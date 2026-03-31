@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a0a1f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<title>Semana Santa - Sonsonate</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
+.hdr{text-align:center;padding:8px 8px 4px;border-bottom:1px solid rgba(178,102,255,.2)}
+.hdr h1{font-size:13px;color:#c084fc;letter-spacing:2px}
+.hdr .s{font-size:11px;color:#ccc}
+.days{display:flex;gap:0;border-bottom:2px solid rgba(178,102,255,.2)}
+.day{flex:1;padding:10px 4px;text-align:center;cursor:pointer;font-size:10px;font-weight:700;color:#888;background:none;border:none;font-family:inherit;line-height:1.3}
+.day .di{font-size:18px;display:block}
+.day.a{color:#c084fc;background:rgba(178,102,255,.1);border-bottom:2px solid #c084fc;margin-bottom:-2px}
+.bar{display:flex;justify-content:space-around;padding:5px;background:rgba(0,0,0,.3)}
+.bar .v{font-size:15px;font-weight:700;color:#c084fc}
+.bar .l{font-size:10px;color:#ccc}
+.tools{padding:5px;display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
+.btn{background:rgba(178,102,255,.12);border:1px solid #7c3aed;color:#c084fc;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600}
+.btn.on{background:rgba(76,175,80,.3);border-color:#4CAF50;color:#90EE90}
+.cfg{margin:4px 8px;padding:8px;background:rgba(0,0,0,.3);border-radius:6px;border:1px solid rgba(178,102,255,.2);display:none}
+.cfg.open{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}
+.cfg label{font-size:11px;color:#ccc;display:block;margin-bottom:2px}
+.cfg input{background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;text-align:center;font-size:16px}
+#map{width:100%;height:52vh;min-height:280px}
+.mapbtn{background:rgba(0,0,0,.75);border:1px solid #666;color:#fff;padding:8px 10px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;backdrop-filter:blur(4px)}
+.notice{text-align:center;padding:6px;font-size:13px;color:#c084fc;background:rgba(178,102,255,.08);display:none}
+.notice.show{display:block}
+.vtabs{display:flex;border-bottom:1px solid rgba(178,102,255,.15)}
+.vtab{flex:1;padding:8px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:#888;border:none;background:none}
+.vtab.a{color:#c084fc;border-bottom:2px solid #c084fc;margin-bottom:-1px}
+.pnl{display:none}.pnl.a{display:block}
+.tbl{margin:6px;background:rgba(0,0,0,.2);border-radius:6px;border:1px solid rgba(178,102,255,.15);overflow:hidden;max-height:50vh;overflow-y:auto}
+.tbl .th{display:grid;grid-template-columns:32px 1fr 65px;padding:6px 8px;font-size:12px;font-weight:700;color:#c084fc;background:rgba(178,102,255,.1);position:sticky;top:0}
+.tbl .tr{display:grid;grid-template-columns:32px 1fr 65px;padding:8px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
+.tbl .tr:active{background:rgba(178,102,255,.1)}
+.tbl .rn{font-weight:700;color:#c084fc;font-size:15px}.tbl .rt{text-align:right;font-weight:700;color:#c084fc;align-self:center;font-size:13px}
+.tbl .rs{font-size:11px;color:#aaa}
+.ftr{padding:6px 8px;margin:4px 8px 10px;background:rgba(255,255,255,.04);border-radius:6px;font-size:11px;color:#aaa;line-height:1.4}
+/* EN VIVO */
+.live-card{background:rgba(0,0,0,.3);border:1px solid rgba(178,102,255,.2);border-radius:10px;padding:14px;margin-bottom:10px;text-align:center}
+.live-next{background:linear-gradient(135deg,rgba(178,102,255,.1),rgba(178,102,255,.05));border:2px solid #c084fc;border-radius:12px;padding:18px 14px;margin-bottom:12px;text-align:center}
+.live-next .ln-label{font-size:13px;color:#ccc;text-transform:uppercase;letter-spacing:1px}
+.live-next .ln-num{font-size:48px;font-weight:700;color:#c084fc;line-height:1.1}
+.live-next .ln-ref{font-size:16px;color:#fff;margin-top:6px}
+.live-next .ln-time{font-size:20px;color:#c084fc;margin-top:6px}
+.live-progress{background:rgba(0,0,0,.4);border-radius:20px;height:26px;overflow:hidden;margin:10px 0;border:1px solid rgba(178,102,255,.2)}
+.live-progress-bar{height:100%;background:linear-gradient(90deg,#c084fc,#7c3aed);border-radius:20px;transition:width .5s;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#111}
+.live-btn{width:100%;padding:18px;border:none;border-radius:10px;font-family:inherit;font-size:18px;font-weight:700;cursor:pointer;margin-bottom:8px}
+.live-btn-done{background:#4CAF50;color:#fff}
+.live-btn-done:active{background:#388E3C}
+.live-btn-undo{background:rgba(178,102,255,.1);color:#c084fc;border:1px solid #7c3aed;font-size:14px;padding:12px}
+.live-carry{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:8px;margin-bottom:6px;border:1px solid rgba(255,255,255,.1)}
+.live-carry.done{background:rgba(76,175,80,.1);border-color:rgba(76,175,80,.3)}
+.live-carry.pending{background:rgba(255,255,255,.03)}
+.live-carry.current{background:rgba(178,102,255,.1);border-color:#c084fc;border-width:2px}
+.live-carry .lc-num{font-size:20px;font-weight:700;width:32px}
+.live-carry .lc-info{flex:1;padding:0 8px}
+.live-carry .lc-ref{font-size:14px;font-weight:600;color:#fff}
+.live-carry .lc-sub{font-size:11px;color:#aaa}
+.live-carry .lc-time{font-size:15px;font-weight:700}
+.live-carry.done .lc-num{color:#4CAF50}
+.live-carry.current .lc-num{color:#c084fc}
+.live-carry.pending .lc-num{color:#666}
+.rfloat{display:none;position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:2000;background:#d4af37;color:#1a0a02;font-weight:700;font-size:12px;padding:9px 18px;border-radius:22px;box-shadow:0 3px 12px rgba(212,175,55,.5);cursor:pointer;border:none}
+.rfloat.show{display:block}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div style="font-size:16px;color:#c084fc">✝</div>
+  <h1>SEMANA SANTA · SONSONATE</h1>
+  <div class="s" id="hSub"></div>
+</div>
+
+<div class="days">
+  <button class="day a" onclick="switchDay(0)"><span class="di">Ⓛ</span>LUN</button>
+  <button class="day" onclick="switchDay(1)"><span class="di">Ⓜ</span>MAR</button>
+  <button class="day" onclick="switchDay(2)"><span class="di">Ⓜ</span>MIÉ</button>
+  <button class="day" onclick="switchDay(3)"><span class="di">Ⓥ</span>VIE</button>
+</div>
+
+<div class="bar" id="stats"></div>
+
+<div class="tools">
+  <button class="btn" onclick="document.getElementById('cfgP').classList.toggle('open')">⚙️ Mi Grupo</button>
+  <button class="btn" onclick="shareWhatsApp()">📤 Compartir</button>
+  <button class="btn" onclick="resetData()" style="border-color:#914444;color:#e08080">🗑️</button>
+</div>
+<div class="cfg" id="cfgP">
+  <div><label>¿Cargadores de?</label><select id="cType" onchange="onTypeChange()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="21">Hombres (21 grupos)</option><option value="27">Mujeres (27 grupos)</option></select></div>
+  <div><label>¿En qué grupo vas?</label><input type="number" id="cG" value="5" min="1" max="50" onchange="calc()"></div>
+  <div><label>¿Qué grupo saca?</label><input type="number" id="cS" value="19" min="1" max="50" onchange="daySacaManual[currentDay]=true;calc()"></div>
+  <div><label>Hora de salida</label><input type="number" id="cH" value="15" min="0" max="23" onchange="calc()"></div>
+  <div><label>Min por cambio</label><input type="number" id="cMn" value="6" min="1" max="20" onchange="calc()"></div>
+</div>
+
+<div class="vtabs">
+  <button class="vtab" onclick="showView(0)">🗺️ MAPA</button>
+  <button class="vtab" onclick="showView(1)">📋 MIS CARGADAS</button>
+  <button class="vtab a" onclick="showView(2)" style="font-weight:700">✝️ AVANCE</button>
+</div>
+
+<div class="pnl" id="v0">
+  <div class="notice" id="noti"></div>
+  <div style="position:relative">
+    <div id="map"></div>
+    <!-- Right side: edit controls -->
+    <div id="mapEditBar" style="position:absolute;top:8px;right:8px;z-index:1000;display:flex;flex-direction:column;gap:5px">
+      <button id="bEdit" onclick="toggleEdit()" class="mapbtn">✏️ Editar</button>
+    </div>
+    <div id="mapEditTools" style="position:absolute;top:8px;right:8px;z-index:1000;display:none;flex-direction:column;gap:5px">
+      <button id="bEditClose" onclick="toggleEdit()" class="mapbtn" style="background:rgba(76,175,80,.85)">✏️ Editando</button>
+      <button id="bDrag" onclick="toggleDrag()" class="mapbtn">🔀 Mover</button>
+      <button onclick="addRef()" class="mapbtn">📌 Ref</button>
+    </div>
+    <!-- Left side: view controls -->
+    <div style="position:absolute;top:8px;left:8px;z-index:1000;display:flex;flex-direction:column;gap:5px">
+      <button id="bGps" onclick="toggleGps()" class="mapbtn">📍 Mi Ubicación</button>
+      <button id="bAll" onclick="toggleAll()" class="mapbtn">👥 Ver otros grupos</button>
+    </div>
+  </div>
+</div>
+<div class="pnl" id="v1">
+  <div class="tbl" id="tbl"></div>
+</div>
+<div class="pnl a" id="v2">
+  <div id="livePanel" style="padding:10px"></div>
+</div>
+<div class="ftr" id="ftr"></div>
+<script>
+// ========== MIÉRCOLES: 129 puntos exactos del KML ==========
+const MIER_PTS=[
+{n:'Tornamesa Catedral',lat:13.7205165,lng:-89.7268171},{n:'Mitad de Catedral',lat:13.7204618,lng:-89.7271688},{n:'Portón de Catedral',lat:13.7206729,lng:-89.7275041},
+{n:'Despensa de Don Juan',lat:13.7209203,lng:-89.7273058},{n:'Omnisport',lat:13.7213138,lng:-89.7270429},{n:'Casa de la Cultura',lat:13.7216413,lng:-89.7267932},
+{n:'Parada de Buses 53E',lat:13.7214223,lng:-89.726466},{n:'Piedra Lisa',lat:13.7211645,lng:-89.7261092},{n:'Sede Nuevas Ideas',lat:13.7209411,lng:-89.7257749},
+{n:'Ferretería Salaverría',lat:13.720697,lng:-89.7254305},{n:'Mitad del Puente',lat:13.7205279,lng:-89.7251279},{n:'Imprenta',lat:13.7203374,lng:-89.7248288},
+{n:'Boris Olivares',lat:13.7200858,lng:-89.7244155},{n:'Casa de la Mujer',lat:13.7197654,lng:-89.7239408},{n:'Medardo',lat:13.7194539,lng:-89.7241446},
+{n:'Mercado El Ángel',lat:13.7191287,lng:-89.7243735},{n:'Vía Ferreá',lat:13.7189568,lng:-89.7240933},{n:'Portón COED Thomas Jefferson',lat:13.7187273,lng:-89.7237472},
+{n:'Esquina COED Thomas Jefferson',lat:13.718493,lng:-89.7233502},{n:'El Palace',lat:13.7182673,lng:-89.7229471},{n:'Pizza Cristian',lat:13.7179755,lng:-89.722467},
+{n:'Moto Repuestos Paíz',lat:13.7177858,lng:-89.7221313},{n:'Autorepuestos Yamasay',lat:13.717567,lng:-89.7217987},{n:'Hotel Florencia',lat:13.7173679,lng:-89.7214472},
+{n:'Peluqería Miriam',lat:13.7170813,lng:-89.7210503},{n:'Casa Rosada',lat:13.7168588,lng:-89.7206806},{n:'Tienda R y R',lat:13.7166102,lng:-89.7203138},
+{n:'Cargada 28',lat:13.716998,lng:-89.720059},{n:'Esquina Colonia Nueva',lat:13.7173567,lng:-89.7197927},{n:'Poste donde Salen los Buses',lat:13.7170799,lng:-89.7193483},
+{n:'Cruzona',lat:13.716749,lng:-89.7189781},{n:'Cargada 32',lat:13.7165128,lng:-89.7186527},{n:'Esquina',lat:13.7162861,lng:-89.7182665},
+{n:'Punto 34',lat:13.7160858,lng:-89.7179126},{n:'Punto 35',lat:13.7159294,lng:-89.7175397},{n:'Punto 36',lat:13.7157731,lng:-89.7171455},
+{n:'Villa Lilian',lat:13.7156298,lng:-89.7166385},{n:'Punto 38',lat:13.7154552,lng:-89.716212},{n:'Punto 39',lat:13.7153223,lng:-89.7157266},
+{n:'Punto 40',lat:13.7158932,lng:-89.7155525},{n:'Punto 41',lat:13.7164039,lng:-89.7154345},{n:'Punto 42',lat:13.716925,lng:-89.715295},
+{n:'Punto 43',lat:13.7174149,lng:-89.7151233},{n:'Punto 44',lat:13.7175169,lng:-89.7155862},{n:'Punto 45',lat:13.7176524,lng:-89.7160583},
+{n:'Punto 46',lat:13.7177671,lng:-89.7164982},{n:'Punto 47',lat:13.7178817,lng:-89.7169488},{n:'Punto 48',lat:13.7180172,lng:-89.7173596},
+{n:'Punto 49',lat:13.718111,lng:-89.717774},{n:'Punto 51',lat:13.7181844,lng:-89.718194},{n:'Punto 52',lat:13.7182261,lng:-89.7185668},
+{n:'Punto 53',lat:13.7182469,lng:-89.7189129},{n:'Punto 54',lat:13.718312,lng:-89.7193286},{n:'Balzamar esquina',lat:13.7184155,lng:-89.7197969},
+{n:'Punto 56',lat:13.718749,lng:-89.7196788},{n:'Punto 57',lat:13.7190461,lng:-89.7195447},{n:'Punto 58',lat:13.7193874,lng:-89.7193731},
+{n:'Punto 59',lat:13.7195382,lng:-89.7198259},{n:'Punto 60',lat:13.7196711,lng:-89.7202362},{n:'Punto 61',lat:13.7198066,lng:-89.7206171},
+{n:'Punto 62',lat:13.7199577,lng:-89.7210034},{n:'Punto 63',lat:13.7196294,lng:-89.7212298},{n:'Punto 64',lat:13.7192281,lng:-89.7215463},
+{n:'Punto 65',lat:13.7194209,lng:-89.7218897},{n:'Punto 66',lat:13.7196242,lng:-89.722174},{n:'Punto 67',lat:13.7198482,lng:-89.7224422},
+{n:'Punto 68',lat:13.7200619,lng:-89.7227641},{n:'Punto 69',lat:13.7203068,lng:-89.723102},{n:'Punto 70',lat:13.7205205,lng:-89.7234078},
+{n:'Punto 71',lat:13.7207081,lng:-89.7237416},{n:'Punto 72',lat:13.7209062,lng:-89.7240527},{n:'Punto 73',lat:13.7211042,lng:-89.7243693},
+{n:'Punto 74',lat:13.7214878,lng:-89.7241446},{n:'Punto 75',lat:13.7219099,lng:-89.7238979},{n:'Punto 76',lat:13.722128,lng:-89.72414},
+{n:'Punto 77',lat:13.722412,lng:-89.7244244},{n:'Punto 78',lat:13.7226683,lng:-89.7246667},{n:'Punto 79',lat:13.7228981,lng:-89.7249521},
+{n:'Punto 80',lat:13.7232715,lng:-89.7246751},{n:'Punto 81',lat:13.7235998,lng:-89.7244337},{n:'Punto 82',lat:13.7240063,lng:-89.7241225},
+{n:'Punto 83',lat:13.7243838,lng:-89.7238489},{n:'Punto 84',lat:13.7249519,lng:-89.7234948},{n:'Punto 85',lat:13.7253584,lng:-89.7232212},
+{n:'Punto 86',lat:13.7257535,lng:-89.7229441},{n:'Punto 87',lat:13.7261704,lng:-89.7226973},{n:'Punto 88',lat:13.726502,lng:-89.7224281},
+{n:'Punto 89',lat:13.7268303,lng:-89.7221975},{n:'Punto 90',lat:13.7272107,lng:-89.7219614},{n:'Punto 91',lat:13.7269762,lng:-89.7215966},
+{n:'Punto 92',lat:13.7267573,lng:-89.7212158},{n:'Punto 93',lat:13.7265697,lng:-89.7209636},{n:'Punto 94',lat:13.7263508,lng:-89.7206632},
+{n:'Punto 95',lat:13.7268355,lng:-89.7204647},{n:'Punto 96',lat:13.726997,lng:-89.7207652},{n:'Col. 14',lat:13.7271377,lng:-89.7209905},
+{n:'Punto 98',lat:13.7273652,lng:-89.7213355},{n:'Punto 99',lat:13.7275997,lng:-89.7216628},{n:'Punto 100',lat:13.727927,lng:-89.7214498},
+{n:'Punto 101',lat:13.7282553,lng:-89.7211923},{n:'Punto 102',lat:13.7285753,lng:-89.7209379},{n:'Punto 103',lat:13.7284242,lng:-89.7206214},
+{n:'Punto 104',lat:13.7285753,lng:-89.7202727},{n:'Punto 105',lat:13.7289505,lng:-89.7202244},{n:'Punto 106',lat:13.7291486,lng:-89.7206643},
+{n:'Punto 107',lat:13.7289714,lng:-89.7209594},{n:'Punto 108',lat:13.7291251,lng:-89.7212946},{n:'Punto 109',lat:13.7288094,lng:-89.7214407},
+{n:'Punto 110',lat:13.728455,lng:-89.7216123},{n:'Punto 111',lat:13.7281237,lng:-89.7218016},{n:'Punto 112',lat:13.727785,lng:-89.7220001},
+{n:'Punto 113',lat:13.7274338,lng:-89.7223149},{n:'Punto 114',lat:13.7270957,lng:-89.722655},{n:'Punto 115',lat:13.7267674,lng:-89.7229662},
+{n:'Punto 116',lat:13.7264722,lng:-89.7233149},{n:'Punto 117',lat:13.7260831,lng:-89.7236116},{n:'Salarrue',lat:13.72572,lng:-89.7238697},
+{n:'Punto 119',lat:13.7253162,lng:-89.7241462},{n:'Punto 120',lat:13.7248107,lng:-89.7245056},{n:'Punto 121',lat:13.724472,lng:-89.7247792},
+{n:'Punto 122',lat:13.7240342,lng:-89.7251118},{n:'Punto 123',lat:13.7237007,lng:-89.7253532},{n:'Punto 124',lat:13.7233672,lng:-89.7255732},
+{n:'Punto 125',lat:13.7230389,lng:-89.7258038},{n:'Punto 126',lat:13.7233359,lng:-89.7260923},{n:'Punto 127',lat:13.7236225,lng:-89.726323},
+{n:'Punto 128',lat:13.7239326,lng:-89.7265791},{n:'Punto 129',lat:13.7242348,lng:-89.7269224},{n:'Punto 130',lat:13.7239691,lng:-89.7271584}
+];
+
+// ========== MIÉRCOLES: Reference waypoints (key landmarks) ==========
+const MIER_WP_REF=[
+{n:"Catedral",lat:13.7205165,lng:-89.7268171},
+{n:"Omnisport",lat:13.7213138,lng:-89.7270429},
+{n:"Mitad del Puente",lat:13.7205279,lng:-89.7251279},
+{n:"Mercado El Ángel",lat:13.7191287,lng:-89.7243735},
+{n:"COED Thomas Jefferson",lat:13.7187273,lng:-89.7237472},
+{n:"Hotel Florencia",lat:13.7173679,lng:-89.7214472},
+{n:"Tienda R y R",lat:13.7166102,lng:-89.7203138},
+{n:"Cruzona",lat:13.716749,lng:-89.7189781},
+{n:"Villa Lilian",lat:13.7156298,lng:-89.7166385},
+{n:"Balzamar",lat:13.7184155,lng:-89.7197969},
+{n:"Salarrue",lat:13.72572,lng:-89.7238697},
+{n:"Col. 14",lat:13.7271377,lng:-89.7209905},
+];
+
+// ========== LUNES: 103 puntos exactos del KML ==========
+const LUN_PTS=[
+{n:'Grupo 19 (Levanta)',lat:13.7205038,lng:-89.7268142},{n:'Grupo 20 (Saca)',lat:13.7204777,lng:-89.7271632},{n:'Grupo 21 (Minuto de silencio)',lat:13.7206679,lng:-89.7275011},
+{n:'Grupo 1 (B. Agrícola)',lat:13.7203631,lng:-89.7277349},{n:'Grupo 2 (P. 2001)',lat:13.7199461,lng:-89.7279817},{n:'Grupo 3 (Claro)',lat:13.7195387,lng:-89.7282346},
+{n:'Grupo 4 (Selim)',lat:13.7192524,lng:-89.7284855},{n:'Grupo 5 (Agroservicio)',lat:13.718882,lng:-89.7287269},{n:'Grupo 6 (P. Lupita)',lat:13.718582,lng:-89.7289339},
+{n:'Grupo 7 (H. Veracruz)',lat:13.7182537,lng:-89.7291377},{n:'Grupo 8 (C. Crédito)',lat:13.7179107,lng:-89.7293711},{n:'Grupo 9 (Megaplaza)',lat:13.7175267,lng:-89.7295749},
+{n:'Grupo 10 (Flores)',lat:13.7177899,lng:-89.7300121},{n:'Grupo 11',lat:13.7180374,lng:-89.730401},{n:'Grupo 12',lat:13.7176713,lng:-89.7306562},
+{n:'Grupo 13 (F. Lozano)',lat:13.7173416,lng:-89.7309029},{n:'Grupo 14',lat:13.717571,lng:-89.731273},{n:'Grupo 15',lat:13.7178359,lng:-89.7316597},
+{n:'Grupo 16 (Panes Dalila)',lat:13.7182059,lng:-89.7314237},{n:'Grupo 17 (Dr. Arbizú)',lat:13.718526,lng:-89.7311732},{n:'Grupo 18',lat:13.7187814,lng:-89.7314924},
+{n:'Grupo 19',lat:13.7190133,lng:-89.731782},{n:'Grupo 20 (Jugos)',lat:13.7186785,lng:-89.7320336},{n:'Grupo 21',lat:13.7183089,lng:-89.7322888},
+{n:'Grupo 1 (Pupusería)',lat:13.7180018,lng:-89.7325207},{n:'Grupo 2',lat:13.7177069,lng:-89.7327523},{n:'Grupo 3',lat:13.7174209,lng:-89.7329489},
+{n:'Grupo 4',lat:13.7170964,lng:-89.7331018},{n:'Grupo 5 (Alexis)',lat:13.7166855,lng:-89.7332318},{n:'Grupo 6',lat:13.7161983,lng:-89.7333429},
+{n:'Grupo 7',lat:13.7157251,lng:-89.7334055},{n:'Grupo 8',lat:13.7152247,lng:-89.733444},{n:'Grupo 9',lat:13.7146337,lng:-89.7335051},
+{n:'Grupo 10 (William Mendoza)',lat:13.7140187,lng:-89.7335748},{n:'Grupo 11',lat:13.7133942,lng:-89.7336122},{n:'Grupo 12',lat:13.7128443,lng:-89.7336364},
+{n:'Grupo 13',lat:13.7126762,lng:-89.7332711},{n:'Grupo 14',lat:13.7123899,lng:-89.7327963},{n:'Grupo 15',lat:13.7121459,lng:-89.732339},
+{n:'Grupo 16',lat:13.7119606,lng:-89.7319596},{n:'Grupo 17',lat:13.7117834,lng:-89.7316056},{n:'Grupo 18',lat:13.7115932,lng:-89.7312381},
+{n:'Grupo 19',lat:13.711403,lng:-89.7308894},{n:'Grupo 20',lat:13.7111737,lng:-89.7305327},{n:'Grupo 21 (Sensunapán)',lat:13.7110173,lng:-89.7302323},
+{n:'Grupo 1',lat:13.7113676,lng:-89.7300127},{n:'Grupo 2',lat:13.7117526,lng:-89.7297767},{n:'Grupo 3',lat:13.7121196,lng:-89.729558},
+{n:'Grupo 4',lat:13.7124658,lng:-89.7293766},{n:'Grupo 5',lat:13.7128431,lng:-89.7291289},{n:'Grupo 6',lat:13.7132183,lng:-89.7288773},
+{n:'Grupo 7 (P. Antorchas)',lat:13.7136069,lng:-89.7286467},{n:'Grupo 8',lat:13.7140058,lng:-89.7284135},{n:'Grupo 9',lat:13.714381,lng:-89.7281936},
+{n:'Grupo 10',lat:13.7147903,lng:-89.7279647},{n:'Grupo 11',lat:13.7152687,lng:-89.7276823},{n:'Grupo 12 (Canchita)',lat:13.7157475,lng:-89.7274007},
+{n:'Grupo 13',lat:13.716155,lng:-89.7271571},{n:'Grupo 14',lat:13.71658,lng:-89.7268705},{n:'Grupo 15',lat:13.716968,lng:-89.7266286},
+{n:'Grupo 16',lat:13.7173743,lng:-89.7263993},{n:'Grupo 17 (COED BRITO)',lat:13.7177813,lng:-89.7261697},{n:'Grupo 18 (CNR)',lat:13.7181252,lng:-89.7259767},
+{n:'Grupo 19 (TELAS)',lat:13.7185029,lng:-89.7257623},{n:'Grupo 20 (MODA FASHION)',lat:13.7188385,lng:-89.725575},{n:'Grupo 21 (SELECTOS)',lat:13.7192706,lng:-89.7253634},
+{n:'Grupo 1 (Quesos)',lat:13.7196094,lng:-89.7251757},{n:'Grupo 2 (Amperio)',lat:13.719969,lng:-89.724996},{n:'Grupo 3',lat:13.7203285,lng:-89.7248304},
+{n:'Grupo 4 (F. Generosa)',lat:13.7207418,lng:-89.7245964},{n:'Grupo 5 (Esquina IPS)',lat:13.7210786,lng:-89.7243618},{n:'Grupo 6 (Ex IPS)',lat:13.7214746,lng:-89.7241486},
+{n:'Grupo 7 (Administración)',lat:13.7218648,lng:-89.7238889},{n:'Grupo 8 (Car Wash)',lat:13.7216677,lng:-89.7236013},{n:'Grupo 9 (AHSEC)',lat:13.7214827,lng:-89.7232847},
+{n:'Grupo 10 (Uniformate)',lat:13.7212065,lng:-89.7229307},{n:'Grupo 11 (Librería)',lat:13.7215833,lng:-89.7226518},{n:'Grupo 12 (P. UNAB)',lat:13.721903,lng:-89.7224202},
+{n:'Grupo 13 (ITDEM)',lat:13.7222126,lng:-89.7221862},{n:'Grupo 14',lat:13.7226048,lng:-89.7219108},{n:'Grupo 15',lat:13.7229571,lng:-89.7216379},
+{n:'Grupo 16 (Luz Clarita)',lat:13.7232658,lng:-89.7214544},{n:'Grupo 17 (Última)',lat:13.7233944,lng:-89.7211656},{n:'Grupo 18',lat:13.7231467,lng:-89.7209014},
+{n:'Grupo 19',lat:13.7229592,lng:-89.7206788},{n:'Grupo 20 (Ida)',lat:13.7227292,lng:-89.7204053},{n:'Grupo 21 (Ida)',lat:13.7230478,lng:-89.7201119},
+{n:'Grupo 1 (Ida)',lat:13.7232966,lng:-89.7198558},{n:'Grupo 2 (Regreso)',lat:13.7235413,lng:-89.7195569},{n:'Grupo 3 (Regreso)',lat:13.7232521,lng:-89.7197886},
+{n:'Grupo 4 (Regreso)',lat:13.7229667,lng:-89.7200247},{n:'Grupo 5 (Regreso)',lat:13.7226892,lng:-89.7203539},{n:'Grupo 6',lat:13.722384,lng:-89.720583},
+{n:'Grupo 7',lat:13.7220443,lng:-89.7208097},{n:'Grupo 8',lat:13.7216614,lng:-89.721066},{n:'Grupo 9',lat:13.7212652,lng:-89.7213262},
+{n:'Grupo 10',lat:13.7208859,lng:-89.7216059},{n:'Grupo 11',lat:13.7205267,lng:-89.7218667},{n:'Grupo 12',lat:13.720169,lng:-89.7221217},
+{n:'Grupo 13',lat:13.7198094,lng:-89.7223679},{n:'Grupo 14',lat:13.7194821,lng:-89.7225958},{n:'Grupo 15',lat:13.7196932,lng:-89.7229097},
+{n:'Grupo 16 (Entra)',lat:13.7199589,lng:-89.7232262}
+];
+// Lunes reference waypoints
+const LUN_WP_REF=[
+{n:"Catedral",lat:13.7205038,lng:-89.7268142},
+{n:"Veracruz",lat:13.7182537,lng:-89.7291377},
+{n:"Megaplaza",lat:13.7175267,lng:-89.7295749},
+{n:"Sensunapán",lat:13.7110173,lng:-89.7302323},
+{n:"COED Brito",lat:13.7177813,lng:-89.7261697},
+{n:"Selectos",lat:13.7192706,lng:-89.7253634},
+{n:"IPS",lat:13.7210786,lng:-89.7243618},
+];
+
+// ========== VIERNES MAÑANA: 44 puntos exactos del KML ==========
+const VIER_PTS=[
+{n:'Iglesia el pilar',lat:13.7236207,lng:-89.7273996},{n:'Esquina',lat:13.7239621,lng:-89.7271582},{n:'AHJN',lat:13.7242369,lng:-89.727519},
+{n:'Punto 4',lat:13.7244897,lng:-89.7278543},{n:'Punto 5',lat:13.724758,lng:-89.7282432},{n:'Punto 6',lat:13.7249612,lng:-89.7285329},
+{n:'San Vicente de Paul',lat:13.7246585,lng:-89.7287919},{n:'Minuto de Silencio',lat:13.7242416,lng:-89.7290869},{n:'Casa de Ancianas',lat:13.7239754,lng:-89.7287756},
+{n:'Ex - Pupusería Cony',lat:13.7237357,lng:-89.7284537},{n:'Parqueo',lat:13.7234647,lng:-89.7286737},{n:'Hospital',lat:13.7231312,lng:-89.7289419},
+{n:'UMA',lat:13.7228811,lng:-89.7286308},{n:'Tortodromo',lat:13.722657,lng:-89.7282123},{n:'UMA',lat:13.7223126,lng:-89.7284374},
+{n:'Punto 16',lat:13.7219322,lng:-89.7286949},{n:'Punto 17',lat:13.7216892,lng:-89.7283505},{n:'Banco Hipotecario',lat:13.7214234,lng:-89.728034},
+{n:'Foto Richard',lat:13.7212098,lng:-89.7276746},{n:'Despensa',lat:13.7209336,lng:-89.7272991},{n:'Punto 21',lat:13.7207199,lng:-89.7269236},
+{n:'Librería el Shadai',lat:13.7204802,lng:-89.7266125},{n:'Colegio San Antonio',lat:13.720204,lng:-89.726827},{n:'Ex - RAF',lat:13.7198965,lng:-89.7270577},
+{n:'Electrónica 2001',lat:13.7201362,lng:-89.7273903},{n:'Banco Agrícola',lat:13.7203331,lng:-89.727731},{n:'Portón de la electrónica 2001',lat:13.7199632,lng:-89.727977},
+{n:'Claro',lat:13.7195853,lng:-89.7282318},{n:'Casa Blanca',lat:13.719219,lng:-89.7284956},{n:'Agroservicio',lat:13.7188751,lng:-89.7287397},
+{n:'Pan Lilian',lat:13.718578,lng:-89.7289409},{n:'Ermita de Veracruz',lat:13.7182706,lng:-89.7291447},{n:'Punto 33',lat:13.7185103,lng:-89.7295337},
+{n:'Punto 34',lat:13.718737,lng:-89.7298824},{n:'Punto 35',lat:13.7190262,lng:-89.7296946},{n:'Agroservicio',lat:13.7193485,lng:-89.7294867},
+{n:'Mercado',lat:13.7197134,lng:-89.7292397},{n:'Punto 38',lat:13.7200493,lng:-89.7290125},{n:'Punto 39',lat:13.7204859,lng:-89.7286913},
+{n:'Cortesías',lat:13.7208368,lng:-89.7284344},{n:'Librería San Salvador',lat:13.7206101,lng:-89.7281149},{n:'Banco Agricola',lat:13.7203834,lng:-89.7277152},
+{n:'Portón de Catedral',lat:13.7206883,lng:-89.7275023},{n:'Última Cargada',lat:13.7204668,lng:-89.7271617}
+];
+const VIER_WP_REF=[
+{n:"Iglesia El Pilar",lat:13.7236207,lng:-89.7273996},
+{n:"San Vicente de Paul",lat:13.7246585,lng:-89.7287919},
+{n:"Hospital",lat:13.7231312,lng:-89.7289419},
+{n:"Banco Hipotecario",lat:13.7214234,lng:-89.728034},
+{n:"Ermita Veracruz",lat:13.7182706,lng:-89.7291447},
+{n:"Catedral",lat:13.7206883,lng:-89.7275023},
+];
+
+// ========== STATE ==========
+let gmap, infoWin, routeLine, routeClickLine;
+let currentDay = 0; // 0=lunes,1=martes,2=miercoles,3=viernes
+let positions = [];
+let changes = [], myCarries = [];
+let allMarkers = [], wpMarkers = [], showAll = true, dragMode = false;
+let dayNames = ['Lunes Santo','Martes Santo','Miércoles Santo','Viernes Mañana'];
+let dayHours = [15, 15, 15, 8];
+let daySaca = [19, 19, 19, 19];
+let daySacaManual = [true, false, false, false]; // true if user manually set saca
+
+let savedPositions = [null, null, null, null];
+let savedRefs = [null, null, null, null];
+
+// ========== MARTES: 69 puntos estimados del mapa ==========
+const MART_PTS=[
+{n:'Iglesia El Angel',lat:13.7196,lng:-89.7233},{n:'Punto 2',lat:13.7198,lng:-89.72275},{n:'Almacenes Bou',lat:13.72,lng:-89.7222},
+{n:'Punto 4',lat:13.71982,lng:-89.72264},{n:'Punto 5',lat:13.71964,lng:-89.72308},{n:'Punto 6',lat:13.71946,lng:-89.72352},
+{n:'Punto 7',lat:13.71928,lng:-89.72396},{n:'Mercadito El Angel',lat:13.7191,lng:-89.7244},{n:'Punto 9',lat:13.7192,lng:-89.7248667},
+{n:'Punto 10',lat:13.7193,lng:-89.7253333},{n:'Punto 11',lat:13.7194,lng:-89.7258},{n:'Punto 12',lat:13.7195,lng:-89.7264},
+{n:'Punto 13',lat:13.7196,lng:-89.727},{n:'Punto 14',lat:13.71955,lng:-89.7276},{n:'Claro',lat:13.7195,lng:-89.7282},
+{n:'Punto 16',lat:13.7191,lng:-89.7285},{n:'Punto 17',lat:13.7187,lng:-89.7288},{n:'Ermita Barrio Veracruz',lat:13.7183,lng:-89.7291},
+{n:'Punto 19',lat:13.7179,lng:-89.72935},{n:'Punto 20',lat:13.7175,lng:-89.7296},{n:'Punto 21',lat:13.71715,lng:-89.7301},
+{n:'Punto 22',lat:13.7168,lng:-89.7306},{n:'Punto 23',lat:13.716475,lng:-89.731},{n:'Punto 24',lat:13.71615,lng:-89.7314},
+{n:'Punto 25',lat:13.715825,lng:-89.7318},{n:'5a Av Sur',lat:13.7155,lng:-89.7322},{n:'Punto 27',lat:13.715125,lng:-89.73255},
+{n:'Punto 28',lat:13.71475,lng:-89.7329},{n:'Punto 29',lat:13.714375,lng:-89.73325},{n:'Colonia San Rafael',lat:13.714,lng:-89.7336},
+{n:'Punto 31',lat:13.7136667,lng:-89.7339},{n:'Punto 32',lat:13.7133333,lng:-89.7342},{n:'Punto 33',lat:13.713,lng:-89.7345},
+{n:'Punto 34',lat:13.7127,lng:-89.734925},{n:'Punto 35',lat:13.7124,lng:-89.73535},{n:'Punto 36',lat:13.7121,lng:-89.735775},
+{n:'8a Calle Poniente',lat:13.7118,lng:-89.7362},{n:'Punto 38',lat:13.7121333,lng:-89.7366333},{n:'Punto 39',lat:13.7124667,lng:-89.7370667},
+{n:'Punto 40',lat:13.7128,lng:-89.7375},{n:'Punto 41',lat:13.7133,lng:-89.7377667},{n:'Punto 42',lat:13.7138,lng:-89.7380333},
+{n:'C.E. República de Haití',lat:13.7143,lng:-89.7383},{n:'Punto 44',lat:13.714475,lng:-89.73785},{n:'Punto 45',lat:13.71465,lng:-89.7374},
+{n:'Punto 46',lat:13.714825,lng:-89.73695},{n:'Calle a San Antonio del Monte',lat:13.715,lng:-89.7365},{n:'Punto 48',lat:13.71516,lng:-89.736},
+{n:'Punto 49',lat:13.71532,lng:-89.7355},{n:'Punto 50',lat:13.71548,lng:-89.735},{n:'Punto 51',lat:13.71564,lng:-89.7345},
+{n:'Little Caesars',lat:13.7158,lng:-89.734},{n:'Punto 53',lat:13.7160333,lng:-89.7335},{n:'Punto 54',lat:13.7162667,lng:-89.733},
+{n:'Punto 55',lat:13.7165,lng:-89.7325},{n:'Punto 56',lat:13.71675,lng:-89.732125},{n:'Punto 57',lat:13.717,lng:-89.73175},
+{n:'Punto 58',lat:13.71725,lng:-89.731375},{n:'Punto 59',lat:13.7175,lng:-89.731},{n:'Punto 60',lat:13.7178333,lng:-89.7306},
+{n:'Punto 61',lat:13.7181667,lng:-89.7302},{n:'Punto 62',lat:13.7185,lng:-89.7298},{n:'Punto 63',lat:13.7189333,lng:-89.7294667},
+{n:'Punto 64',lat:13.7193667,lng:-89.7291333},{n:'BAC',lat:13.7198,lng:-89.7288},{n:'Punto 66',lat:13.72015,lng:-89.7283},
+{n:'Calle Obispo Marroquín',lat:13.7205,lng:-89.7278},{n:'Punto 68',lat:13.7205,lng:-89.7273},{n:'Catedral Santísima Trinidad',lat:13.7205,lng:-89.7268}
+];
+
+let MART_WP_REF = [
+{n:"Iglesia El Angel",lat:13.7196,lng:-89.7233},
+{n:"Almacenes Bou",lat:13.72,lng:-89.7222},
+{n:"Claro",lat:13.7195,lng:-89.7282},
+{n:"Ermita Veracruz",lat:13.7183,lng:-89.7291},
+{n:"5a Av Sur",lat:13.7155,lng:-89.7322},
+{n:"Col. San Rafael",lat:13.714,lng:-89.7336},
+{n:"8a Calle Poniente",lat:13.7118,lng:-89.7362},
+{n:"C.E. Rep. de Haití",lat:13.7143,lng:-89.7383},
+{n:"Little Caesars",lat:13.7158,lng:-89.734},
+{n:"BAC",lat:13.7198,lng:-89.7288},
+{n:"Catedral",lat:13.7205,lng:-89.7268},
+];
+
+// ========== LOCAL STORAGE ==========
+const SAVE_KEY = 'semanaSanta_v22';
+function getWPs(){return currentDay===0?LUN_WP_REF:currentDay===1?MART_WP_REF:currentDay===2?MIER_WP_REF:currentDay===3?VIER_WP_REF:[];}
+function saveAll() {
+  try {
+    savedPositions[currentDay] = positions.map(p=>({lat:p.lat,lng:p.lng,n:p.n||''}));
+    savedRefs[currentDay] = getWPs().map(w=>({lat:w.lat,lng:w.lng,n:w.n}));
+    const data = {
+      sp: savedPositions, sr: savedRefs,
+      sc: daySaca, sh: dayHours, sm: daySacaManual,
+      cfg: {g:+$('cG').value,t:+$('cType').value,mn:+$('cMn').value},
+      cd: currentDay
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+  } catch(e) {}
+}
+function loadSaved() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    if(d.sp) savedPositions = d.sp;
+    if(d.sr) savedRefs = d.sr;
+    if(d.sc) daySaca = d.sc;
+    if(d.sh) dayHours = d.sh;
+    if(d.sm) daySacaManual = d.sm;
+    if(d.cfg){$('cG').value=d.cfg.g||5;$('cType').value=d.cfg.t||21;$('cMn').value=d.cfg.mn||6;}
+    if(typeof d.cd==='number') currentDay = d.cd;
+    // Restore saved refs into the arrays
+    if(savedRefs[0]&&savedRefs[0].length){LUN_WP_REF.length=0;savedRefs[0].forEach(r=>LUN_WP_REF.push(r));}
+    if(savedRefs[1]&&savedRefs[1].length){MART_WP_REF.length=0;savedRefs[1].forEach(r=>MART_WP_REF.push(r));}
+    if(savedRefs[2]&&savedRefs[2].length){MIER_WP_REF.length=0;savedRefs[2].forEach(r=>MIER_WP_REF.push(r));}
+    if(savedRefs[3]&&savedRefs[3].length){VIER_WP_REF.length=0;savedRefs[3].forEach(r=>VIER_WP_REF.push(r));}
+    return true;
+  } catch(e){return false;}
+}
+function resetData(){
+  if(!confirm('¿Borrar TODO el progreso guardado?')) return;
+  localStorage.removeItem(SAVE_KEY);
+  savedPositions=[null,null,null,null];savedRefs=[null,null,null,null];
+  location.reload();
+}
+
+// Touch guard
+let lastMulti = 0;
+document.addEventListener('touchstart', e => { if(e.touches.length>1) lastMulti=Date.now(); }, {passive:true});
+function isZoom() { return Date.now()-lastMulti<500; }
+
+// ========== URL PARAMS & SHARING ==========
+let isShared = false; // true if opened via shared link
+function readParams(){
+  const p = new URLSearchParams(window.location.search);
+  if(p.has('grupo')||p.has('saca')||p.has('tipo')){
+    isShared=true;
+    if(p.has('grupo')) $('cG').value=p.get('grupo');
+    if(p.has('saca')) $('cS').value=p.get('saca');
+    if(p.has('tipo')) $('cType').value=p.get('tipo');
+    if(p.has('dia')){
+      const d=parseInt(p.get('dia'));
+      if(d>=0&&d<=3) currentDay=d;
+    }
+  }
+}
+
+function shareWhatsApp(){
+  const c=cfg();
+  const base=window.location.origin+window.location.pathname;
+  const link=base+'?grupo='+c.g+'&saca='+c.s+'&tipo='+c.t+'&dia='+currentDay;
+  const tipo=c.t===27?'mujeres':'hombres';
+  const msg='✝️ *Procesión '+dayNames[currentDay]+'*\n'
+    +'Grupo #'+c.g+' ('+tipo+')\n'
+    +'Saca: Grupo #'+c.s+'\n\n'
+    +'Abrí este link para ver tus cargadas:\n'+link;
+  
+  // Try native share first, fallback to WhatsApp
+  if(navigator.share){
+    navigator.share({title:'Procesión '+dayNames[currentDay],text:msg,url:link}).catch(()=>{});
+  } else {
+    window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+  }
+}
+
+const $ = id => document.getElementById(id);
+function cfg() {
+  return {g:+$('cG').value||5, t:+$('cType').value||21, s:+$('cS').value||19, h:+$('cH').value||15, mn:+$('cMn').value||6};
+}
+function onTypeChange(){ calc(); }
+function fmt(min) {
+  let h=Math.floor(min/60), m=Math.round(min%60);
+  if(m===60){h++;m=0}
+  let h12=((h-1)%12)+1; if(h12<=0)h12+=12;
+  return h12+':'+String(m).padStart(2,'0')+' '+(h>=12&&h<24?'PM':'AM');
+}
+function hd(a,b){const R=6371000,d1=(b.lat-a.lat)*Math.PI/180,d2=(b.lng-a.lng)*Math.PI/180;const x=Math.sin(d1/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(d2/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+function placeAlong(path,intv){const r=[];if(path.length<2)return r;let a=0;for(let i=1;i<path.length;i++){const p=path[i-1],q=path[i],s=hd(p,q);if(s<.1)continue;let u=0;while(a+(s-u)>=intv){const ad=intv-a;u+=ad;const f=u/s;r.push({lat:p.lat+(q.lat-p.lat)*f,lng:p.lng+(q.lng-p.lng)*f});a=0;}a+=(s-u);}return r;}
+
+// ========== INIT ==========
+function initMap() {
+  gmap = new google.maps.Map($('map'), {
+    center:{lat:13.717,lng:-89.729}, zoom:15,
+    mapTypeControl:false, streetViewControl:false, fullscreenControl:false,
+    gestureHandling:'greedy', // one finger moves map, two fingers zoom
+    styles:[] // show all default Google Maps labels
+  });
+  infoWin = new google.maps.InfoWindow();
+  // Re-render markers on zoom change (show/hide others based on zoom)
+  let zoomTimer=null;
+  gmap.addListener('zoom_changed',function(){
+    clearTimeout(zoomTimer);
+    zoomTimer=setTimeout(function(){renderMarkers();},300);
+  });
+  const hasSaved = loadSaved();
+  readParams(); // apply URL params (overrides saved config if shared)
+  // Hide edit tools for shared users
+  if(isShared){
+    const eb=document.getElementById('mapEditBar');
+    if(eb) eb.style.display='none';
+  }
+  // Restore day tabs
+  document.querySelectorAll('.day').forEach((b,i)=>b.classList.toggle('a',i===currentDay));
+  $('cS').value = daySaca[currentDay];
+  $('cH').value = dayHours[currentDay];
+  loadDay(currentDay);
+}
+
+// ========== DAY SWITCHING ==========
+function getLastGroup(day){
+  // Calculate which group "enters" (last change) for a given day
+  const s=daySaca[day]||19;
+  const t=+$('cType').value||21;
+  const pts=day===0?LUN_PTS:day===1?MART_PTS:day===2?MIER_PTS:day===3?VIER_PTS:[];
+  const tot=pts.length;
+  if(tot===0) return s;
+  return ((s-1+tot-1)%t)+1;
+}
+
+function switchDay(d) {
+  // Save current day's state
+  daySaca[currentDay] = +$('cS').value||19;
+  dayHours[currentDay] = +$('cH').value||15;
+  saveAll();
+
+  // Auto-calculate saca for the new day if not manually set
+  // Next day's saca = previous day's last group + 1
+  if(d>0 && !daySacaManual[d]){
+    const prevDay=d-1;
+    const lastGrp=getLastGroup(prevDay);
+    const t=+$('cType').value||21;
+    daySaca[d]=((lastGrp)%t)+1; // lastGroup+1, wrap around
+  }
+
+  currentDay = d;
+  document.querySelectorAll('.day').forEach((b,i) => b.classList.toggle('a',i===d));
+
+  // Restore config for this day
+  $('cS').value = daySaca[d];
+  $('cH').value = dayHours[d];
+
+  loadDay(d);
+}
+
+function loadDay(d) {
+  // Clear map
+  allMarkers.forEach(m=>m.setMap(null));
+  wpMarkers.forEach(m=>m.setMap(null));
+  allMarkers=[]; wpMarkers=[];
+  if(routeLine){routeLine.setMap(null);routeLine=null;}
+  if(routeClickLine){routeClickLine.setMap(null);routeClickLine=null;}
+  $('noti').classList.remove('show');
+
+  // Check if we have saved positions for this day
+  if(savedPositions[d] && savedPositions[d].length > 0) {
+    positions = savedPositions[d].map(p=>({lat:p.lat,lng:p.lng,n:p.n||''}));
+    drawRouteLine();
+    calc();
+    fitBounds();
+    return;
+  }
+
+  // No saved data — use defaults
+  if(d === 0) {
+    positions = LUN_PTS.map(p=>({lat:p.lat,lng:p.lng,n:p.n}));
+    drawRouteLine();
+    calc();
+    fitBounds();
+  } else if(d === 2) {
+    positions = MIER_PTS.map(p=>({lat:p.lat,lng:p.lng,n:p.n}));
+    drawRouteLine();
+    calc();
+    fitBounds();
+  } else if(d === 3) {
+    positions = VIER_PTS.map(p=>({lat:p.lat,lng:p.lng,n:p.n}));
+    drawRouteLine();
+    calc();
+    fitBounds();
+  } else if(d === 1) {
+    positions = MART_PTS.map(p=>({lat:p.lat,lng:p.lng,n:p.n}));
+    drawRouteLine();
+    calc();
+    fitBounds();
+  }
+}
+
+// ========== MIÉRCOLES: draw polyline through exact points ==========
+function drawRouteLine() {
+  if(routeLine) routeLine.setMap(null);
+  if(routeClickLine) routeClickLine.setMap(null);
+  const path = positions.map(p=>({lat:p.lat,lng:p.lng}));
+  routeLine = new google.maps.Polyline({
+    path, map:gmap, strokeColor:'#9333ea', strokeWeight:5, strokeOpacity:.8, zIndex:1
+  });
+  // Fat invisible line for easy tapping
+  routeClickLine = new google.maps.Polyline({
+    path, map:gmap, strokeColor:'#9333ea', strokeWeight:25, strokeOpacity:0.01, zIndex:2
+  });
+  routeClickLine.addListener('click', function(e){
+    if(isZoom()) return;
+    // e.edge = index of the segment clicked (Google Maps provides this)
+    insertAtPosition(e.latLng.lat(), e.latLng.lng(), e.edge);
+  });
+}
+
+function fitBounds() {
+  if(positions.length<2) return;
+  const b = new google.maps.LatLngBounds();
+  positions.forEach(p=>b.extend(p));
+  gmap.fitBounds(b,{top:20,bottom:20,left:20,right:20});
+}
+
+// ========== INSERT CHANGE (tap on route line) ==========
+function insertAtPosition(lat,lng,edge) {
+  if(!editMode||isShared) return;
+  if(positions.length<2) return;
+
+  // Google Maps gives us the edge (segment) index that was clicked
+  // edge = index of segment between positions[edge] and positions[edge+1]
+  let insertIdx;
+  if(typeof edge==='number' && edge>=0 && edge<positions.length){
+    insertIdx=edge+1; // insert after the start of the clicked segment
+  } else {
+    // Fallback: find closest segment
+    let bestSeg=0, bestD=Infinity;
+    for(let i=0;i<positions.length-1;i++){
+      const d=distToSegment({lat,lng},positions[i],positions[i+1]);
+      if(d<bestD){bestD=d;bestSeg=i;}
+    }
+    insertIdx=bestSeg+1;
+  }
+
+  positions.splice(insertIdx,0,{lat,lng,n:''});
+
+  drawRouteLine();
+  calc();
+
+  const c=cfg();
+  const grp=((c.s-1+insertIdx)%c.t)+1;
+  const num=insertIdx+1;
+  infoWin.setContent('<div style="text-align:center;font-family:Georgia;color:#111;font-size:13px"><b style="color:#2e7d32;font-size:15px">✅ Cambio #'+num+'</b><br>Grupo <b>#'+grp+'</b><br><span style="font-size:11px;color:#777">Secuencia actualizada</span></div>');
+  infoWin.setPosition({lat,lng});
+  infoWin.open(gmap);
+  setTimeout(()=>infoWin.close(),2500);
+}
+
+// Distance from point p to line segment a→b
+function distToSegment(p,a,b){
+  const dx=b.lng-a.lng, dy=b.lat-a.lat;
+  const len2=dx*dx+dy*dy;
+  if(len2===0) return hd(p,a); // a==b
+  let t=((p.lng-a.lng)*dx+(p.lat-a.lat)*dy)/len2;
+  t=Math.max(0,Math.min(1,t));
+  const proj={lat:a.lat+t*dy, lng:a.lng+t*dx};
+  return hd(p,proj);
+}
+
+// ========== CALCULATE ==========
+// Viernes special timing
+const VIER_CORTESIAS_CHANGE = 28; // cortesías start after this change (~11:30)
+const VIER_CORTESIAS_MIN = 30;    // 30 min pause (11:30-12:00)
+const VIER_LAST_EXTRA = 0.3;     // last change 30% longer
+
+function calcTime(num, tot, c) {
+  if(currentDay !== 3) {
+    // Simple: fixed min/change
+    return c.h * 60 + num * c.mn;
+  }
+  // VIERNES: variable timing
+  // Total time = 360 min (8AM-2PM), minus 30 cortesías = 330 carrying min
+  const totalMin = 360;
+  const carryMin = totalMin - VIER_CORTESIAS_MIN;
+  // 43 normal + 1 at 130% = 44.3 units
+  const units = (tot - 1) + 1.3;
+  const minPerChange = carryMin / units;
+  const lastMin = minPerChange * 1.3;
+
+  let elapsed = 0;
+  for(let i = 1; i <= num; i++) {
+    if(i === tot) {
+      elapsed += lastMin; // last change is longer
+    } else {
+      elapsed += minPerChange;
+    }
+    // Add cortesías pause after the cortesías change
+    if(i === VIER_CORTESIAS_CHANGE) {
+      elapsed += VIER_CORTESIAS_MIN;
+    }
+  }
+  return c.h * 60 + elapsed;
+}
+
+function calc() {
+  const c=cfg();
+  const tot=positions.length;
+
+  changes=positions.map((p,i)=>{
+    const num=i+1;
+    const grp=((c.s-1+i)%c.t)+1;
+    const timeMin=calcTime(num, tot, c);
+    const isCortesia=(currentDay===3 && num===VIER_CORTESIAS_CHANGE);
+    return {num,grp,time:fmt(timeMin),lat:p.lat,lng:p.lng,n:p.n||'',mine:grp===c.g,cortesia:isCortesia};
+  });
+  myCarries=changes.filter(ch=>ch.mine);
+  const isMujeres=c.t===27;
+  const colores=['🟡','🔴','🔵'];
+  const colorNames=['Amarillo','Rojo','Azul'];
+  const colorHex=['#fbbf24','#ef4444','#3b82f6'];
+  myCarries.forEach((mc,i)=>{
+    mc.ci=i+1;
+    if(isMujeres){
+      mc.colorIdx=i%3;
+      mc.colorIcon=colores[mc.colorIdx];
+      mc.colorName=colorNames[mc.colorIdx];
+      mc.colorHex=colorHex[mc.colorIdx];
+    }
+  });
+
+  let totalM=0;
+  for(let i=1;i<positions.length;i++) totalM+=hd(positions[i-1],positions[i]);
+  const km=(totalM/1000).toFixed(2);
+
+  // Estimated end time - use real average if available
+  let endTime=tot>0?calcTime(tot,tot,c):c.h*60;
+  let endLabel='Entra (est.)';
+  const realAvg=getRealAvg();
+  if(realAvg && doneCount()>0){
+    // Project from last recorded carry
+    const recorded=myCarries.filter(x=>isDone(x.ci)).map(x=>({num:x.num,t:getEntry(x.ci).t})).sort((a,b)=>b.num-a.num);
+    if(recorded.length>0){
+      const last=recorded[0];
+      const changesLeft=tot-last.num;
+      const estMs=last.t+changesLeft*realAvg*60000;
+      const estDate=new Date(estMs);
+      const h=estDate.getHours(),m=estDate.getMinutes();
+      endTime=h*60+m;
+      endLabel='Entra (real)';
+    }
+  }
+  // Last group that enters
+  const lastGrp=((c.s-1+tot-1)%c.t)+1;
+
+  $('stats').innerHTML=[
+    {v:'#'+c.g,l:'Tu Grupo'},{v:myCarries.length,l:'Cargadas'},
+    {v:'#'+lastGrp,l:'Entra grp'},{v:fmt(endTime),l:endLabel},
+  ].map(x=>'<div style="text-align:center"><div class="v">'+x.v+'</div><div class="l">'+x.l+'</div></div>').join('');
+
+  let extra=currentDay===3?' · ☕ Cortesías ~11:30-12:00':'';
+  $('hSub').textContent=dayNames[currentDay]+' · '+fmt(c.h*60)+'-'+fmt(endTime)+' · Saca: #'+c.s+' → Entra: #'+lastGrp+extra;
+  const isMuj=c.t===27;
+  $('ftr').innerHTML='<b>'+dayNames[currentDay]+'</b> · '+tot+' cambios · Grupo #'+c.g+(isMuj?' · 🟡🔴🔵':'')+(editMode?' · <b>Tocá la línea verde</b> para insertar':'')+'<br><span style="color:#e08080;font-size:10px">⚠️ Las horas son estimadas. Pueden variar según el ritmo real.</span>';
+
+  renderTable();
+  renderLive();
+  renderMarkers();
+  renderWPmarkers();
+  saveAll();
+}
+
+// ========== WAYPOINT REFERENCE MARKERS ==========
+function renderWPmarkers() {
+  wpMarkers.forEach(m=>m.setMap(null));
+  wpMarkers=[];
+  const wps = getWPs();
+  wps.forEach((wp,i)=>{
+    const mk=new google.maps.Marker({
+      position:{lat:wp.lat,lng:wp.lng}, map:gmap,
+      label:{text:'◆',color:'#c084fc',fontWeight:'bold',fontSize:'12px'},
+      icon:{path:google.maps.SymbolPath.CIRCLE,scale:(dragMode&&editMode)?16:12,
+        fillColor:'#222',fillOpacity:.9,
+        strokeColor:'#7c3aed',strokeWeight:2},
+      zIndex:5000, draggable:dragMode&&editMode,
+      optimized:!(dragMode&&editMode)
+    });
+    mk.addListener('click',function(){
+      if(isZoom())return;
+      const ren=editMode?'<br><button onclick="renameRef('+i+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#7c3aed;color:#fff;font-size:12px;font-weight:600;cursor:pointer">✏️ Renombrar</button>':'';
+      const del=editMode?'<br><button onclick="deleteRef('+i+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🗑️ Eliminar</button>':'';
+      const drag=(dragMode&&editMode)?'<br><i style="font-size:11px;color:#777">Arrastrá para mover</i>':'';
+      infoWin.setContent('<div style="text-align:center;font-family:Georgia;color:#111;font-size:13px"><b style="font-size:15px">'+wp.n+'</b><br><span style="font-size:12px;color:#555">Referencia</span>'+drag+ren+del+'</div>');
+      infoWin.open(gmap,mk);
+    });
+    if(dragMode&&editMode){
+      mk.addListener('dragend',function(){
+        const p=mk.getPosition();
+        wps[i].lat=p.lat(); wps[i].lng=p.lng();
+        saveAll();
+      });
+    }
+    wpMarkers.push(mk);
+  });
+}
+
+function addRef(){
+  const name=prompt('Nombre de la referencia:');
+  if(!name) return;
+  const center=gmap.getCenter();
+  const wps=getWPs();
+  wps.push({n:name,lat:center.lat(),lng:center.lng()});
+  renderWPmarkers();
+  saveAll();
+}
+
+function deleteRef(i){
+  const wps=getWPs();
+  if(i<0||i>=wps.length) return;
+  wps.splice(i,1);
+  infoWin.close();
+  renderWPmarkers();
+  saveAll();
+}
+
+function renameRef(i){
+  const wps=getWPs();
+  if(i<0||i>=wps.length) return;
+  const name=prompt('Nuevo nombre para referencia:',wps[i].n);
+  if(name===null) return;
+  wps[i].n=name;
+  infoWin.close();
+  renderWPmarkers();
+  saveAll();
+}
+
+function renameChange(ci){
+  if(ci<0||ci>=positions.length) return;
+  const name=prompt('Nuevo nombre para este cambio:',positions[ci].n||'');
+  if(name===null) return;
+  positions[ci].n=name;
+  infoWin.close();
+  calc();
+}
+
+// ========== MARKERS ==========
+function renderMarkers() {
+  allMarkers.forEach(m=>m.setMap(null));
+  allMarkers=[];
+
+  const zoom=gmap?gmap.getZoom():15;
+  // When zoomed out, only show your markers (much faster)
+  const showOthers=showAll&&(zoom>=15||editMode);
+
+  changes.forEach((ch,ci)=>{
+    if(!ch.mine&&!showOthers) return;
+    const m=ch.mine;
+    const sc=m?(dragMode?20:15):(dragMode?14:9);
+    // For women: use image color for mine markers
+    let fc=m?'#c084fc':'#5599ff';
+    if(m){
+      const mc=myCarries.find(x=>x.num===ch.num);
+      if(mc&&mc.colorHex) fc=mc.colorHex;
+    }
+    const mk=new google.maps.Marker({
+      position:{lat:ch.lat,lng:ch.lng},map:gmap,
+      label:{text:String(ch.grp),color:m?'#111':'#fff',fontWeight:'bold',fontSize:m?'13px':'10px'},
+      icon:{path:google.maps.SymbolPath.CIRCLE,scale:sc,fillColor:fc,fillOpacity:m?1:.4,strokeColor:m?'#fff':fc,strokeWeight:m?3:1},
+      zIndex:m?3000:100, draggable:dragMode&&editMode,
+      optimized:!(dragMode&&editMode) // canvas render when not dragging = faster
+    });
+    mk.addListener('click',function(){
+      if(isZoom())return;
+      const tag=m?'<br><b style="color:#7c3aed">✝️ Tu cargada #'+ch.ci+'</b>':'';
+      let colorTag='';if(m){const mc=myCarries.find(x=>x.num===ch.num);if(mc&&mc.colorIcon) colorTag='<br><span style="font-size:14px">'+mc.colorIcon+' <b>'+mc.colorName+'</b></span>';}
+      const ref=ch.n?'<br><span style="font-size:12px;color:#555">'+ch.n+'</span>':'';
+      const cort=ch.cortesia?'<br><b style="color:#e65100">☕ Cortesías después</b>':'';
+      const drag=(dragMode&&editMode)?'<br><i style="font-size:11px;color:#777">Arrastrá para mover</i>':'';
+      const ren=editMode?'<br><button onclick="renameChange('+ci+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#7c3aed;color:#fff;font-size:12px;font-weight:600;cursor:pointer">✏️ Renombrar</button>':'';
+      const del=editMode?'<br><button onclick="deleteChange('+ci+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🗑️ Eliminar</button>':'';
+      infoWin.setContent('<div style="text-align:center;font-family:Georgia;min-width:150px;color:#111;font-size:13px"><b style="font-size:15px">Grupo #'+ch.grp+'</b><br>Cambio #'+ch.num+'<br><b>~'+ch.time+'</b>'+tag+colorTag+ref+cort+drag+ren+del+'</div>');
+      infoWin.open(gmap,mk);
+    });
+    if(dragMode&&editMode){
+      mk.addListener('dragend',function(){
+        const p=mk.getPosition();
+        positions[ci]={lat:p.lat(),lng:p.lng(),n:positions[ci].n};
+        drawRouteLine();
+        calc();
+      });
+    }
+    allMarkers.push(mk);
+  });
+}
+
+// ========== DELETE CHANGE ==========
+function deleteChange(ci) {
+  if(ci<0||ci>=positions.length) return;
+  const removed = positions[ci];
+  positions.splice(ci, 1);
+  infoWin.close();
+  drawRouteLine();
+  calc();
+}
+
+// ========== TABLE ==========
+function renderTable() {
+  let h='<div class="th"><span>#</span><span>Ubicación / Referencia</span><span style="text-align:right">Hora</span></div>';
+  myCarries.forEach((mc,i)=>{
+    const ref=mc.n||nearWP(mc);
+    const color=mc.colorIcon?mc.colorIcon+' ':'';
+    h+='<div class="tr" onclick="zoomTo('+i+')"><span class="rn">'+mc.ci+'</span><div><div style="font-weight:600">'+color+ref+'</div><div class="rs">Cambio #'+mc.num+(mc.colorName?' · '+mc.colorName:'')+'</div></div><div class="rt">'+mc.time+'</div></div>';
+  });
+  $('tbl').innerHTML=h;
+}
+
+// ========== EN VIVO ==========
+// Store: {dayNum: {ci: timestamp_ms, ...}}
+let carryTimes = {};
+const COMP_KEY = 'ssLive_v2';
+
+function loadCompleted(){
+  try{
+    const raw=localStorage.getItem(COMP_KEY);
+    if(raw) carryTimes=JSON.parse(raw);
+  }catch(e){}
+}
+function saveCompleted(){
+  try{localStorage.setItem(COMP_KEY,JSON.stringify(carryTimes));}catch(e){}
+}
+loadCompleted();
+
+function getDayTimes(){
+  if(!carryTimes[currentDay]) carryTimes[currentDay]={};
+  return carryTimes[currentDay];
+}
+function getEntry(ci){
+  const v=getDayTimes()[String(ci)];
+  if(!v) return null;
+  // Support old format (just number) and new {t,manual}
+  if(typeof v==='number') return {t:v,manual:false};
+  return v;
+}
+function isDone(ci){return getDayTimes().hasOwnProperty(String(ci));}
+function doneCount(){return Object.keys(getDayTimes()).length;}
+
+function markDone(ci){
+  getDayTimes()[String(ci)]={t:Date.now(),manual:false};
+  saveCompleted();
+  renderLive();
+  calc();
+}
+
+function markDoneWithTime(ci){
+  const panel=$('livePanel');
+  const existing=document.getElementById('timePicker');
+  if(existing) existing.remove();
+
+  let hOpts='';
+  for(let h=1;h<=12;h++) hOpts+='<option value="'+h+'">'+h+'</option>';
+  let mOpts='';
+  for(let m=0;m<60;m+=5) mOpts+='<option value="'+m+'">'+String(m).padStart(2,'0')+'</option>';
+
+  const div=document.createElement('div');
+  div.id='timePicker';
+  div.style.cssText='background:rgba(0,0,0,.85);border:2px solid #c084fc;border-radius:12px;padding:16px;margin:10px 0;text-align:center';
+  div.innerHTML='<div style="color:#c084fc;font-size:14px;font-weight:700;margin-bottom:10px">🕐 ¿A qué hora cargaste #'+ci+'?</div>'
+    +'<div style="display:flex;gap:8px;justify-content:center;align-items:center;margin-bottom:12px">'
+    +'<select id="tpH" style="background:#222;color:#fff;border:1px solid #666;border-radius:6px;padding:10px;font-size:18px;font-family:inherit">'+hOpts+'</select>'
+    +'<span style="color:#fff;font-size:20px;font-weight:700">:</span>'
+    +'<select id="tpM" style="background:#222;color:#fff;border:1px solid #666;border-radius:6px;padding:10px;font-size:18px;font-family:inherit">'+mOpts+'</select>'
+    +'<select id="tpAP" style="background:#222;color:#fff;border:1px solid #666;border-radius:6px;padding:10px;font-size:18px;font-family:inherit"><option>AM</option><option>PM</option></select>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;justify-content:center">'
+    +'<button onclick="confirmTimePick('+ci+')" style="background:#4CAF50;color:#fff;border:none;border-radius:8px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✅ Confirmar</button>'
+    +'<button onclick="document.getElementById(\'timePicker\').remove()" style="background:rgba(255,255,255,.1);color:#ccc;border:1px solid #666;border-radius:8px;padding:12px 16px;font-size:14px;cursor:pointer;font-family:inherit">Cancelar</button>'
+    +'</div>';
+
+  // Pre-select the PROJECTED time of this carry
+  const mc=myCarries.find(x=>x.ci===ci);
+  if(mc){
+    const est=getEstimate(mc);
+    const tp=est.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if(tp){
+      let eh=parseInt(tp[1]), em=parseInt(tp[2]);
+      const epm=tp[3].toUpperCase()==='PM';
+      div.querySelector('#tpAP').selectedIndex=epm?1:0;
+      div.querySelector('#tpH').value=eh;
+      div.querySelector('#tpM').value=Math.floor(em/5)*5;
+    }
+  }
+
+  // Insert after the button
+  const btn=panel.querySelector('.live-btn-done');
+  if(btn) btn.parentNode.insertBefore(div, btn.nextSibling.nextSibling);
+  else panel.appendChild(div);
+}
+
+function confirmTimePick(ci){
+  let h=parseInt($('tpH').value);
+  const m=parseInt($('tpM').value);
+  const ap=$('tpAP').value;
+  if(ap==='PM'&&h<12) h+=12;
+  if(ap==='AM'&&h===12) h=0;
+  const now=new Date();
+  now.setHours(h,m,0,0);
+  getDayTimes()[String(ci)]={t:now.getTime(),manual:true};
+  saveCompleted();
+  renderLive();
+  calc();
+}
+
+function undoLast(){
+  const dt=getDayTimes();
+  const keys=Object.keys(dt);
+  if(keys.length===0) return;
+  // Sort by timestamp descending, remove most recent
+  keys.sort((a,b)=>{
+    const ta=typeof dt[a]==='object'?dt[a].t:dt[a];
+    const tb=typeof dt[b]==='object'?dt[b].t:dt[b];
+    return tb-ta;
+  });
+  delete dt[keys[0]];
+  saveCompleted();
+  renderLive();
+  calc();
+}
+
+function resetLive(){
+  if(!confirm('¿Reiniciar cargadas de '+dayNames[currentDay]+'?')) return;
+  carryTimes[currentDay]={};
+  saveCompleted();
+  renderLive();
+  calc();
+}
+
+// Calculate real average min/change, ignoring outliers
+function getRealAvg(){
+  const entries=[];
+  myCarries.forEach(mc=>{
+    const e=getEntry(mc.ci);
+    if(e) entries.push({ci:mc.ci, num:mc.num, t:e.t});
+  });
+  if(entries.length<2) return null;
+  entries.sort((a,b)=>a.num-b.num);
+  
+  // Calculate per-segment rates
+  const rates=[];
+  for(let i=1;i<entries.length;i++){
+    const diffMin=(entries[i].t-entries[i-1].t)/60000;
+    const diffChanges=entries[i].num-entries[i-1].num;
+    if(diffMin>0&&diffChanges>0) rates.push(diffMin/diffChanges);
+  }
+  if(rates.length===0) return null;
+  
+  // Find median
+  const sorted=[...rates].sort((a,b)=>a-b);
+  const median=sorted[Math.floor(sorted.length/2)];
+  
+  // Keep only rates within 2x of median (ignore extreme outliers)
+  const filtered=rates.filter(r=>r>=median*0.3&&r<=median*2.5);
+  if(filtered.length===0) return median;
+  
+  return filtered.reduce((a,b)=>a+b,0)/filtered.length;
+}
+
+// Get last recorded time and project forward
+function getEstimate(mc){
+  const recorded=myCarries.filter(x=>isDone(x.ci)).map(x=>({num:x.num,t:getEntry(x.ci).t})).sort((a,b)=>b.num-a.num);
+  if(recorded.length===0) return mc.time; // no data yet, use initial estimate
+  const last=recorded[0]; // most recent recorded
+  const avg=getRealAvg();
+  const minPer=avg||(+$('cMn').value||6); // fallback to config if only 1 entry
+  const changesAhead=mc.num-last.num;
+  if(changesAhead<=0) return mc.time;
+  const estMs=last.t+changesAhead*minPer*60000;
+  return fmtClock(estMs);
+}
+
+function fmtClock(ts){
+  const d=new Date(ts);
+  let h=d.getHours(),m=d.getMinutes();
+  let h12=((h-1)%12)+1;if(h12<=0)h12+=12;
+  return h12+':'+String(m).padStart(2,'0')+' '+(h>=12&&h<24?'PM':'AM');
+}
+
+function renderLive(){
+  if(!myCarries.length){$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">No hay cargadas. Verificá la configuración.</p></div>';return;}
+  
+  const total=myCarries.length;
+  const done=doneCount();
+  const pending=myCarries.filter(mc=>!isDone(mc.ci));
+  const nextCarry=pending[0];
+  const pct=total>0?Math.round(done/total*100):0;
+
+  let h='';
+
+  // Header
+  const lastGrpLive=changes.length>0?changes[changes.length-1].grp:'?';
+  h+='<div style="text-align:center;margin-bottom:8px"><span style="font-size:20px">✝️</span><br><span style="font-size:13px;color:#c084fc;font-weight:700">'+dayNames[currentDay].toUpperCase()+'</span><br><span style="font-size:12px;color:#ccc">Grupo #'+cfg().g+' · '+total+' cargadas · Saca #'+cfg().s+' → Entra #'+lastGrpLive+'</span></div>';
+  h+='<div style="text-align:center;margin-bottom:6px;font-size:10px;color:#e08080">⚠️ Las horas son aproximadas y se ajustan con cada registro</div>';
+
+  // Progress
+  h+='<div class="live-progress"><div class="live-progress-bar" style="width:'+pct+'%">'+done+'/'+total+'</div></div>';
+
+  if(done>=total){
+    // ===== FINAL SUMMARY =====
+    h+='<div class="live-next" style="border-color:#4CAF50"><div class="ln-label" style="color:#4CAF50">🎉 ¡COMPLETADO!</div><div class="ln-num" style="color:#4CAF50;font-size:28px">Todas las cargadas</div></div>';
+    const times=[];
+    myCarries.forEach(mc=>{const e=getEntry(mc.ci);if(e)times.push({ci:mc.ci,num:mc.num,t:e.t,colorIcon:mc.colorIcon||''});});
+    times.sort((a,b)=>a.num-b.num);
+    if(times.length>=2){
+      const firstT=times[0].t,lastT=times[times.length-1].t;
+      const totalMin=Math.round((lastT-firstT)/60000);
+      const totalHrs=Math.floor(totalMin/60),totalMins=totalMin%60;
+      const avg=getRealAvg();
+      let durs='';
+      for(let i=1;i<times.length;i++){
+        const dur=((times[i].t-times[i-1].t)/60000).toFixed(1);
+        durs+='<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span>'+times[i-1].colorIcon+' #'+times[i-1].ci+' → #'+times[i].ci+'</span><span style="color:#4CAF50;font-weight:700">'+dur+' min</span></div>';
+      }
+      h+='<div style="background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.2);border-radius:10px;padding:12px;margin-bottom:10px">';
+      h+='<div style="text-align:center;font-size:14px;font-weight:700;color:#4CAF50;margin-bottom:8px">📊 Resumen Final</div>';
+      h+='<div style="display:flex;justify-content:space-around;margin-bottom:10px">';
+      h+='<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:#fff">'+totalHrs+'h '+totalMins+'m</div><div style="font-size:10px;color:#aaa">Tiempo total</div></div>';
+      if(avg) h+='<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:#fff">'+avg.toFixed(1)+'</div><div style="font-size:10px;color:#aaa">Min/cambio</div></div>';
+      h+='<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:#fff">'+total+'</div><div style="font-size:10px;color:#aaa">Cargadas</div></div>';
+      h+='</div>';
+      h+='<div style="font-size:12px;color:#ccc;margin-bottom:4px"><b>Detalle:</b></div>';
+      h+=durs;
+      h+='<div style="margin-top:8px;font-size:11px;color:#aaa">Primera: '+fmtClock(firstT)+' · Última: '+fmtClock(lastT)+'</div>';
+      h+='</div>';
+    }
+  } else {
+    const ref=nextCarry.n||nearWP(nextCarry);
+    const estTime=getEstimate(nextCarry);
+    const realAvg=getRealAvg();
+
+    h+='<div class="live-next"'+(nextCarry.colorHex?' style="border-color:'+nextCarry.colorHex+'"':'')+'>';
+    h+='<div class="ln-label">Próxima cargada</div>';
+    h+='<div class="ln-num"'+(nextCarry.colorHex?' style="color:'+nextCarry.colorHex+'"':'')+'>#'+nextCarry.ci+'</div>';
+    if(nextCarry.colorIcon) h+='<div style="font-size:18px;margin:4px 0">'+nextCarry.colorIcon+' <b>'+nextCarry.colorName+'</b></div>';
+    h+='<div class="ln-ref">📍 '+ref+'</div>';
+    h+='<div class="ln-time">~'+estTime+'</div>';
+    h+='<div id="countdownText" style="font-size:13px;margin-top:4px"></div>';
+    if(realAvg) h+='<div style="font-size:10px;color:#4CAF50;margin-top:2px">⏱️ Promedio: '+realAvg.toFixed(1)+' min/cambio</div>';
+    h+='<div style="font-size:10px;color:#aaa;margin-top:4px">Cambio #'+nextCarry.num+'</div>';
+    h+='</div>';
+
+    // Mark done buttons
+    h+='<button class="live-btn live-btn-done" onclick="markDone('+nextCarry.ci+')">✅ ¡Ya cargué #'+nextCarry.ci+'!</button>';
+    h+='<button style="width:100%;padding:10px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#ccc;font-size:12px;font-family:inherit;cursor:pointer;margin-bottom:8px" onclick="markDoneWithTime('+nextCarry.ci+')">🕐 Registrar con otra hora</button>';
+  }
+
+  // Undo
+  if(done>0){
+    h+='<button class="live-btn live-btn-undo" onclick="undoLast()">↩️ Deshacer última</button>';
+  }
+
+  // Carry list
+  h+='<div style="margin-top:12px">';
+  myCarries.forEach(mc=>{
+    const mcDone=isDone(mc.ci);
+    const isCurrent=nextCarry&&mc.ci===nextCarry.ci;
+    const cls=mcDone?'done':(isCurrent?'current':'pending');
+    const ref=mc.n||nearWP(mc);
+    const colorIcon=mc.colorIcon||'';
+    const icon=mcDone?'✅':(isCurrent?'✝️':'⏳');
+    const entry=getEntry(mc.ci);
+    const realT=entry?fmtClock(entry.t):'';
+    const estT=mcDone?realT:getEstimate(mc);
+    const borderColor=mc.colorHex&&isCurrent?'border-color:'+mc.colorHex:'';
+    h+='<div class="live-carry '+cls+'" style="'+borderColor+'" onclick="zoomTo('+(mc.ci-1)+')">';
+    h+='<div class="lc-num">'+icon+'</div>';
+    h+='<div class="lc-info"><div class="lc-ref">'+colorIcon+' Cargada #'+mc.ci+' — '+ref+'</div><div class="lc-sub">Cambio #'+mc.num+(mc.colorName?' · '+mc.colorName:'')+(realT?' · '+realT:'')+'</div></div>';
+    h+='<div class="lc-time" style="color:'+(mcDone?'#4CAF50':(mc.colorHex||'#c084fc'))+'">'+estT+'</div>';
+    h+='</div>';
+  });
+  h+='</div>';
+
+  h+='<div style="text-align:center;margin-top:12px"><button onclick="resetLive()" style="background:none;border:1px solid #914444;color:#e08080;padding:6px 14px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit">🗑️ Reiniciar cargadas</button></div>';
+
+  $('livePanel').innerHTML=h;
+  updateCountdown();
+}
+function nearWP(p){
+  const wps = getWPs();
+  let b='Punto',bd=1e9;
+  wps.forEach(w=>{const d=hd(p,w);if(d<bd){bd=d;b=w.n;}});
+  return b;
+}
+function zoomTo(i){
+  if(!myCarries[i])return;
+  showView(0);
+  const mc=myCarries[i];
+  gmap.setCenter({lat:mc.lat,lng:mc.lng});
+  gmap.setZoom(18);
+  const t=allMarkers.find(m=>{const p=m.getPosition();return Math.abs(p.lat()-mc.lat)<.00005&&Math.abs(p.lng()-mc.lng)<.00005;});
+  if(t) google.maps.event.trigger(t,'click');
+}
+
+// ========== UI ==========
+let editMode=false;
+function toggleEdit(){
+  if(isShared) return;
+  editMode=!editMode;
+  $('mapEditBar').style.display=editMode?'none':'flex';
+  $('mapEditTools').style.display=editMode?'flex':'none';
+  if(!editMode&&dragMode) toggleDrag();
+}
+function toggleDrag(){
+  dragMode=!dragMode;
+  $('bDrag').style.background=dragMode?'rgba(76,175,80,.8)':'rgba(0,0,0,.7)';
+  $('bDrag').style.borderColor=dragMode?'#4CAF50':'#666';
+  renderMarkers();renderWPmarkers();
+}
+function toggleAll(){showAll=!showAll;$('bAll').textContent=showAll?'👥 Ver otros grupos':'👤 Solo mis cargadas';$('bAll').style.background=showAll?'rgba(0,0,0,.75)':'rgba(76,175,80,.8)';renderMarkers();}
+function showView(n){document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('a',i===n));document.querySelectorAll('.pnl').forEach((p,i)=>p.classList.toggle('a',i===n));}
+
+// ========== GPS TRACKING ==========
+let gpsMarker=null, gpsCircle=null, gpsWatchId=null, gpsOn=false;
+
+function toggleGps(){
+  if(gpsOn){
+    if(gpsWatchId!==null){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}
+    if(gpsMarker){gpsMarker.setMap(null);gpsMarker=null;}
+    if(gpsCircle){gpsCircle.setMap(null);gpsCircle=null;}
+    gpsOn=false;
+    $('bGps').style.background='rgba(0,0,0,.75)';
+    $('noti').classList.remove('show');
+    calc(); // restore footer
+    return;
+  }
+  if(!navigator.geolocation){
+    $('noti').textContent='❌ Tu navegador no soporta GPS';
+    $('noti').classList.add('show');
+    return;
+  }
+  gpsOn=true;
+  $('bGps').style.background='rgba(66,133,244,.8)';
+  $('noti').textContent='📍 Buscando ubicación...';
+  $('noti').classList.add('show');
+
+  gpsWatchId=navigator.geolocation.watchPosition(
+    function(pos){
+      const lat=pos.coords.latitude, lng=pos.coords.longitude, acc=pos.coords.accuracy;
+      const ll={lat,lng};
+      $('noti').classList.remove('show');
+      if(!gpsMarker){
+        gpsMarker=new google.maps.Marker({
+          position:ll, map:gmap, zIndex:9000,
+          icon:{path:google.maps.SymbolPath.CIRCLE,scale:10,fillColor:'#4285F4',fillOpacity:1,strokeColor:'#fff',strokeWeight:3}
+        });
+        gpsCircle=new google.maps.Circle({
+          center:ll,radius:acc,map:gmap,fillColor:'#4285F4',fillOpacity:.12,strokeColor:'#4285F4',strokeOpacity:.3,strokeWeight:1
+        });
+        gmap.setCenter(ll);
+        gmap.setZoom(17);
+      } else {
+        gpsMarker.setPosition(ll);
+        gpsCircle.setCenter(ll);
+        gpsCircle.setRadius(acc);
+      }
+      // Info about nearest change
+      let nearIdx=0,nearD=Infinity;
+      changes.forEach((ch,i)=>{const d=hd(ll,ch);if(d<nearD){nearD=d;nearIdx=i;}});
+      const near=changes[nearIdx];
+      if(near){
+        const nextMine=myCarries.find(mc=>mc.num>near.num);
+        let info='📍 Cerca del cambio #'+near.num+' (Grp #'+near.grp+')';
+        if(near.n) info+=' · '+near.n;
+        if(nextMine) info+='<br>Próxima cargada: #'+nextMine.ci+' (~'+nextMine.time+')';
+        $('ftr').innerHTML='<b style="color:#4285F4">'+info+'</b>';
+      }
+    },
+    function(err){
+      gpsOn=false;
+      $('bGps').style.background='rgba(0,0,0,.75)';
+      if(err.code===1){
+        $('noti').innerHTML='❌ Permiso denegado.<br>Si abriste el archivo descargado, el GPS no funciona por seguridad del navegador.<br><b>Solución:</b> Abrí la app desde Claude (sin descargar) o subila a un hosting HTTPS.';
+      } else if(err.code===2){
+        $('noti').textContent='❌ GPS no disponible. Activá la ubicación en Ajustes del cel.';
+      } else {
+        $('noti').textContent='❌ Tiempo agotado. Asegurate de tener GPS activado.';
+      }
+      $('noti').classList.add('show');
+    },
+    {enableHighAccuracy:true, maximumAge:5000, timeout:10000}
+  );
+}
+// ========== COUNTDOWN TIMER ==========
+let countdownInterval=null;
+function startCountdown(){
+  if(countdownInterval) clearInterval(countdownInterval);
+  countdownInterval=setInterval(updateCountdown,30000); // every 30s
+  updateCountdown();
+}
+function updateCountdown(){
+  const el=document.getElementById('countdownText');
+  if(!el||!myCarries.length) return;
+  const pending=myCarries.filter(mc=>!isDone(mc.ci));
+  if(pending.length===0){el.textContent='';return;}
+  const next=pending[0];
+  const est=getEstimate(next);
+  // Parse estimated time
+  const tp=est.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if(!tp){el.textContent='';return;}
+  let h=parseInt(tp[1]),m=parseInt(tp[2]);
+  if(tp[3].toUpperCase()==='PM'&&h<12)h+=12;
+  if(tp[3].toUpperCase()==='AM'&&h===12)h=0;
+  const now=new Date();
+  const estDate=new Date();estDate.setHours(h,m,0,0);
+  // If estimate is before now but less than 12h, it might be next day
+  if(estDate<now&&(now-estDate)>12*3600000) estDate.setDate(estDate.getDate()+1);
+  const diffMin=Math.round((estDate-now)/60000);
+  if(diffMin<=0){
+    el.innerHTML='<span style="color:#c084fc;font-weight:700">⏰ ¡Ya debería ser tu turno!</span>';
+  } else if(diffMin<=60){
+    el.innerHTML='<span style="color:#c084fc">⏳ Faltan <b>~'+diffMin+' min</b> para tu cargada</span>';
+  } else {
+    const hrs=Math.floor(diffMin/60),mins=diffMin%60;
+    el.innerHTML='<span style="color:#aaa">⏳ Faltan ~'+hrs+'h '+mins+'min</span>';
+  }
+}
+startCountdown();
+
+// ========== SERVICE WORKER ==========
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_lMqEQiLroj-jhx-a9d_o-6uWFfOCbg0&libraries=geometry&callback=initMap" async defer></script>
+</body>
+</html>
