@@ -74,6 +74,8 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
 .live-carry.pending .lc-num{color:#666}
 .rfloat{display:none;position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:2000;background:#d4af37;color:#1a0a02;font-weight:700;font-size:12px;padding:9px 18px;border-radius:22px;box-shadow:0 3px 12px rgba(212,175,55,.5);cursor:pointer;border:none}
 .rfloat.show{display:block}
+@keyframes flashPulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.flash{animation:flashPulse 0.8s ease-in-out 6}
 </style>
 </head>
 <body>
@@ -82,7 +84,26 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
   <div style="font-size:16px;color:#c084fc">✝</div>
   <h1>SEMANA SANTA · SONSONATE</h1>
   <div class="s" id="hSub"></div>
+  <div id="onlineCounter" style="display:none;font-size:10px;color:#4CAF50;margin-top:2px"></div>
 </div>
+
+<!-- Live broadcast banner (everyone sees) -->
+<div id="broadcastBanner" style="display:none;padding:10px;background:rgba(255,152,0,.12);border-bottom:1px solid rgba(255,152,0,.3);text-align:center">
+  <div style="font-size:13px;color:#ff9800;font-weight:700" id="broadcastText"></div>
+  <div style="font-size:9px;color:#888;margin-top:2px" id="broadcastTime"></div>
+</div>
+
+<!-- Admin broadcast input (only editor) -->
+<div id="broadcastInput" style="display:none;padding:8px;background:rgba(0,0,0,.3);border-bottom:1px solid rgba(124,58,237,.2)">
+  <div style="display:flex;gap:6px">
+    <input type="text" id="broadcastMsg" placeholder="Escribí un mensaje en vivo..." style="flex:1;padding:8px;border:1px solid #666;border-radius:8px;background:rgba(0,0,0,.4);color:#fff;font-size:13px;font-family:inherit">
+    <button onclick="sendBroadcast()" style="padding:8px 14px;border:none;border-radius:8px;background:#ff9800;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">📢</button>
+    <button onclick="clearBroadcast()" style="padding:8px;border:1px solid #666;border-radius:8px;background:none;color:#888;font-size:11px;cursor:pointer;font-family:inherit">✕</button>
+  </div>
+</div>
+
+<!-- Carry alert banner -->
+<div id="alertBanner" style="display:none;padding:12px;text-align:center;font-size:14px;color:#fff;border-bottom:2px solid;border-radius:0"></div>
 
 <div id="installBanner" style="display:none;padding:10px;background:rgba(124,58,237,.15);border-bottom:1px solid rgba(124,58,237,.3);text-align:center;cursor:pointer;position:relative" onclick="installApp()">
   <span style="font-size:13px;color:#c084fc">📱 <b>Tocá aquí para instalar la app</b></span>
@@ -414,6 +435,7 @@ function saveAll() {
       cd: currentDay
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    if(typeof syncPositions==='function') syncPositions();
   } catch(e) {}
 }
 function loadSaved() {
@@ -431,7 +453,8 @@ function loadSaved() {
     }
     if(!raw) return false;
     const d = JSON.parse(raw);
-    // DON'T load saved positions — always use KML from code
+    // Load saved positions (admin uses these, shared users use KML)
+    if(d.sp) savedPositions = d.sp;
     // Only load refs if user added custom ones
     if(d.sr) savedRefs = d.sr;
     if(d.sc) daySaca = d.sc;
@@ -580,9 +603,9 @@ function initMap() {
   infoWin = new google.maps.InfoWindow();
   // Re-render markers on zoom change (show/hide others based on zoom)
   let zoomTimer=null;
-  gmap.addListener('zoom_changed',function(){
+  gmap.addListener('idle',function(){
     clearTimeout(zoomTimer);
-    zoomTimer=setTimeout(function(){renderMarkers();},300);
+    zoomTimer=setTimeout(function(){renderMarkers();},500);
   });
   const hasSaved = loadSaved();
   readParams();
@@ -655,10 +678,14 @@ function loadDay(d) {
   if(routeClickLine){routeClickLine.setMap(null);routeClickLine=null;}
   $('noti').classList.remove('show');
 
-  // Always load from KML data (code is the source of truth)
+  // Admin: load saved edits if available. Shared: always KML
   const dayPts=[LUN_PTS,MART_PTS,MIER_PTS,VIER_PTS];
-  if(dayPts[d] && dayPts[d].length>0){
+  if(!isShared && savedPositions[d] && savedPositions[d].length>0){
+    positions = savedPositions[d].map(p=>({lat:p.lat,lng:p.lng,n:p.n||''}));
+  } else if(dayPts[d] && dayPts[d].length>0){
     positions = dayPts[d].map(p=>({lat:p.lat,lng:p.lng,n:p.n}));
+  }
+  if(positions.length>0){
     drawRouteLine();
     calc();
     fitBounds();
@@ -729,11 +756,30 @@ function insertAtPosition(lat,lng,edge) {
 function distToSegment(p,a,b){
   const dx=b.lng-a.lng, dy=b.lat-a.lat;
   const len2=dx*dx+dy*dy;
-  if(len2===0) return hd(p,a); // a==b
+  if(len2===0) return hd(p,a);
   let t=((p.lng-a.lng)*dx+(p.lat-a.lat)*dy)/len2;
   t=Math.max(0,Math.min(1,t));
   const proj={lat:a.lat+t*dy, lng:a.lng+t*dx};
   return hd(p,proj);
+}
+
+// Snap a GPS point to the nearest position on the route
+function snapToRoute(p){
+  if(positions.length<2) return p;
+  let bestD=Infinity, bestProj=p;
+  for(let i=0;i<positions.length-1;i++){
+    const a=positions[i], b=positions[i+1];
+    const dx=b.lng-a.lng, dy=b.lat-a.lat;
+    const len2=dx*dx+dy*dy;
+    if(len2===0) continue;
+    let t=((p.lng-a.lng)*dx+(p.lat-a.lat)*dy)/len2;
+    t=Math.max(0,Math.min(1,t));
+    const proj={lat:a.lat+t*dy, lng:a.lng+t*dx};
+    const d=hd(p,proj);
+    if(d<bestD){bestD=d;bestProj=proj;}
+  }
+  // Only snap if within 100m of route, otherwise show raw GPS
+  return bestD<100?bestProj:p;
 }
 
 // ========== CALCULATE ==========
@@ -949,14 +995,17 @@ function renderMarkers() {
   allMarkers=[];
 
   const zoom=gmap?gmap.getZoom():15;
-  // When zoomed out, only show your markers (much faster)
   const showOthers=showAll&&(zoom>=15||editMode);
+  
+  // Only render markers in current viewport (huge performance boost)
+  const bounds=gmap?gmap.getBounds():null;
 
   changes.forEach((ch,ci)=>{
     if(!ch.mine&&!showOthers) return;
+    // Skip markers outside viewport
+    if(bounds&&!bounds.contains({lat:ch.lat,lng:ch.lng})) return;
     const m=ch.mine;
     const sc=m?(dragMode?20:15):(dragMode?14:9);
-    // For women: use image color for mine markers
     let fc=m?'#c084fc':'#5599ff';
     if(m){
       const mc=myCarries.find(x=>x.num===ch.num);
@@ -967,7 +1016,7 @@ function renderMarkers() {
       label:{text:String(ch.grp),color:m?'#111':'#fff',fontWeight:'bold',fontSize:m?'13px':'10px'},
       icon:{path:google.maps.SymbolPath.CIRCLE,scale:sc,fillColor:fc,fillOpacity:m?1:.4,strokeColor:m?'#fff':fc,strokeWeight:m?3:1},
       zIndex:m?3000:100, draggable:dragMode&&editMode,
-      optimized:!(dragMode&&editMode) // canvas render when not dragging = faster
+      optimized:true
     });
     mk.addListener('click',function(){
       if(isZoom())return;
@@ -1483,10 +1532,9 @@ function updateCountdown(){
   const el=document.getElementById('countdownText');
   if(!el||!myCarries.length) return;
   const pending=myCarries.filter(mc=>!isDone(mc.ci));
-  if(pending.length===0){el.textContent='';return;}
+  if(pending.length===0){el.textContent='';hideAlert();return;}
   const next=pending[0];
   const est=getEstimate(next);
-  // Parse estimated time
   const tp=est.match(/(\d+):(\d+)\s*(AM|PM)/i);
   if(!tp){el.textContent='';return;}
   let h=parseInt(tp[1]),m=parseInt(tp[2]);
@@ -1494,17 +1542,55 @@ function updateCountdown(){
   if(tp[3].toUpperCase()==='AM'&&h===12)h=0;
   const now=new Date();
   const estDate=new Date();estDate.setHours(h,m,0,0);
-  // If estimate is before now but less than 12h, it might be next day
   if(estDate<now&&(now-estDate)>12*3600000) estDate.setDate(estDate.getDate()+1);
   const diffMin=Math.round((estDate-now)/60000);
   if(diffMin<=0){
     el.innerHTML='<span style="color:#c084fc;font-weight:700">⏰ Cargada en curso</span>';
+    triggerAlert(next.ci,'now');
+  } else if(diffMin<=5){
+    el.innerHTML='<span style="color:#ff9800;font-weight:700">⚠️ ¡Faltan <b>~'+diffMin+' min</b>! Preparáte</span>';
+    triggerAlert(next.ci,'soon');
   } else if(diffMin<=60){
     el.innerHTML='<span style="color:#c084fc">⏳ Faltan <b>~'+diffMin+' min</b> para tu cargada</span>';
+    hideAlert();
   } else {
     const hrs=Math.floor(diffMin/60),mins=diffMin%60;
     el.innerHTML='<span style="color:#aaa">⏳ Faltan ~'+hrs+'h '+mins+'min</span>';
+    hideAlert();
   }
+}
+
+// ========== CARRY ALERT (vibration + flash) ==========
+let lastAlertCi=0, lastAlertType='';
+function triggerAlert(ci,type){
+  const key=ci+'-'+type;
+  if(lastAlertCi===ci&&lastAlertType===type) return; // already alerted
+  lastAlertCi=ci;lastAlertType=type;
+  // Vibrate
+  if(navigator.vibrate){
+    if(type==='now') navigator.vibrate([300,100,300,100,500]); // strong
+    else navigator.vibrate([200,100,200]); // medium
+  }
+  // Show flash banner
+  const banner=document.getElementById('alertBanner');
+  if(banner){
+    if(type==='now'){
+      banner.innerHTML='⏰ <b>¡CARGADA #'+ci+' EN CURSO!</b>';
+      banner.style.background='rgba(192,132,252,.2)';
+      banner.style.borderColor='#c084fc';
+    } else {
+      banner.innerHTML='⚠️ <b>¡Preparáte! Cargada #'+ci+' en menos de 5 min</b>';
+      banner.style.background='rgba(255,152,0,.2)';
+      banner.style.borderColor='#ff9800';
+    }
+    banner.style.display='block';
+    banner.classList.add('flash');
+    setTimeout(function(){banner.classList.remove('flash');},5000);
+  }
+}
+function hideAlert(){
+  const banner=document.getElementById('alertBanner');
+  if(banner){banner.style.display='none';banner.classList.remove('flash');}
 }
 startCountdown();
 
@@ -1664,7 +1750,7 @@ function buscarAnda(tipo){
   setTimeout(()=>noti.classList.remove('show'),2000);
 }
 
-function listenAnda(tipo,imgUrl,color){
+function listenAnda(tipo,imgUrl,color,zIdx){
   db.ref(tipo).on('value',function(snap){
     const d=snap.val();
     if(!d||!d.lat||!d.lng||Date.now()-d.t>120000){
@@ -1674,22 +1760,23 @@ function listenAnda(tipo,imgUrl,color){
       }
       return;
     }
-    const ll={lat:d.lat,lng:d.lng};
+    const raw={lat:d.lat,lng:d.lng};
+    const ll=snapToRoute(raw);
     if(!urnaMarkers[tipo]&&gmap){
       urnaMarkers[tipo]=new google.maps.Marker({
-        position:ll, map:gmap, zIndex:10000,
+        position:ll, map:gmap, zIndex:zIdx,
         icon:{
           url:imgUrl,
-          scaledSize:new google.maps.Size(50,50),
-          anchor:new google.maps.Point(25,25)
+          scaledSize:new google.maps.Size(60,60),
+          anchor:new google.maps.Point(30,30)
         }
       });
-      // Add colored ring around it using a circle overlay
+      // Thick colored ring to differentiate
       urnaMarkers[tipo]._ring=new google.maps.Circle({
-        center:ll,map:gmap,radius:8,
-        fillColor:color,fillOpacity:0.2,
-        strokeColor:color,strokeWeight:3,strokeOpacity:0.8,
-        zIndex:9999
+        center:ll,map:gmap,radius:15,
+        fillColor:color,fillOpacity:0.25,
+        strokeColor:color,strokeWeight:5,strokeOpacity:0.9,
+        zIndex:zIdx-1
       });
     } else if(urnaMarkers[tipo]){
       urnaMarkers[tipo].setPosition(ll);
@@ -1697,8 +1784,104 @@ function listenAnda(tipo,imgUrl,color){
     }
   });
 }
-listenAnda('jesus','jesus-marker.jpg','#dc2626');
-listenAnda('virgen','maria-marker.jpg','#3b82f6');
+listenAnda('jesus','jesus-marker.jpg','#dc2626',10000);
+listenAnda('virgen','maria-marker.jpg','#3b82f6',9998);
+
+// ========== ONLINE COUNTER (admin only) ==========
+// Register presence
+const myPresRef=db.ref('online/'+Math.random().toString(36).substr(2,9));
+db.ref('.info/connected').on('value',function(snap){
+  if(snap.val()===true){
+    myPresRef.set(Date.now());
+    myPresRef.onDisconnect().remove();
+  }
+});
+// Listen for count (admin only)
+if(!isShared){
+  document.getElementById('onlineCounter').style.display='block';
+  document.getElementById('broadcastInput').style.display='block';
+  db.ref('online').on('value',function(snap){
+    const d=snap.val();
+    const count=d?Object.keys(d).length:0;
+    document.getElementById('onlineCounter').textContent='👥 '+count+' conectados ahora';
+  });
+}
+
+// ========== LIVE BROADCAST ==========
+function sendBroadcast(){
+  const msg=document.getElementById('broadcastMsg').value.trim();
+  if(!msg) return;
+  db.ref('broadcast').set({text:msg,t:Date.now()});
+  document.getElementById('broadcastMsg').value='';
+}
+function clearBroadcast(){
+  db.ref('broadcast').remove();
+}
+// Everyone listens
+db.ref('broadcast').on('value',function(snap){
+  const d=snap.val();
+  const banner=document.getElementById('broadcastBanner');
+  if(!d||!d.text){
+    banner.style.display='none';
+    return;
+  }
+  document.getElementById('broadcastText').textContent='📢 '+d.text;
+  const ago=Math.round((Date.now()-d.t)/60000);
+  document.getElementById('broadcastTime').textContent=ago<1?'Ahora mismo':ago<60?'Hace '+ago+' min':'Hace '+Math.floor(ago/60)+'h '+ago%60+'m';
+  banner.style.display='block';
+});
+
+// ========== CONFIG SYNC ==========
+// Admin: push config changes to Firebase
+function syncConfig(){
+  if(isShared) return;
+  db.ref('config/day'+currentDay).set({
+    s:+document.getElementById('cS').value,
+    h:+document.getElementById('cH').value,
+    mn:+document.getElementById('cMn').value,
+    t:Date.now()
+  });
+}
+// Hook admin config inputs
+if(!isShared){
+  ['cS','cH','cMn'].forEach(function(id){
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('change',function(){setTimeout(syncConfig,100);});
+  });
+}
+// Shared: listen for config changes
+if(isShared){
+  db.ref('config/day'+currentDay).on('value',function(snap){
+    const d=snap.val();
+    if(!d) return;
+    let changed=false;
+    if(d.s&&+document.getElementById('cS').value!==d.s){document.getElementById('cS').value=d.s;changed=true;}
+    if(d.h&&+document.getElementById('cH').value!==d.h){document.getElementById('cH').value=d.h;changed=true;}
+    if(d.mn&&+document.getElementById('cMn').value!==d.mn){document.getElementById('cMn').value=d.mn;changed=true;}
+    if(changed) calc();
+  });
+}
+
+// ========== MAP POSITIONS SYNC ==========
+let syncTimer=null;
+function syncPositions(){
+  if(isShared) return;
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(function(){
+    const pts=positions.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
+    db.ref('positions/day'+currentDay).set(pts);
+  },500);
+}
+// Shared: listen for position updates
+if(isShared){
+  db.ref('positions/day'+currentDay).on('value',function(snap){
+    const d=snap.val();
+    if(!d||!d.length) return;
+    positions=d.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
+    drawRouteLine();
+    calc();
+  });
+}
 
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_lMqEQiLroj-jhx-a9d_o-6uWFfOCbg0&libraries=geometry&callback=initMap" async defer></script>
