@@ -103,7 +103,6 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
 </div>
 
 <!-- Carry alert banner -->
-<div id="alertBanner" style="display:none;padding:12px;text-align:center;font-size:14px;color:#fff;border-bottom:2px solid;border-radius:0"></div>
 
 <div id="installBanner" style="display:none;padding:10px;background:rgba(124,58,237,.15);border-bottom:1px solid rgba(124,58,237,.3);text-align:center;cursor:pointer;position:relative" onclick="installApp()">
   <span style="font-size:13px;color:#c084fc">📱 <b>Tocá aquí para instalar la app</b></span>
@@ -1551,17 +1550,17 @@ function updateCountdown(){
   const diffMin=Math.round((estDate-now)/60000);
   if(diffMin<=0){
     el.innerHTML='<span style="color:#c084fc;font-weight:700">⏰ Cargada en curso</span>';
-    triggerAlert(next.ci,'now');
+    if(navigator.vibrate&&lastAlertCi!==next.ci){navigator.vibrate([300,100,300,100,500]);lastAlertCi=next.ci;}
   } else if(diffMin<=5){
     el.innerHTML='<span style="color:#ff9800;font-weight:700">⚠️ ¡Faltan <b>~'+diffMin+' min</b>! Preparáte</span>';
-    triggerAlert(next.ci,'soon');
+    if(navigator.vibrate&&lastAlertCi!==next.ci){navigator.vibrate([200,100,200]);lastAlertCi=next.ci;}
   } else if(diffMin<=60){
     el.innerHTML='<span style="color:#c084fc">⏳ Faltan <b>~'+diffMin+' min</b> para tu cargada</span>';
-    hideAlert();
+
   } else {
     const hrs=Math.floor(diffMin/60),mins=diffMin%60;
     el.innerHTML='<span style="color:#aaa">⏳ Faltan ~'+hrs+'h '+mins+'min</span>';
-    hideAlert();
+
   }
 }
 
