@@ -631,6 +631,7 @@ function initMap() {
   loadDay(currentDay);
   // Show urna button only for admin (after isShared is set)
   if(typeof showUrnaButton==='function') showUrnaButton();
+  if(typeof showAdminTools==='function') showAdminTools();
 }
 
 // ========== DAY SWITCHING ==========
@@ -1797,14 +1798,16 @@ db.ref('.info/connected').on('value',function(snap){
   }
 });
 // Listen for count (admin only)
-if(!isShared){
-  document.getElementById('onlineCounter').style.display='block';
-  document.getElementById('broadcastInput').style.display='block';
-  db.ref('online').on('value',function(snap){
-    const d=snap.val();
-    const count=d?Object.keys(d).length:0;
-    document.getElementById('onlineCounter').textContent='👥 '+count+' conectados ahora';
-  });
+function showAdminTools(){
+  if(!isShared){
+    document.getElementById('broadcastInput').style.display='block';
+    document.getElementById('onlineCounter').style.display='block';
+    db.ref('online').on('value',function(snap){
+      const d=snap.val();
+      const count=d?Object.keys(d).length:0;
+      document.getElementById('onlineCounter').textContent='👥 '+count+' conectados ahora';
+    });
+  }
 }
 
 // ========== LIVE BROADCAST ==========
