@@ -766,10 +766,15 @@ function distToSegment(p,a,b){
 
 // Snap a GPS point to the nearest position on the route
 function snapToRoute(p){
-  if(positions.length<2) return p;
+  var pts=positions;
+  if(!pts||pts.length<2){
+    var dayPtsArr=[LUN_PTS,MART_PTS,MIER_PTS,VIER_PTS];
+    pts=dayPtsArr[currentDay]||[];
+  }
+  if(pts.length<2) return p;
   let bestD=Infinity, bestProj=p;
-  for(let i=0;i<positions.length-1;i++){
-    const a=positions[i], b=positions[i+1];
+  for(let i=0;i<pts.length-1;i++){
+    const a=pts[i], b=pts[i+1];
     const dx=b.lng-a.lng, dy=b.lat-a.lat;
     const len2=dx*dx+dy*dy;
     if(len2===0) continue;
@@ -779,8 +784,7 @@ function snapToRoute(p){
     const d=hd(p,proj);
     if(d<bestD){bestD=d;bestProj=proj;}
   }
-  // Only snap if within 100m of route, otherwise show raw GPS
-  return bestD<100?bestProj:p;
+  return bestProj;
 }
 
 // ========== CALCULATE ==========
