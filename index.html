@@ -1678,6 +1678,21 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// ========== LIVE BROADCAST (runs first for everyone) ==========
+db.ref('broadcast').on('value',function(snap){
+  var d=snap.val();
+  var banner=document.getElementById('broadcastBanner');
+  if(!banner) return;
+  if(!d||!d.text){
+    banner.style.display='none';
+    return;
+  }
+  document.getElementById('broadcastText').textContent='📢 '+d.text;
+  var ago=Math.round((Date.now()-d.t)/60000);
+  document.getElementById('broadcastTime').textContent=ago<1?'Ahora mismo':ago<60?'Hace '+ago+' min':'Hace '+Math.floor(ago/60)+'h '+ago%60+'m';
+  banner.style.display='block';
+});
+
 let urnaMarkers={jesus:null,virgen:null};
 let urnaActive={jesus:false,virgen:false};
 let urnaWatchIds={jesus:null,virgen:null};
@@ -1823,19 +1838,6 @@ function sendBroadcast(){
 function clearBroadcast(){
   db.ref('broadcast').remove();
 }
-// Everyone listens
-db.ref('broadcast').on('value',function(snap){
-  const d=snap.val();
-  const banner=document.getElementById('broadcastBanner');
-  if(!d||!d.text){
-    banner.style.display='none';
-    return;
-  }
-  document.getElementById('broadcastText').textContent='📢 '+d.text;
-  const ago=Math.round((Date.now()-d.t)/60000);
-  document.getElementById('broadcastTime').textContent=ago<1?'Ahora mismo':ago<60?'Hace '+ago+' min':'Hace '+Math.floor(ago/60)+'h '+ago%60+'m';
-  banner.style.display='block';
-});
 
 // ========== CONFIG SYNC ==========
 // Admin: push config changes to Firebase
