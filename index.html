@@ -618,10 +618,15 @@ function placeAlong(path,intv){const r=[];if(path.length<2)return r;let a=0;for(
 // ========== INIT ==========
 function initMap() {
   gmap = new google.maps.Map($('map'), {
-    center:{lat:13.717,lng:-89.729}, zoom:15,
+    center:{lat:13.721,lng:-89.726}, zoom:15,
     mapTypeControl:false, streetViewControl:false, fullscreenControl:false,
-    gestureHandling:'greedy', // one finger moves map, two fingers zoom
-    styles:[] // show all default Google Maps labels
+    gestureHandling:'greedy',
+    minZoom:14, maxZoom:21,
+    restriction:{
+      latLngBounds:{north:13.735,south:13.712,east:-89.715,west:-89.738},
+      strictBounds:false
+    },
+    styles:[]
   });
   infoWin = new google.maps.InfoWindow();
   // Re-render markers on zoom change (show/hide others based on zoom)
@@ -1380,9 +1385,17 @@ function fmtClock(ts){
 function renderLive(){
   if(!myCarries.length){$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">No hay cargadas. Verificá la configuración.</p></div>';return;}
   
+  // Check if this day is in the past
+  var dayDate=new Date(dayDates[currentDay]+'T23:59:00');
+  var now=new Date();
+  var isPastDay=(dayDate<now&&currentDay!==3);
+  
   const total=myCarries.length;
   const manualDone=doneCount();
-  const effCambio=getEffCambio();const grupoDone=effCambio>0?myCarries.filter(mc=>mc.num<=effCambio).length:0;
+  var effCambio=getEffCambio();
+  // Past days: all carries are done
+  if(isPastDay) effCambio=changes.length;
+  const grupoDone=effCambio>0?myCarries.filter(mc=>mc.num<=effCambio).length:0;
   const done=Math.max(manualDone,grupoDone);
   const pending=myCarries.filter(mc=>!isDone(mc.ci)&&!(effCambio>0&&mc.num<=effCambio));
   const nextCarry=pending[0];
@@ -1427,6 +1440,9 @@ function renderLive(){
     }
   }
   h+='<div id="grupoActualBanner" style="display:'+bannerDisplay+';text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:11px;color:#aaa">Venerada Imagen de Jesús Nazareno</div><div style="font-size:11px;color:#ccc">En este momento carga</div><div id="grupoActualText" style="font-size:22px;font-weight:700;color:#c084fc">'+bannerGrp+'</div><div id="grupoActualProgress" style="font-size:11px;color:#aaa">'+bannerProg+'</div></div>';
+  if(isPastDay){
+    h+='<div class="live-card" style="text-align:center;border-color:#4CAF50"><div style="font-size:14px;color:#4CAF50">✅ PROCESIÓN FINALIZADA</div><div style="font-size:11px;color:#aaa;margin-top:4px">Datos guardados para el próximo año</div></div>';
+  } else {
   h+='<div id="grupoVirgenBanner" style="display:none;text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div style="font-size:11px;color:#93c5fd">María Santísima</div><div style="font-size:11px;color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:22px;font-weight:700;color:#93c5fd"></div><div id="grupoVirgenProgress" style="font-size:10px;color:#ff9800">⚠️ Estimado · ~5 cambios detrás de Jesús</div></div>';
 
   // Admin: control to advance grupo actual
@@ -1459,6 +1475,7 @@ function renderLive(){
   }
   // Chronometer (everyone sees)
   h+='<div style="text-align:center;margin-bottom:8px"><span id="grupoCrono" style="font-size:18px;font-weight:700;color:#ff9800;font-family:monospace">⏱ 0:00</span><br><span id="grupoLastUpdate" style="font-size:10px;color:#888"></span></div>';
+  } // end !isPastDay
 
   // Progress
   h+='<div class="live-progress"><div class="live-progress-bar" style="width:'+pct+'%">'+done+'/'+total+'</div></div>';
@@ -1575,9 +1592,11 @@ function zoomTo(i){
   showView(0);
   const mc=myCarries[i];
   gmap.setCenter({lat:mc.lat,lng:mc.lng});
-  gmap.setZoom(18);
-  const t=allMarkers.find(m=>{const p=m.getPosition();return Math.abs(p.lat()-mc.lat)<.00005&&Math.abs(p.lng()-mc.lng)<.00005;});
-  if(t) google.maps.event.trigger(t,'click');
+  gmap.setZoom(20);
+  setTimeout(function(){
+    const t=allMarkers.find(m=>{const p=m.getPosition();return Math.abs(p.lat()-mc.lat)<.0001&&Math.abs(p.lng()-mc.lng)<.0001;});
+    if(t) google.maps.event.trigger(t,'click');
+  },300);
 }
 
 // ========== UI ==========
