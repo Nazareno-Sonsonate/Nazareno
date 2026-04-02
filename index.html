@@ -2017,7 +2017,9 @@ function advanceGrupo(delta){
     grp=ch.grp;nombre=ch.n||'';
   }
   liveGrupoData={cambio:currentGrupoActual,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
+  try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
   updateGrupoUI();
+  if(typeof renderLive==='function') renderLive();
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
 }
 
@@ -2032,7 +2034,9 @@ function setGrupoManual(){
   var grp=0,nombre='';
   if(num>0&&num<=changes.length){var ch=changes[num-1];grp=ch.grp;nombre=ch.n||'';}
   liveGrupoData={cambio:num,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
+  try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
   updateGrupoUI();
+  if(typeof renderLive==='function') renderLive();
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
 }
 
@@ -2042,9 +2046,11 @@ function changeDesfase(delta){
   var el=document.getElementById('desfaseNum');
   if(el) el.textContent=virgenDesfase;
   if(liveGrupoData&&liveGrupoData.cambio>0){
+    try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
     db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
   }
   updateGrupoUI();
+  if(typeof renderLive==='function') renderLive();
 }
 
 function changeMovidos(delta){
@@ -2053,9 +2059,11 @@ function changeMovidos(delta){
   var el=document.getElementById('movidosNum');
   if(el) el.textContent=(virgenMovidos>0?'+':'')+virgenMovidos;
   if(liveGrupoData&&liveGrupoData.cambio>0){
+    try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
     db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
   }
   updateGrupoUI();
+  if(typeof renderLive==='function') renderLive();
 }
 
 
@@ -2175,10 +2183,11 @@ function startDayListeners(){
   gaRef.on('value',function(snap){
     var d=snap.val();
     if(!d){
-      // Only clear if localStorage didn't already load data
-      if(!liveGrupoData){currentGrupoActual=0;updateGrupoUI();}
+      // Never clear if we have local data
       return;
     }
+    // Only update if data is newer than what we have
+    if(liveGrupoData&&liveGrupoData.t&&d.t&&d.t<=liveGrupoData.t) return;
     currentGrupoActual=d.cambio||0;
     liveGrupoData=d;
     if(d.desfase!==undefined) virgenDesfase=d.desfase;
