@@ -1697,12 +1697,7 @@ if('serviceWorker' in navigator){
   }
   function setupSWUpdates(reg){
     setInterval(()=>reg.update(),30000);
-    reg.addEventListener('updatefound',function(){
-      const nw=reg.installing;
-      nw.addEventListener('statechange',function(){
-        if(nw.state==='activated') window.location.reload();
-      });
-    });
+    // No auto-reload — update applies next time user opens the app
   }
 }
 </script>
