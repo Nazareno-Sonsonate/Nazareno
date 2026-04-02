@@ -1329,6 +1329,7 @@ function renderLive(){
 
   // Live grupo tracking banner (everyone sees)
   h+='<div id="grupoActualBanner" style="display:none;text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:11px;color:#aaa">Venerada Imagen de Jesús Nazareno</div><div style="font-size:11px;color:#ccc">En este momento carga</div><div id="grupoActualText" style="font-size:22px;font-weight:700;color:#c084fc"></div><div id="grupoActualProgress" style="font-size:11px;color:#aaa"></div></div>';
+  h+='<div id="grupoVirgenBanner" style="display:none;text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div style="font-size:11px;color:#93c5fd">María Santísima</div><div style="font-size:11px;color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:22px;font-weight:700;color:#93c5fd"></div><div id="grupoVirgenProgress" style="font-size:10px;color:#ff9800">⚠️ Estimado · ~5 cambios detrás de Jesús</div></div>';
 
   // Admin: control to advance grupo actual
   if(!isShared){
@@ -1948,6 +1949,22 @@ function updateGrupoUI(){
       banner.style.display='block';
     } else {
       banner.style.display='none';
+    }
+  }
+  // Virgen estimated banner
+  var vBanner=document.getElementById('grupoVirgenBanner');
+  var vTxt=document.getElementById('grupoVirgenText');
+  if(vBanner&&vTxt){
+    if(liveGrupoData&&liveGrupoData.cambio>5){
+      var vCambio=liveGrupoData.cambio-5;
+      var vNombre='';
+      if(changes.length>0&&vCambio>0&&vCambio<=changes.length){
+        vNombre=changes[vCambio-1].n||'';
+      }
+      vTxt.textContent='~Cambio #'+vCambio+(vNombre?' · '+vNombre:'');
+      vBanner.style.display='block';
+    } else {
+      vBanner.style.display='none';
     }
   }
 }
