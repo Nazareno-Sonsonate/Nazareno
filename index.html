@@ -9,6 +9,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Semana Santa - Sonsonate</title>
+<meta name="description" content="Rastreo en vivo de la procesión de Semana Santa en Sonsonate, El Salvador">
+<meta property="og:title" content="Procesión Semana Santa · Sonsonate">
+<meta property="og:description" content="Rastreo en vivo de cargadas, ubicación de las andas y avance de la procesión">
+<meta property="og:image" content="https://procesion-sonsonate-semana-santa.github.io/procesion/jesus.jpg">
+<meta property="og:url" content="https://procesion-sonsonate-semana-santa.github.io/procesion/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
@@ -356,7 +363,7 @@ let allMarkers = [], wpMarkers = [], showAll = true, dragMode = false;
 let dayNames = ['Lunes Santo','Martes Santo','Miércoles Santo','Viernes Mañana'];
 let dayDates = ['2026-03-30','2026-03-31','2026-04-01','2026-04-03']; // Semana Santa 2026
 let dayHours = [15, 15, 15, 6];
-let daySaca = [19, 17, 13, 19];
+let daySaca = [19, 17, 13, 17];
 let daySacaManual = [true, true, false, false];
 
 function detectToday(){
@@ -439,8 +446,12 @@ function saveAll() {
       cd: currentDay
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
-    if(typeof syncPositions==='function') syncPositions();
   } catch(e) {}
+}
+// Separate function to sync positions - only call after actual edits
+function syncAndSave(){
+  saveAll();
+  if(typeof syncPositions==='function') syncPositions();
 }
 function loadSaved() {
   try {
@@ -578,8 +589,8 @@ function cfg() {
   return {g:+$('cG').value||5, t:+$('cType').value||21, s:+$('cS').value||19, h:+$('cH').value||15, mn:+$('cMn').value||6, color:+($('cColor')?$('cColor').value:0)};
 }
 // Default sacas: [lun, mar, mie, vie] per type
-const defaultSacaH = [19, 17, 13, 19]; // hombres 21 grupos
-const defaultSacaM = [19, 27, 13, 19]; // mujeres 27 grupos
+const defaultSacaH = [19, 17, 13, 17]; // hombres 21 grupos
+const defaultSacaM = [19, 27, 13, 22]; // mujeres 27 grupos
 function onTypeChange(){
   $('colorDiv').style.display=(+$('cType').value===27)?'block':'none';
   const isM=(+$('cType').value===27);
@@ -754,6 +765,7 @@ function insertAtPosition(lat,lng,edge) {
 
   drawRouteLine();
   calc();
+  if(typeof syncPositions==='function') syncPositions();
 
   const c=cfg();
   const grp=((c.s-1+insertIdx)%c.t)+1;
@@ -994,6 +1006,7 @@ function renameChange(ci){
   positions[ci].n=name;
   infoWin.close();
   calc();
+  if(typeof syncPositions==='function') syncPositions();
 }
 
 function exportPoints(){
@@ -1074,6 +1087,7 @@ function renderMarkers() {
         positions[ci]={lat:p.lat(),lng:p.lng(),n:positions[ci].n};
         drawRouteLine();
         calc();
+        if(typeof syncPositions==='function') syncPositions();
       });
     }
     allMarkers.push(mk);
@@ -1088,6 +1102,7 @@ function deleteChange(ci) {
   infoWin.close();
   drawRouteLine();
   calc();
+  if(typeof syncPositions==='function') syncPositions();
 }
 
 // ========== TABLE ==========
@@ -1096,7 +1111,7 @@ function renderTable() {
   myCarries.forEach((mc,i)=>{
     const ref=mc.n||nearWP(mc);
     const label=mc.carryLabel||'';
-    h+='<div class="tr" onclick="zoomTo('+i+')"><span class="rn">'+mc.ci+'</span><div><div style="font-weight:600">'+ref+'</div><div class="rs">Cambio #'+mc.num+(label?' · '+label:'')+'</div></div>'+(isShared?'':'<div class="rt">'+mc.time+'</div>')+'</div>';
+    h+='<div class="tr" onclick="zoomTo('+i+')"><span class="rn">'+mc.ci+'</span><div><div style="font-weight:600">'+ref+'</div><div class="rs">Cambio #'+mc.num+(label?' · '+label:'')+'</div></div><div class="rt">'+mc.time+'</div></div>';
   });
   $('tbl').innerHTML=h;
 }
@@ -1254,6 +1269,24 @@ function getRealAvg(){
 // Get last recorded time and project forward
 function getEstimate(mc){
   const now=Date.now();
+  
+  // BEST METHOD: Use grupo actual if available
+  if(window.liveGrupoData&&window.liveGrupoData.cambio>0&&window.liveGrupoData.t){
+    var gCambio=window.liveGrupoData.cambio;
+    var gTime=window.liveGrupoData.t;
+    var cc=cfg();
+    var startDate=new Date();
+    startDate.setHours(cc.h,0,0,0);
+    if(now<startDate.getTime()) startDate.setDate(startDate.getDate()-1);
+    var startMs=startDate.getTime();
+    var elapsedG=(gTime-startMs)/60000;
+    if(elapsedG>0&&gCambio>0){
+      var realMpc=elapsedG/gCambio;
+      if(mc.num<=gCambio) return fmtClock(startMs+mc.num*realMpc*60000);
+      return fmtClock(gTime+(mc.num-gCambio)*realMpc*60000);
+    }
+  }
+
   const recorded=myCarries.filter(x=>isDone(x.ci)).map(x=>({num:x.num,t:getEntry(x.ci).t})).sort((a,b)=>b.num-a.num);
   const avg=getRealAvg();
   const minPer=avg||(+$('cMn').value||6);
@@ -1350,7 +1383,7 @@ function renderLive(){
   } else {
     h+='<div style="display:flex;gap:8px;margin-bottom:8px"><button '+jBtn+'>🔴 Buscar Jesús</button><button '+vBtn+'>🔵 Buscar Virgen</button></div>';
   }
-  if(!isShared) h+='<div style="text-align:center;margin-bottom:6px;font-size:10px;color:#e08080">⚠️ Las horas son aproximadas y se ajustan con cada registro</div>';
+  h+='<div style="text-align:center;margin-bottom:6px;font-size:10px;color:#e08080">⚠️ Las horas son aproximadas y se ajustan en tiempo real</div>';
 
   // Live grupo tracking banner (everyone sees)
   h+='<div id="grupoActualBanner" style="display:none;text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:11px;color:#aaa">Venerada Imagen de Jesús Nazareno</div><div style="font-size:11px;color:#ccc">En este momento carga</div><div id="grupoActualText" style="font-size:22px;font-weight:700;color:#c084fc"></div><div id="grupoActualProgress" style="font-size:11px;color:#aaa"></div></div>';
@@ -1379,7 +1412,7 @@ function renderLive(){
     h+='</div>';
   }
   // Chronometer (everyone sees)
-  h+='<div style="text-align:center;margin-bottom:8px"><span id="grupoCrono" style="font-size:18px;font-weight:700;color:#ff9800;font-family:monospace">⏱ 0:00</span></div>';
+  h+='<div style="text-align:center;margin-bottom:8px"><span id="grupoCrono" style="font-size:18px;font-weight:700;color:#ff9800;font-family:monospace">⏱ 0:00</span><br><span id="grupoLastUpdate" style="font-size:10px;color:#888"></span></div>';
 
   // Progress
   h+='<div class="live-progress"><div class="live-progress-bar" style="width:'+pct+'%">'+done+'/'+total+'</div></div>';
@@ -1433,8 +1466,8 @@ function renderLive(){
     h+='<div class="ln-num"'+(nextCarry.colorHex?' style="color:'+nextCarry.colorHex+'"':'')+'>#'+nextCarry.ci+'</div>';
     if(nextCarry.carryLabel) h+='<div style="font-size:14px;margin:4px 0">'+nextCarry.carryLabel+'</div>';
     h+='<div class="ln-ref">📍 '+ref+'</div>';
-    if(!isShared) h+='<div class="ln-time">~'+estTime+'</div>';
-    if(!isShared) h+='<div id="countdownText" style="font-size:13px;margin-top:4px"></div>';
+    h+='<div class="ln-time">~'+estTime+'</div>';
+    h+='<div id="countdownText" style="font-size:13px;margin-top:4px"></div>';
     if(realAvg) h+='<div style="font-size:10px;color:#4CAF50;margin-top:2px">⏱️ Promedio: '+realAvg.toFixed(1)+' min/cambio</div>';
     h+='<div style="font-size:10px;color:#aaa;margin-top:4px">Cambio #'+nextCarry.num+'</div>';
     h+='</div>';
@@ -1473,7 +1506,7 @@ function renderLive(){
     h+='<div class="live-carry '+cls+'" style="'+borderColor+'" onclick="zoomTo('+(mc.ci-1)+')">';
     h+='<div class="lc-num">'+icon+'</div>';
     h+='<div class="lc-info"><div class="lc-ref">Cargada #'+mc.ci+' — '+ref+'</div><div class="lc-sub">Cambio #'+mc.num+(label?' · '+label:'')+(realT?' · '+realT:'')+'</div></div>';
-    if(!isShared) h+='<div class="lc-time" style="color:'+(mcDone?'#4CAF50':(mc.colorHex||'#c084fc'))+'">'+estT+'</div>';
+    h+='<div class="lc-time" style="color:'+(mcDone?'#4CAF50':(mc.colorHex||'#c084fc'))+'">'+estT+'</div>';
     h+='</div>';
   });
   h+='</div>';
@@ -1910,7 +1943,7 @@ let currentGrupoActual=0;
 var liveGrupoData=null;
 var virgenDesfase=5;
 var virgenMovidos=0;
-var daySacaMuj=[19,27,13,19]; // saca de mujeres por día
+var daySacaMuj=[19,27,13,22]; // saca de mujeres por día
 // Load from localStorage immediately
 try{
   var savedGrupo=localStorage.getItem('grupoActual_day');
@@ -1925,15 +1958,24 @@ var cronoInterval=null;
 
 function updateCrono(){
   var el=document.getElementById('grupoCrono');
+  var upEl=document.getElementById('grupoLastUpdate');
   if(!el) return;
   if(!liveGrupoData||!liveGrupoData.t||liveGrupoData.cambio===0){
     el.textContent='⏱ 0:00';
+    if(upEl) upEl.textContent='';
     return;
   }
   var elapsed=Math.floor((Date.now()-liveGrupoData.t)/1000);
   var min=Math.floor(elapsed/60);
   var sec=elapsed%60;
   el.textContent='⏱ '+min+':'+(sec<10?'0':'')+sec;
+  if(upEl){
+    var d=new Date(liveGrupoData.t);
+    var h=d.getHours(),m=d.getMinutes();
+    var h12=((h-1)%12)+1;if(h12<=0)h12+=12;
+    var ampm=h>=12&&h<24?'PM':'AM';
+    upEl.textContent='Última actualización: '+h12+':'+(m<10?'0':'')+m+' '+ampm;
+  }
 }
 
 function startCrono(){
