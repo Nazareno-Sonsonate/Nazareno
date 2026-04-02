@@ -360,15 +360,21 @@ let daySaca = [19, 17, 13, 19];
 let daySacaManual = [true, true, false, false];
 
 function detectToday(){
-  const today=new Date().toISOString().slice(0,10);
+  const now=new Date();
+  // If before 5 AM, consider it still the previous day's procession
+  let checkDate=new Date(now);
+  if(now.getHours()<5){
+    checkDate.setDate(checkDate.getDate()-1);
+  }
+  const today=checkDate.toISOString().slice(0,10);
   let todayIdx=-1;
   dayDates.forEach((d,i)=>{if(d===today)todayIdx=i;});
   // Mark past/today on tabs
   document.querySelectorAll('.day').forEach((btn,i)=>{
     const date=new Date(dayDates[i]+'T12:00:00');
-    const now=new Date();
-    now.setHours(12,0,0,0);
-    if(date<now) btn.classList.add('past');
+    const ref=new Date();
+    ref.setHours(12,0,0,0);
+    if(date<ref&&dayDates[i]!==today) btn.classList.add('past');
     if(dayDates[i]===today) btn.classList.add('today');
   });
   return todayIdx;
@@ -420,7 +426,7 @@ let MART_WP_REF = [
 ];
 
 // ========== LOCAL STORAGE ==========
-const SAVE_KEY = 'semanaSanta_v41';
+const SAVE_KEY = 'semanaSanta_v42';
 function getWPs(){return currentDay===0?LUN_WP_REF:currentDay===1?MART_WP_REF:currentDay===2?MIER_WP_REF:currentDay===3?VIER_WP_REF:[];}
 function saveAll() {
   try {
@@ -440,7 +446,7 @@ function loadSaved() {
   try {
     let raw = localStorage.getItem(SAVE_KEY);
     if(!raw){
-      for(let v=41;v>=13;v--){
+      for(let v=42;v>=13;v--){
         raw=localStorage.getItem('semanaSanta_v'+v);
         if(raw){
           localStorage.setItem(SAVE_KEY,raw);
@@ -1675,7 +1681,7 @@ setTimeout(function(){
 // ========== SERVICE WORKER ==========
 if('serviceWorker' in navigator){
   // Force clear old caches and SW on first load of new version
-  const APP_VERSION='v41';
+  const APP_VERSION='v42';
   if(localStorage.getItem('appVer')!==APP_VERSION){
     // Clear all caches
     if(window.caches) caches.keys().then(ks=>ks.forEach(k=>caches.delete(k)));
@@ -1780,11 +1786,15 @@ function toggleUrna(tipo){
     document.getElementById(btnId).style.background=bgOn;
     document.getElementById(btnId).textContent=activeLabel;
     
+    var lastWrite={};
     urnaWatchIds[tipo]=navigator.geolocation.watchPosition(function(pos){
-      db.ref(tipo).set({lat:pos.coords.latitude,lng:pos.coords.longitude,t:Date.now()});
+      var now=Date.now();
+      if(lastWrite[tipo]&&now-lastWrite[tipo]<8000) return;
+      lastWrite[tipo]=now;
+      db.ref(tipo).set({lat:pos.coords.latitude,lng:pos.coords.longitude,t:now});
     },function(err){
       console.log(tipo+' GPS error',err);
-    },{enableHighAccuracy:true, maximumAge:3000, timeout:10000});
+    },{enableHighAccuracy:true, maximumAge:10000, timeout:15000});
   });
 }
 
