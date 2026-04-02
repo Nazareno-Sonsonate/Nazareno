@@ -127,6 +127,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
   <div><label>¿En qué grupo vas?</label><input type="number" id="cG" value="5" min="1" max="50" onchange="calc()"></div>
   <div id="colorDiv" style="display:none"><label>¿Tu color?</label><select id="cColor" onchange="calc()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="0">🟡 Amarillo</option><option value="1">🔴 Rojo</option><option value="2">🔵 Azul</option></select></div>
   <div class="adminOnly"><label>¿Qué grupo saca?</label><input type="number" id="cS" value="19" min="1" max="50" onchange="daySacaManual[currentDay]=true;calc()"></div>
+  <div class="adminOnly"><label>Saca mujeres</label><input type="number" id="cSM" value="13" min="1" max="27" onchange="daySacaMuj[currentDay]=+this.value;if(liveGrupoData){liveGrupoData.sacaMuj=+this.value;db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI()"></div>
   <div class="adminOnly"><label>Hora de salida</label><input type="number" id="cH" value="15" min="0" max="23" onchange="calc()"></div>
   <div class="adminOnly"><label>Min por cambio</label><input type="number" id="cMn" value="6" min="1" max="20" onchange="calc()"></div>
 </div>
@@ -632,6 +633,7 @@ function initMap() {
   document.querySelectorAll('.day').forEach((b,i)=>b.classList.toggle('a',i===currentDay));
   $('cS').value = daySaca[currentDay];
   $('cH').value = dayHours[currentDay];
+  if($('cSM')) $('cSM').value = daySacaMuj[currentDay]||13;
   loadDay(currentDay);
   // Show urna button only for admin (after isShared is set)
   if(typeof showUrnaButton==='function') showUrnaButton();
@@ -671,6 +673,7 @@ function switchDay(d) {
   // Restore config for this day
   $('cS').value = daySaca[d];
   $('cH').value = dayHours[d];
+  if($('cSM')) $('cSM').value = daySacaMuj[d]||13;
 
   loadDay(d);
 }
@@ -1365,12 +1368,6 @@ function renderLive(){
     h+='<button onclick="changeDesfase(1)" style="padding:4px 10px;border:1px solid #3b82f6;border-radius:6px;background:rgba(59,130,246,.2);color:#93c5fd;font-size:14px;cursor:pointer">+</button>';
     h+='<span style="font-size:10px;color:#888">cambios</span>';
     h+='</div>';
-    h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
-    h+='<span style="font-size:12px;color:#93c5fd">Saca mujeres:</span>';
-    h+='<button onclick="changeSacaMuj(-1)" style="padding:4px 10px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:14px;cursor:pointer">−</button>';
-    h+='<span id="sacaMujNum" style="font-size:16px;font-weight:700;color:#93c5fd;min-width:30px;text-align:center">'+(daySacaMuj[currentDay]||13)+'</span>';
-    h+='<button onclick="changeSacaMuj(1)" style="padding:4px 10px;border:1px solid #3b82f6;border-radius:6px;background:rgba(59,130,246,.2);color:#93c5fd;font-size:14px;cursor:pointer">+</button>';
-    h+='</div>';
   }
   // Chronometer (everyone sees)
   h+='<div style="text-align:center;margin-bottom:8px"><span id="grupoCrono" style="font-size:18px;font-weight:700;color:#ff9800;font-family:monospace">⏱ 0:00</span></div>';
@@ -1937,13 +1934,14 @@ startCrono();
 function advanceGrupo(delta){
   var tot=changes.length;
   if(tot===0) tot=positions.length;
-  currentGrupoActual=Math.max(0,Math.min(tot,currentGrupoActual+delta));
+  var maxCambio=tot+virgenDesfase; // allow extra for Virgen to finish
+  currentGrupoActual=Math.max(0,Math.min(maxCambio,currentGrupoActual+delta));
   var grp=0,nombre='';
   if(currentGrupoActual>0&&currentGrupoActual<=changes.length){
     var ch=changes[currentGrupoActual-1];
     grp=ch.grp;nombre=ch.n||'';
   }
-  liveGrupoData={cambio:currentGrupoActual,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,t:Date.now()};
+  liveGrupoData={cambio:currentGrupoActual,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
   updateGrupoUI();
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
 }
@@ -2005,15 +2003,29 @@ function updateGrupoUI(){
   var txtEl=document.getElementById('grupoActualText');
   var progEl=document.getElementById('grupoActualProgress');
   if(banner&&txtEl&&progEl){
-    if(liveGrupoData&&liveGrupoData.grp>0){
-      txtEl.textContent='Grupo #'+liveGrupoData.grp;
-      var progHtml='Cambio '+liveGrupoData.cambio+' de '+liveGrupoData.tot+(liveGrupoData.nombre?' \u00b7 '+liveGrupoData.nombre:'');
-      if(!isShared){
-        var procPct=Math.round(liveGrupoData.cambio/liveGrupoData.tot*100);
-        progHtml+='<div style="margin-top:6px;height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+procPct+'%;background:linear-gradient(90deg,#c084fc,#7c3aed);border-radius:4px;transition:width .5s"></div></div>'
-          +'<div style="margin-top:2px;font-size:10px;color:#c084fc">'+procPct+'% de la procesion</div>';
+    if(liveGrupoData&&liveGrupoData.cambio>0){
+      var tot=liveGrupoData.tot||changes.length;
+      if(liveGrupoData.cambio>tot){
+        // Jesus finished
+        txtEl.textContent='✅ Jesús terminó';
+        var progHtml=liveGrupoData.nombre||'';
+        if(!isShared){
+          progHtml='Terminó en cambio '+tot;
+          progHtml+='<div style="margin-top:6px;height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden"><div style="height:100%;width:100%;background:linear-gradient(90deg,#4CAF50,#2E7D32);border-radius:4px"></div></div>'
+            +'<div style="margin-top:2px;font-size:10px;color:#4CAF50">100% · Esperando Virgen</div>';
+        }
+        progEl.innerHTML=progHtml;
+      } else {
+        txtEl.textContent='Grupo #'+liveGrupoData.grp;
+        var progHtml=liveGrupoData.nombre||'';
+        if(!isShared){
+          var procPct=Math.round(liveGrupoData.cambio/tot*100);
+          progHtml='Cambio '+liveGrupoData.cambio+' de '+tot+(liveGrupoData.nombre?' \u00b7 '+liveGrupoData.nombre:'');
+          progHtml+='<div style="margin-top:6px;height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+procPct+'%;background:linear-gradient(90deg,#c084fc,#7c3aed);border-radius:4px;transition:width .5s"></div></div>'
+            +'<div style="margin-top:2px;font-size:10px;color:#c084fc">'+procPct+'% de la procesion</div>';
+        }
+        progEl.innerHTML=progHtml;
       }
-      progEl.innerHTML=progHtml;
       banner.style.display='block';
     } else {
       banner.style.display='none';
@@ -2027,14 +2039,20 @@ function updateGrupoUI(){
     if(liveGrupoData&&liveGrupoData.cambio>0){
       var desf=liveGrupoData.desfase!==undefined?liveGrupoData.desfase:virgenDesfase;
       var sacaM=liveGrupoData.sacaMuj||daySacaMuj[currentDay]||13;
+      var totV=liveGrupoData.tot||changes.length;
       var vCambio=Math.max(1,liveGrupoData.cambio-desf);
-      var vGrp=((sacaM-1+vCambio-1)%27)+1;
-      var vNombre='';
-      if(changes.length>0&&vCambio>0&&vCambio<=changes.length){
-        vNombre=changes[vCambio-1].n||'';
+      if(vCambio>=totV){
+        vTxt.textContent='✅ Virgen terminó';
+        if(vProg) vProg.textContent='Saca #'+sacaM;
+      } else {
+        var vGrp=((sacaM-1+vCambio-1)%27)+1;
+        var vNombre='';
+        if(changes.length>0&&vCambio>0&&vCambio<=changes.length){
+          vNombre=changes[vCambio-1].n||'';
+        }
+        vTxt.textContent='Grupo #'+vGrp+(vNombre?' · '+vNombre:'');
+        if(vProg) vProg.textContent='⚠️ Estimado · ~'+desf+' cambios detrás · Saca #'+sacaM;
       }
-      vTxt.textContent='Grupo #'+vGrp+(vNombre?' · '+vNombre:'');
-      if(vProg) vProg.textContent='⚠️ Estimado · ~'+desf+' cambios detrás de Jesús · Saca #'+sacaM;
       vBanner.style.display='block';
     } else {
       vBanner.style.display='none';
