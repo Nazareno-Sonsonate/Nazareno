@@ -659,6 +659,8 @@ function initMap() {
   if(typeof showUrnaButton==='function') showUrnaButton();
   if(typeof showAdminTools==='function') showAdminTools();
   if(typeof startDayListeners==='function') startDayListeners();
+  // DEBUG 2 - check after everything loads
+  setTimeout(function(){alert('AFTER: DIA:'+currentDay+' LIVE:'+(liveGrupoData?liveGrupoData.cambio:'null')+' CHANGES:'+changes.length);},3000);
 }
 
 // ========== DAY SWITCHING ==========
