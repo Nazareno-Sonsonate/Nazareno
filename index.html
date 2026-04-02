@@ -1365,6 +1365,12 @@ function renderLive(){
     h+='<button onclick="changeDesfase(1)" style="padding:4px 10px;border:1px solid #3b82f6;border-radius:6px;background:rgba(59,130,246,.2);color:#93c5fd;font-size:14px;cursor:pointer">+</button>';
     h+='<span style="font-size:10px;color:#888">cambios</span>';
     h+='</div>';
+    h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
+    h+='<span style="font-size:12px;color:#93c5fd">Saca mujeres:</span>';
+    h+='<button onclick="changeSacaMuj(-1)" style="padding:4px 10px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:14px;cursor:pointer">−</button>';
+    h+='<span id="sacaMujNum" style="font-size:16px;font-weight:700;color:#93c5fd;min-width:30px;text-align:center">'+(daySacaMuj[currentDay]||13)+'</span>';
+    h+='<button onclick="changeSacaMuj(1)" style="padding:4px 10px;border:1px solid #3b82f6;border-radius:6px;background:rgba(59,130,246,.2);color:#93c5fd;font-size:14px;cursor:pointer">+</button>';
+    h+='</div>';
   }
   // Chronometer (everyone sees)
   h+='<div style="text-align:center;margin-bottom:8px"><span id="grupoCrono" style="font-size:18px;font-weight:700;color:#ff9800;font-family:monospace">⏱ 0:00</span></div>';
@@ -1958,12 +1964,26 @@ function setGrupoManual(){
 }
 
 function changeDesfase(delta){
-  virgenDesfase=Math.max(0,Math.min(20,virgenDesfase+delta));
+  virgenDesfase=Math.max(0,Math.min(30,virgenDesfase+delta));
   if(liveGrupoData) liveGrupoData.desfase=virgenDesfase;
   var el=document.getElementById('desfaseNum');
   if(el) el.textContent=virgenDesfase;
-  // Save to Firebase
   if(liveGrupoData&&liveGrupoData.cambio>0){
+    db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+  }
+  updateGrupoUI();
+}
+
+function changeSacaMuj(delta){
+  var s=daySacaMuj[currentDay]||13;
+  s=s+delta;
+  if(s<1) s=27;
+  if(s>27) s=1;
+  daySacaMuj[currentDay]=s;
+  var el=document.getElementById('sacaMujNum');
+  if(el) el.textContent=s;
+  if(liveGrupoData){
+    liveGrupoData.sacaMuj=s;
     db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
   }
   updateGrupoUI();
@@ -2004,17 +2024,17 @@ function updateGrupoUI(){
   var vTxt=document.getElementById('grupoVirgenText');
   var vProg=document.getElementById('grupoVirgenProgress');
   if(vBanner&&vTxt){
-    var desf=liveGrupoData&&liveGrupoData.desfase!==undefined?liveGrupoData.desfase:virgenDesfase;
-    if(liveGrupoData&&liveGrupoData.cambio>desf){
-      var vCambio=liveGrupoData.cambio-desf;
-      var sacaM=daySacaMuj[currentDay]||13;
+    if(liveGrupoData&&liveGrupoData.cambio>0){
+      var desf=liveGrupoData.desfase!==undefined?liveGrupoData.desfase:virgenDesfase;
+      var sacaM=liveGrupoData.sacaMuj||daySacaMuj[currentDay]||13;
+      var vCambio=Math.max(1,liveGrupoData.cambio-desf);
       var vGrp=((sacaM-1+vCambio-1)%27)+1;
       var vNombre='';
       if(changes.length>0&&vCambio>0&&vCambio<=changes.length){
         vNombre=changes[vCambio-1].n||'';
       }
       vTxt.textContent='Grupo #'+vGrp+(vNombre?' · '+vNombre:'');
-      if(vProg) vProg.textContent='⚠️ Estimado · ~'+desf+' cambios detrás de Jesús';
+      if(vProg) vProg.textContent='⚠️ Estimado · ~'+desf+' cambios detrás de Jesús · Saca #'+sacaM;
       vBanner.style.display='block';
     } else {
       vBanner.style.display='none';
@@ -2053,6 +2073,7 @@ function startDayListeners(){
     currentGrupoActual=d.cambio||0;
     liveGrupoData=d;
     if(d.desfase!==undefined) virgenDesfase=d.desfase;
+    if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
     try{localStorage.setItem('grupoActual_day',JSON.stringify(d));}catch(e){}
     updateGrupoUI();
     if(typeof renderLive==='function') renderLive();
