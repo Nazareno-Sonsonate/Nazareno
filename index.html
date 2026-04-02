@@ -126,8 +126,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
   <div><label>¿Cargadores de?</label><select id="cType" onchange="onTypeChange()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="21">Hombres (21 grupos)</option><option value="27">Mujeres (27 grupos)</option></select></div>
   <div><label>¿En qué grupo vas?</label><input type="number" id="cG" value="5" min="1" max="50" onchange="calc()"></div>
   <div id="colorDiv" style="display:none"><label>¿Tu color?</label><select id="cColor" onchange="calc()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="0">🟡 Amarillo</option><option value="1">🔴 Rojo</option><option value="2">🔵 Azul</option></select></div>
-  <div class="adminOnly"><label>¿Qué grupo saca?</label><input type="number" id="cS" value="19" min="1" max="50" onchange="daySacaManual[currentDay]=true;calc()"></div>
-  <div class="adminOnly"><label>Saca mujeres</label><input type="number" id="cSM" value="13" min="1" max="27" onchange="daySacaMuj[currentDay]=+this.value;if(liveGrupoData){liveGrupoData.sacaMuj=+this.value;db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI()"></div>
+  <div class="adminOnly"><label>¿Qué grupo saca?</label><input type="number" id="cS" value="19" min="1" max="50" onchange="daySacaManual[currentDay]=true;if(+$('cType').value===27){daySacaMuj[currentDay]=+this.value;if(liveGrupoData){liveGrupoData.sacaMuj=+this.value;db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}calc()"></div>
   <div class="adminOnly"><label>Hora de salida</label><input type="number" id="cH" value="15" min="0" max="23" onchange="calc()"></div>
   <div class="adminOnly"><label>Min por cambio</label><input type="number" id="cMn" value="6" min="1" max="20" onchange="calc()"></div>
 </div>
@@ -583,9 +582,8 @@ const defaultSacaH = [19, 17, 13, 19]; // hombres 21 grupos
 const defaultSacaM = [19, 27, 13, 19]; // mujeres 27 grupos
 function onTypeChange(){
   $('colorDiv').style.display=(+$('cType').value===27)?'block':'none';
-  // Auto-update saca based on type
   const isM=(+$('cType').value===27);
-  $('cS').value=isM?defaultSacaM[currentDay]:defaultSacaH[currentDay];
+  $('cS').value=isM?(daySacaMuj[currentDay]||defaultSacaM[currentDay]):(daySaca[currentDay]||defaultSacaH[currentDay]);
   calc();
 }
 function fmt(min) {
@@ -631,9 +629,9 @@ function initMap() {
   }
   // Restore day tabs
   document.querySelectorAll('.day').forEach((b,i)=>b.classList.toggle('a',i===currentDay));
-  $('cS').value = daySaca[currentDay];
+  $('cS').value = (+$('cType').value===27)?daySacaMuj[currentDay]:daySaca[currentDay];
   $('cH').value = dayHours[currentDay];
-  if($('cSM')) $('cSM').value = daySacaMuj[currentDay]||13;
+
   loadDay(currentDay);
   // Show urna button only for admin (after isShared is set)
   if(typeof showUrnaButton==='function') showUrnaButton();
@@ -654,7 +652,11 @@ function getLastGroup(day){
 
 function switchDay(d) {
   // Save current day's state
-  daySaca[currentDay] = +$('cS').value||19;
+  if(+$('cType').value===27){
+    daySacaMuj[currentDay]=+$('cS').value||13;
+  } else {
+    daySaca[currentDay]=+$('cS').value||19;
+  }
   dayHours[currentDay] = +$('cH').value||15;
   saveAll();
 
@@ -671,9 +673,10 @@ function switchDay(d) {
   document.querySelectorAll('.day').forEach((b,i) => b.classList.toggle('a',i===d));
 
   // Restore config for this day
-  $('cS').value = daySaca[d];
+  var isM=(+$('cType').value===27);
+  $('cS').value = isM?daySacaMuj[d]:daySaca[d];
   $('cH').value = dayHours[d];
-  if($('cSM')) $('cSM').value = daySacaMuj[d]||13;
+
 
   loadDay(d);
 }
@@ -1972,20 +1975,6 @@ function changeDesfase(delta){
   updateGrupoUI();
 }
 
-function changeSacaMuj(delta){
-  var s=daySacaMuj[currentDay]||13;
-  s=s+delta;
-  if(s<1) s=27;
-  if(s>27) s=1;
-  daySacaMuj[currentDay]=s;
-  var el=document.getElementById('sacaMujNum');
-  if(el) el.textContent=s;
-  if(liveGrupoData){
-    liveGrupoData.sacaMuj=s;
-    db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
-  }
-  updateGrupoUI();
-}
 
 function updateGrupoUI(){
   var tot=changes.length;
