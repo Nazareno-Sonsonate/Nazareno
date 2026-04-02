@@ -2019,7 +2019,6 @@ function advanceGrupo(delta){
   liveGrupoData={cambio:currentGrupoActual,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
   try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
   updateGrupoUI();
-  if(typeof renderLive==='function') renderLive();
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
 }
 
@@ -2036,7 +2035,6 @@ function setGrupoManual(){
   liveGrupoData={cambio:num,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
   try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
   updateGrupoUI();
-  if(typeof renderLive==='function') renderLive();
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
 }
 
@@ -2050,7 +2048,6 @@ function changeDesfase(delta){
     db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
   }
   updateGrupoUI();
-  if(typeof renderLive==='function') renderLive();
 }
 
 function changeMovidos(delta){
@@ -2063,9 +2060,7 @@ function changeMovidos(delta){
     db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
   }
   updateGrupoUI();
-  if(typeof renderLive==='function') renderLive();
 }
-
 
 function updateGrupoUI(){
   var tot=changes.length;
@@ -2186,8 +2181,6 @@ function startDayListeners(){
       // Never clear if we have local data
       return;
     }
-    // Only update if data is newer than what we have
-    if(liveGrupoData&&liveGrupoData.t&&d.t&&d.t<=liveGrupoData.t) return;
     currentGrupoActual=d.cambio||0;
     liveGrupoData=d;
     if(d.desfase!==undefined) virgenDesfase=d.desfase;
