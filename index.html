@@ -2007,14 +2007,20 @@ function startCrono(){
 startCrono();
 
 function advanceGrupo(delta){
+  if(changes.length===0&&positions.length>0) calc();
   var tot=changes.length;
   if(tot===0) tot=positions.length;
-  var maxCambio=tot+virgenDesfase; // allow extra for Virgen to finish
+  if(tot===0) return; // nothing to do
+  var maxCambio=tot+virgenDesfase;
   currentGrupoActual=Math.max(0,Math.min(maxCambio,currentGrupoActual+delta));
   var grp=0,nombre='';
   if(currentGrupoActual>0&&currentGrupoActual<=changes.length){
     var ch=changes[currentGrupoActual-1];
     grp=ch.grp;nombre=ch.n||'';
+  } else if(currentGrupoActual>0){
+    // Past last change - calculate grupo manually
+    var cc=cfg();
+    grp=((cc.s-1+currentGrupoActual-1)%cc.t)+1;
   }
   liveGrupoData={cambio:currentGrupoActual,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
   try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
@@ -2066,8 +2072,8 @@ function updateGrupoUI(){
   var tot=changes.length;
   var adminEl=document.getElementById('grupoActualAdmin');
   if(adminEl){
-    if(liveGrupoData&&liveGrupoData.grp>0){
-      adminEl.textContent='#'+liveGrupoData.grp;
+    if(liveGrupoData&&liveGrupoData.cambio>0){
+      adminEl.textContent=liveGrupoData.grp>0?'#'+liveGrupoData.grp:'#'+liveGrupoData.cambio;
     } else {
       adminEl.textContent='-';
     }
