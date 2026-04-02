@@ -1062,7 +1062,7 @@ function renderTable() {
   myCarries.forEach((mc,i)=>{
     const ref=mc.n||nearWP(mc);
     const label=mc.carryLabel||'';
-    h+='<div class="tr" onclick="zoomTo('+i+')"><span class="rn">'+mc.ci+'</span><div><div style="font-weight:600">'+ref+'</div><div class="rs">Cambio #'+mc.num+(label?' · '+label:'')+'</div></div><div class="rt">'+mc.time+'</div></div>';
+    h+='<div class="tr" onclick="zoomTo('+i+')"><span class="rn">'+mc.ci+'</span><div><div style="font-weight:600">'+ref+'</div><div class="rs">Cambio #'+mc.num+(label?' · '+label:'')+'</div></div>'+(isShared?'':'<div class="rt">'+mc.time+'</div>')+'</div>';
   });
   $('tbl').innerHTML=h;
 }
@@ -1314,7 +1314,7 @@ function renderLive(){
   } else {
     h+='<div style="display:flex;gap:8px;margin-bottom:8px"><button '+jBtn+'>🔴 Buscar Jesús</button><button '+vBtn+'>🔵 Buscar Virgen</button></div>';
   }
-  h+='<div style="text-align:center;margin-bottom:6px;font-size:10px;color:#e08080">⚠️ Las horas son aproximadas y se ajustan con cada registro</div>';
+  if(!isShared) h+='<div style="text-align:center;margin-bottom:6px;font-size:10px;color:#e08080">⚠️ Las horas son aproximadas y se ajustan con cada registro</div>';
 
   // Progress
   h+='<div class="live-progress"><div class="live-progress-bar" style="width:'+pct+'%">'+done+'/'+total+'</div></div>';
@@ -1368,8 +1368,8 @@ function renderLive(){
     h+='<div class="ln-num"'+(nextCarry.colorHex?' style="color:'+nextCarry.colorHex+'"':'')+'>#'+nextCarry.ci+'</div>';
     if(nextCarry.carryLabel) h+='<div style="font-size:14px;margin:4px 0">'+nextCarry.carryLabel+'</div>';
     h+='<div class="ln-ref">📍 '+ref+'</div>';
-    h+='<div class="ln-time">~'+estTime+'</div>';
-    h+='<div id="countdownText" style="font-size:13px;margin-top:4px"></div>';
+    if(!isShared) h+='<div class="ln-time">~'+estTime+'</div>';
+    if(!isShared) h+='<div id="countdownText" style="font-size:13px;margin-top:4px"></div>';
     if(realAvg) h+='<div style="font-size:10px;color:#4CAF50;margin-top:2px">⏱️ Promedio: '+realAvg.toFixed(1)+' min/cambio</div>';
     h+='<div style="font-size:10px;color:#aaa;margin-top:4px">Cambio #'+nextCarry.num+'</div>';
     h+='</div>';
@@ -1407,7 +1407,7 @@ function renderLive(){
     h+='<div class="live-carry '+cls+'" style="'+borderColor+'" onclick="zoomTo('+(mc.ci-1)+')">';
     h+='<div class="lc-num">'+icon+'</div>';
     h+='<div class="lc-info"><div class="lc-ref">Cargada #'+mc.ci+' — '+ref+'</div><div class="lc-sub">Cambio #'+mc.num+(label?' · '+label:'')+(realT?' · '+realT:'')+'</div></div>';
-    h+='<div class="lc-time" style="color:'+(mcDone?'#4CAF50':(mc.colorHex||'#c084fc'))+'">'+estT+'</div>';
+    if(!isShared) h+='<div class="lc-time" style="color:'+(mcDone?'#4CAF50':(mc.colorHex||'#c084fc'))+'">'+estT+'</div>';
     h+='</div>';
   });
   h+='</div>';
