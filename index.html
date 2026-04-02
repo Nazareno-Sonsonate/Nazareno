@@ -1397,6 +1397,15 @@ function renderLive(){
   var now=new Date();
   var isPastDay=(dayDate<now&&currentDay!==3);
   
+  // For past days, auto-set grupo actual to last cambio
+  if(isPastDay&&changes.length>0){
+    var sacaPD=daySaca[currentDay]||17;
+    var totPD=changes.length;
+    var lastGrpPD=((sacaPD-1+totPD-1)%21)+1;
+    currentGrupoActual=totPD;
+    liveGrupoData={cambio:totPD,grp:lastGrpPD,nombre:changes[totPD-1].n||'',tot:totPD,desfase:0,movidos:0,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
+  }
+
   const total=myCarries.length;
   const manualDone=doneCount();
   var effCambio=getEffCambio();
@@ -1448,7 +1457,18 @@ function renderLive(){
   }
   h+='<div id="grupoActualBanner" style="display:'+bannerDisplay+';text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:11px;color:#aaa">Venerada Imagen de Jesús Nazareno</div><div style="font-size:11px;color:#ccc">En este momento carga</div><div id="grupoActualText" style="font-size:22px;font-weight:700;color:#c084fc">'+bannerGrp+'</div><div id="grupoActualProgress" style="font-size:11px;color:#aaa">'+bannerProg+'</div></div>';
   if(isPastDay){
-    h+='<div class="live-card" style="text-align:center;border-color:#4CAF50"><div style="font-size:14px;color:#4CAF50">✅ Procesión entregada</div><div style="font-size:11px;color:#aaa;margin-top:4px">La Venerada Imagen ha sido entregada al templo</div></div>';
+    // Past day: show solemn message with grupo that entered
+    var sacaPast=daySaca[currentDay]||17;
+    var totPast=changes.length;
+    var lastGrpPast=((sacaPast-1+totPast-1)%21)+1;
+    h+='<div style="text-align:center;padding:16px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(76,175,80,.08),rgba(46,125,50,.15));border:1px solid rgba(76,175,80,.4)">';
+    h+='<div style="font-size:11px;color:#aaa;letter-spacing:1px">VENERADA IMAGEN DE JESÚS NAZARENO</div>';
+    h+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">✝️ Entregada al Templo</div>';
+    h+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#4CAF50">#'+lastGrpPast+'</b></div>';
+    h+='<div style="font-size:11px;color:#888;margin-top:6px;font-style:italic">Gloria y honor a Jesús Nazareno de Sonsonate</div>';
+    h+='</div>';
+    // Show selector frozen at last group
+    h+='<div style="text-align:center;margin-bottom:8px"><span style="font-size:12px;color:#aaa">Jesús: </span><span style="font-size:20px;font-weight:700;color:#4CAF50">✅ #'+lastGrpPast+'</span></div>';
   } else {
   h+='<div id="grupoVirgenBanner" style="display:none;text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div style="font-size:11px;color:#93c5fd">María Santísima</div><div style="font-size:11px;color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:22px;font-weight:700;color:#93c5fd"></div><div id="grupoVirgenProgress" style="font-size:10px;color:#ff9800">⚠️ Estimado · ~5 cambios detrás de Jesús</div></div>';
 
@@ -1500,7 +1520,15 @@ function renderLive(){
 
   if(done>=total){
     // ===== FINAL SUMMARY =====
-    h+='<div class="live-next" style="border-color:#4CAF50"><div class="ln-label" style="color:#4CAF50">✅ ¡Entregada!</div><div class="ln-num" style="color:#4CAF50;font-size:22px">Todas las cargadas completadas</div><div style="font-size:11px;color:#aaa;margin-top:4px">La Venerada Imagen ha sido entregada al templo</div></div>';
+    var sacaDone=daySaca[currentDay]||17;
+    var totDone=changes.length;
+    var lastGrpDone=((sacaDone-1+totDone-1)%21)+1;
+    h+='<div style="text-align:center;padding:16px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(76,175,80,.08),rgba(46,125,50,.15));border:1px solid rgba(76,175,80,.4)">';
+    h+='<div style="font-size:11px;color:#aaa;letter-spacing:1px">VENERADA IMAGEN DE JESÚS NAZARENO</div>';
+    h+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">✝️ Entregada al Templo</div>';
+    h+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#4CAF50">#'+lastGrpDone+'</b></div>';
+    h+='<div style="font-size:11px;color:#888;margin-top:6px;font-style:italic">Gloria y honor a Jesús Nazareno de Sonsonate</div>';
+    h+='</div>';
     const times=[];
     myCarries.forEach(mc=>{const e=getEntry(mc.ci);if(e)times.push({ci:mc.ci,num:mc.num,t:e.t,colorIcon:mc.colorIcon||''});});
     times.sort((a,b)=>a.num-b.num);
