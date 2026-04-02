@@ -1886,6 +1886,14 @@ function clearBroadcast(){
 // ========== GRUPO ACTUAL (admin marks current group) ==========
 let currentGrupoActual=0;
 var liveGrupoData=null;
+// Load from localStorage immediately
+try{
+  var savedGrupo=localStorage.getItem('grupoActual_day');
+  if(savedGrupo){
+    var sg=JSON.parse(savedGrupo);
+    if(sg&&sg.cambio){currentGrupoActual=sg.cambio;liveGrupoData=sg;}
+  }
+}catch(e){}
 var cronoInterval=null;
 
 function updateCrono(){
@@ -2016,6 +2024,7 @@ function startDayListeners(){
     if(!d){currentGrupoActual=0;liveGrupoData=null;updateGrupoUI();return;}
     currentGrupoActual=d.cambio||0;
     liveGrupoData=d;
+    try{localStorage.setItem('grupoActual_day',JSON.stringify(d));}catch(e){}
     updateGrupoUI();
     if(typeof renderLive==='function') renderLive();
   });
