@@ -1855,49 +1855,51 @@ function clearBroadcast(){
 
 // ========== GRUPO ACTUAL (admin marks current group) ==========
 let currentGrupoActual=0;
+var liveGrupoData=null;
 
 function advanceGrupo(delta){
-  const tot=positions.length||1;
+  var tot=changes.length;
   currentGrupoActual=Math.max(0,Math.min(tot,currentGrupoActual+delta));
-  db.ref('grupoActual/day'+currentDay).set({cambio:currentGrupoActual,t:Date.now()});
-  updateGrupoUI();
+  var grp=0,nombre='';
+  if(currentGrupoActual>0&&currentGrupoActual<=tot){
+    var ch=changes[currentGrupoActual-1];
+    grp=ch.grp;nombre=ch.n||'';
+  }
+  db.ref('grupoActual/day'+currentDay).set({cambio:currentGrupoActual,grp:grp,nombre:nombre,tot:tot,t:Date.now()});
 }
 
 function setGrupoManual(){
-  const input=prompt('¿En qué cambio van? (número del 1 al '+changes.length+')');
+  var input=prompt('En que cambio van? (numero del 1 al '+changes.length+')');
   if(!input) return;
-  const num=parseInt(input);
-  if(isNaN(num)||num<0||num>changes.length){alert('Número inválido');return;}
+  var num=parseInt(input);
+  if(isNaN(num)||num<0||num>changes.length){alert('Numero invalido');return;}
   currentGrupoActual=num;
-  db.ref('grupoActual/day'+currentDay).set({cambio:currentGrupoActual,t:Date.now()});
-  updateGrupoUI();
+  var tot=changes.length,grp=0,nombre='';
+  if(num>0&&num<=tot){var ch=changes[num-1];grp=ch.grp;nombre=ch.n||'';}
+  db.ref('grupoActual/day'+currentDay).set({cambio:num,grp:grp,nombre:nombre,tot:tot,t:Date.now()});
 }
 
 function updateGrupoUI(){
-  const tot=changes.length;
-  // Admin display
-  const adminEl=document.getElementById('grupoActualAdmin');
+  var tot=changes.length;
+  var adminEl=document.getElementById('grupoActualAdmin');
   if(adminEl){
-    if(currentGrupoActual>0&&currentGrupoActual<=tot){
-      const ch=changes[currentGrupoActual-1];
-      adminEl.textContent='#'+ch.grp;
+    if(liveGrupoData&&liveGrupoData.grp>0){
+      adminEl.textContent='#'+liveGrupoData.grp;
     } else {
       adminEl.textContent='-';
     }
   }
-  // Everyone banner
-  const banner=document.getElementById('grupoActualBanner');
-  const txtEl=document.getElementById('grupoActualText');
-  const progEl=document.getElementById('grupoActualProgress');
+  var banner=document.getElementById('grupoActualBanner');
+  var txtEl=document.getElementById('grupoActualText');
+  var progEl=document.getElementById('grupoActualProgress');
   if(banner&&txtEl&&progEl){
-    if(currentGrupoActual>0&&currentGrupoActual<=tot){
-      const ch=changes[currentGrupoActual-1];
-      var procPct=Math.round(currentGrupoActual/tot*100);
-      txtEl.textContent='Grupo #'+ch.grp;
-      var progHtml='Cambio '+currentGrupoActual+' de '+tot+(ch.n?' · '+ch.n:'');
+    if(liveGrupoData&&liveGrupoData.grp>0){
+      txtEl.textContent='Grupo #'+liveGrupoData.grp;
+      var progHtml='Cambio '+liveGrupoData.cambio+' de '+liveGrupoData.tot+(liveGrupoData.nombre?' \u00b7 '+liveGrupoData.nombre:'');
       if(!isShared){
+        var procPct=Math.round(liveGrupoData.cambio/liveGrupoData.tot*100);
         progHtml+='<div style="margin-top:6px;height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+procPct+'%;background:linear-gradient(90deg,#c084fc,#7c3aed);border-radius:4px;transition:width .5s"></div></div>'
-          +'<div style="margin-top:2px;font-size:10px;color:#c084fc">'+procPct+'% de la procesión</div>';
+          +'<div style="margin-top:2px;font-size:10px;color:#c084fc">'+procPct+'% de la procesion</div>';
       }
       progEl.innerHTML=progHtml;
       banner.style.display='block';
@@ -1907,11 +1909,11 @@ function updateGrupoUI(){
   }
 }
 
-// Everyone listens
 db.ref('grupoActual/day'+currentDay).on('value',function(snap){
   var d=snap.val();
-  if(!d){currentGrupoActual=0;updateGrupoUI();return;}
+  if(!d){currentGrupoActual=0;liveGrupoData=null;updateGrupoUI();return;}
   currentGrupoActual=d.cambio||0;
+  liveGrupoData=d;
   updateGrupoUI();
 });
 
