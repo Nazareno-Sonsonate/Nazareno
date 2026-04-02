@@ -690,6 +690,11 @@ function switchDay(d) {
 
 
   loadDay(d);
+  // Reset grupo actual for new day and restart listeners
+  currentGrupoActual=0;
+  liveGrupoData=null;
+  if(typeof stopDayListeners==='function') stopDayListeners();
+  if(typeof startDayListeners==='function') startDayListeners();
 }
 
 function loadDay(d) {
@@ -2154,13 +2159,26 @@ function syncPositions(){
 }
 
 // ========== START ALL DAY-DEPENDENT LISTENERS (called after initMap) ==========
+var activeDayRefs=[];
+function stopDayListeners(){
+  activeDayRefs.forEach(function(r){r.off();});
+  activeDayRefs=[];
+}
+
 function startDayListeners(){
+  stopDayListeners();
   // Load grupo actual from localStorage for correct day
   if(typeof loadGrupoFromStorage==='function') loadGrupoFromStorage();
   // Grupo actual
-  db.ref('grupoActual/day'+currentDay).on('value',function(snap){
+  var gaRef=db.ref('grupoActual/day'+currentDay);
+  activeDayRefs.push(gaRef);
+  gaRef.on('value',function(snap){
     var d=snap.val();
-    if(!d){currentGrupoActual=0;liveGrupoData=null;updateGrupoUI();return;}
+    if(!d){
+      // Only clear if localStorage didn't already load data
+      if(!liveGrupoData){currentGrupoActual=0;updateGrupoUI();}
+      return;
+    }
     currentGrupoActual=d.cambio||0;
     liveGrupoData=d;
     if(d.desfase!==undefined) virgenDesfase=d.desfase;
@@ -2178,7 +2196,9 @@ function startDayListeners(){
     });
   }
   if(isShared){
-    db.ref('config/day'+currentDay).on('value',function(snap){
+    var cfgRef=db.ref('config/day'+currentDay);
+    activeDayRefs.push(cfgRef);
+    cfgRef.on('value',function(snap){
       var d=snap.val();
       if(!d) return;
       var changed=false;
@@ -2190,7 +2210,9 @@ function startDayListeners(){
   }
   // Positions sync
   if(isShared){
-    db.ref('positions/day'+currentDay).on('value',function(snap){
+    var posRef=db.ref('positions/day'+currentDay);
+    activeDayRefs.push(posRef);
+    posRef.on('value',function(snap){
       var d=snap.val();
       if(!d||!d.length) return;
       positions=d.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
