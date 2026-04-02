@@ -587,10 +587,11 @@ function pickGroup(g){
 
 function shareWhatsApp(){
   const c=cfg();
+  const sacaH=daySaca[currentDay]||17;
   const base=window.location.origin+window.location.pathname;
-  const link=base+'?saca='+c.s+'&dia='+currentDay;
+  const link=base+'?saca='+sacaH+'&dia='+currentDay;
   const msg='✝️ *Procesión '+dayNames[currentDay]+'*\n'
-    +'Saca: Grupo #'+c.s+'\n\n'
+    +'Saca: Grupo #'+sacaH+'\n\n'
     +'Abrí el link, elegí tu grupo y mirá tus cargadas:\n'+link;
   
   if(navigator.share){
@@ -644,9 +645,9 @@ function initMap() {
   });
   const hasSaved = loadSaved();
   readParams();
-  // Auto-detect today's day (always override for non-shared)
+  // Auto-detect today's day (always override for everyone)
   const todayIdx = detectToday();
-  if(!isShared && todayIdx>=0){
+  if(todayIdx>=0){
     currentDay = todayIdx;
   }
   // Hide edit tools and admin config for shared users
@@ -1544,7 +1545,7 @@ function renderLive(){
     }
   }
 
-  if(done>=total){
+  if(done>=total&&!isPastDay){
     // ===== FINAL SUMMARY =====
     var sacaDone=daySaca[currentDay]||17;
     var totDone=changes.length;
