@@ -443,7 +443,8 @@ function saveAll() {
       sp: savedPositions, sr: savedRefs,
       sc: daySaca, sh: dayHours, sm: daySacaManual,
       cfg: {g:+$('cG').value,t:+$('cType').value,mn:+$('cMn').value,color:+($('cColor')?$('cColor').value:0)},
-      cd: currentDay
+      cd: currentDay,
+      ga: liveGrupoData ? {d:currentDay, data:liveGrupoData} : null
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   } catch(e) {}
@@ -477,6 +478,14 @@ function loadSaved() {
     if(d.sm) daySacaManual = d.sm;
     if(d.cfg){$('cG').value=d.cfg.g||5;$('cType').value=d.cfg.t||21;$('cMn').value=d.cfg.mn||6;if(d.cfg.color!==undefined)$('cColor').value=d.cfg.color;$('colorDiv').style.display=(+$('cType').value===27)?'block':'none';}
     if(typeof d.cd==='number') currentDay = d.cd;
+    // Restore grupo actual
+    if(d.ga&&d.ga.data&&d.ga.d===currentDay){
+      liveGrupoData=d.ga.data;
+      currentGrupoActual=d.ga.data.cambio||0;
+      if(d.ga.data.desfase!==undefined) virgenDesfase=d.ga.data.desfase;
+      if(d.ga.data.movidos!==undefined) virgenMovidos=d.ga.data.movidos;
+      if(d.ga.data.sacaMuj) daySacaMuj[currentDay]=d.ga.data.sacaMuj;
+    }
     if(savedRefs[0]&&savedRefs[0].length){LUN_WP_REF.length=0;savedRefs[0].forEach(r=>LUN_WP_REF.push(r));}
     if(savedRefs[1]&&savedRefs[1].length){MART_WP_REF.length=0;savedRefs[1].forEach(r=>MART_WP_REF.push(r));}
     if(savedRefs[2]&&savedRefs[2].length){MIER_WP_REF.length=0;savedRefs[2].forEach(r=>MIER_WP_REF.push(r));}
@@ -2024,6 +2033,7 @@ function advanceGrupo(delta){
   }
   liveGrupoData={cambio:currentGrupoActual,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
   try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+  saveAll();
   updateGrupoUI();
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
 }
@@ -2040,6 +2050,7 @@ function setGrupoManual(){
   if(num>0&&num<=changes.length){var ch=changes[num-1];grp=ch.grp;nombre=ch.n||'';}
   liveGrupoData={cambio:num,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
   try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+  saveAll();
   updateGrupoUI();
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
 }
