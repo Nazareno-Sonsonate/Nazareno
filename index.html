@@ -1470,7 +1470,28 @@ function renderLive(){
     // Show selector frozen at last group
     h+='<div style="text-align:center;margin-bottom:8px"><span style="font-size:12px;color:#aaa">Jesús: </span><span style="font-size:20px;font-weight:700;color:#4CAF50">✅ #'+lastGrpPast+'</span></div>';
   } else {
-  h+='<div id="grupoVirgenBanner" style="display:none;text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div style="font-size:11px;color:#93c5fd">María Santísima</div><div style="font-size:11px;color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:22px;font-weight:700;color:#93c5fd"></div><div id="grupoVirgenProgress" style="font-size:10px;color:#ff9800">⚠️ Estimado · ~5 cambios detrás de Jesús</div></div>';
+  // Virgen banner - pre-render with data
+  var vBannerDisplay='none',vBannerGrp='',vBannerProg='';
+  if(liveGrupoData&&liveGrupoData.cambio>0){
+    var vDesf=liveGrupoData.desfase||0;
+    var vSacaM=liveGrupoData.sacaMuj||daySacaMuj[currentDay]||22;
+    var vTotB=liveGrupoData.tot||changes.length;
+    var vCambioB=Math.max(1,liveGrupoData.cambio-vDesf);
+    var vMovB=liveGrupoData.movidos||0;
+    var vCambioGrpB=Math.max(1,vCambioB-vMovB);
+    if(vCambioB>=vTotB){
+      var lastGrpMB=(((vSacaM-1+vTotB-1-vMovB)%27)+27)%27+1;
+      vBannerGrp='✅ Entró Grupo #'+lastGrpMB;
+      vBannerProg='Saca #'+vSacaM;
+    } else {
+      var vGrpB=(((vSacaM-1+vCambioGrpB-1)%27)+27)%27+1;
+      var vNomB=changes.length>0&&vCambioB>0&&vCambioB<=changes.length?changes[vCambioB-1].n||'':'';
+      vBannerGrp='Grupo #'+vGrpB+(vNomB?' · '+vNomB:'');
+      vBannerProg='⚠️ Estimado';
+    }
+    vBannerDisplay='block';
+  }
+  h+='<div id="grupoVirgenBanner" style="display:'+vBannerDisplay+';text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div style="font-size:11px;color:#93c5fd">María Santísima</div><div style="font-size:11px;color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:22px;font-weight:700;color:#93c5fd">'+vBannerGrp+'</div><div id="grupoVirgenProgress" style="font-size:10px;color:#ff9800">'+vBannerProg+'</div></div>';
 
   // Admin: control to advance grupo actual
   if(!isShared){
