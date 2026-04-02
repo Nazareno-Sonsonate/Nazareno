@@ -771,8 +771,17 @@ function snapToRoute(p){
     pts=dayPtsArr[currentDay]||[];
   }
   if(pts.length<2) return p;
+  
+  // If grupo actual is set, only search nearby segments (±15 changes)
+  var startIdx=0, endIdx=pts.length-1;
+  if(window.liveGrupoData&&window.liveGrupoData.cambio>0){
+    var curr=window.liveGrupoData.cambio-1;
+    startIdx=Math.max(0,curr-15);
+    endIdx=Math.min(pts.length-1,curr+15);
+  }
+  
   let bestD=Infinity, bestProj=p;
-  for(let i=0;i<pts.length-1;i++){
+  for(let i=startIdx;i<endIdx;i++){
     const a=pts[i], b=pts[i+1];
     const dx=b.lng-a.lng, dy=b.lat-a.lat;
     const len2=dx*dx+dy*dy;
@@ -1285,8 +1294,10 @@ function renderLive(){
   if(!myCarries.length){$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">No hay cargadas. Verificá la configuración.</p></div>';return;}
   
   const total=myCarries.length;
-  const done=doneCount();
-  const pending=myCarries.filter(mc=>!isDone(mc.ci));
+  const manualDone=doneCount();
+  const grupoDone=window.liveGrupoData&&window.liveGrupoData.cambio>0?myCarries.filter(mc=>mc.num<=window.liveGrupoData.cambio).length:0;
+  const done=Math.max(manualDone,grupoDone);
+  const pending=myCarries.filter(mc=>!isDone(mc.ci)&&!(window.liveGrupoData&&window.liveGrupoData.cambio>0&&mc.num<=window.liveGrupoData.cambio));
   const nextCarry=pending[0];
   const pct=total>0?Math.round(done/total*100):0;
 
@@ -1552,7 +1563,7 @@ function startCountdown(){
 function updateCountdown(){
   const el=document.getElementById('countdownText');
   if(!el||!myCarries.length) return;
-  const pending=myCarries.filter(mc=>!isDone(mc.ci));
+  const pending=myCarries.filter(mc=>!isDone(mc.ci)&&!(window.liveGrupoData&&window.liveGrupoData.cambio>0&&mc.num<=window.liveGrupoData.cambio));
   if(pending.length===0){el.textContent='';hideAlert();return;}
   const next=pending[0];
   const est=getEstimate(next);
