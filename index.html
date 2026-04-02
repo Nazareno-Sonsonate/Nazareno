@@ -631,6 +631,7 @@ function initMap() {
   // Show urna button only for admin (after isShared is set)
   if(typeof showUrnaButton==='function') showUrnaButton();
   if(typeof showAdminTools==='function') showAdminTools();
+  if(typeof startDayListeners==='function') startDayListeners();
 }
 
 // ========== DAY SWITCHING ==========
@@ -1321,12 +1322,13 @@ function renderLive(){
 
   // Admin: control to advance grupo actual
   if(!isShared){
-    h+='<div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;justify-content:center">';
+    h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
     h+='<span style="font-size:12px;color:#aaa">Grupo actual:</span>';
     h+='<button onclick="advanceGrupo(-1)" style="padding:6px 14px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#ccc;font-size:16px;font-weight:700;cursor:pointer">−</button>';
     h+='<span id="grupoActualAdmin" onclick="setGrupoManual()" style="font-size:20px;font-weight:700;color:#c084fc;min-width:40px;text-align:center;cursor:pointer;text-decoration:underline">-</span>';
     h+='<button onclick="advanceGrupo(1)" style="padding:6px 14px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.3);color:#c084fc;font-size:16px;font-weight:700;cursor:pointer">+</button>';
     h+='</div>';
+    h+='<div style="text-align:center;margin-bottom:8px"><span id="grupoCrono" style="font-size:18px;font-weight:700;color:#ff9800;font-family:monospace">⏱ 0:00</span></div>';
   }
 
   // Progress
@@ -1408,11 +1410,12 @@ function renderLive(){
       }
     }
     const mcDone=isDone(mc.ci);
+    const passedByGrupo=!mcDone&&window.liveGrupoData&&window.liveGrupoData.cambio>0&&mc.num<=window.liveGrupoData.cambio;
     const isCurrent=nextCarry&&mc.ci===nextCarry.ci;
-    const cls=mcDone?'done':(isCurrent?'current':'pending');
+    const cls=mcDone?'done':(passedByGrupo?'done':(isCurrent?'current':'pending'));
     const ref=mc.n||nearWP(mc);
     const label=mc.carryLabel||'';
-    const icon=mcDone?'✅':(isCurrent?'✝️':'⏳');
+    const icon=mcDone?'✅':(passedByGrupo?'☑️':(isCurrent?'✝️':'⏳'));
     const entry=getEntry(mc.ci);
     const realT=entry?fmtClock(entry.t):'';
     const estT=mcDone?realT:getEstimate(mc);
@@ -1856,6 +1859,26 @@ function clearBroadcast(){
 // ========== GRUPO ACTUAL (admin marks current group) ==========
 let currentGrupoActual=0;
 var liveGrupoData=null;
+var cronoInterval=null;
+
+function updateCrono(){
+  var el=document.getElementById('grupoCrono');
+  if(!el) return;
+  if(!liveGrupoData||!liveGrupoData.t||liveGrupoData.cambio===0){
+    el.textContent='⏱ 0:00';
+    return;
+  }
+  var elapsed=Math.floor((Date.now()-liveGrupoData.t)/1000);
+  var min=Math.floor(elapsed/60);
+  var sec=elapsed%60;
+  el.textContent='⏱ '+min+':'+(sec<10?'0':'')+sec;
+}
+
+function startCrono(){
+  if(cronoInterval) clearInterval(cronoInterval);
+  cronoInterval=setInterval(updateCrono,1000);
+}
+startCrono();
 
 function advanceGrupo(delta){
   var tot=changes.length;
@@ -1896,6 +1919,8 @@ function updateGrupoUI(){
       adminEl.textContent='-';
     }
   }
+  // Update chronometer
+  updateCrono();
   var banner=document.getElementById('grupoActualBanner');
   var txtEl=document.getElementById('grupoActualText');
   var progEl=document.getElementById('grupoActualProgress');
@@ -1916,16 +1941,7 @@ function updateGrupoUI(){
   }
 }
 
-db.ref('grupoActual/day'+currentDay).on('value',function(snap){
-  var d=snap.val();
-  if(!d){currentGrupoActual=0;liveGrupoData=null;updateGrupoUI();return;}
-  currentGrupoActual=d.cambio||0;
-  liveGrupoData=d;
-  updateGrupoUI();
-});
-
 // ========== CONFIG SYNC ==========
-// Admin: push config changes to Firebase
 function syncConfig(){
   if(isShared) return;
   db.ref('config/day'+currentDay).set({
@@ -1935,45 +1951,57 @@ function syncConfig(){
     t:Date.now()
   });
 }
-// Hook admin config inputs
-if(!isShared){
-  ['cS','cH','cMn'].forEach(function(id){
-    const el=document.getElementById(id);
-    if(el) el.addEventListener('change',function(){setTimeout(syncConfig,100);});
-  });
-}
-// Shared: listen for config changes
-if(isShared){
-  db.ref('config/day'+currentDay).on('value',function(snap){
-    const d=snap.val();
-    if(!d) return;
-    let changed=false;
-    if(d.s&&+document.getElementById('cS').value!==d.s){document.getElementById('cS').value=d.s;changed=true;}
-    if(d.h&&+document.getElementById('cH').value!==d.h){document.getElementById('cH').value=d.h;changed=true;}
-    if(d.mn&&+document.getElementById('cMn').value!==d.mn){document.getElementById('cMn').value=d.mn;changed=true;}
-    if(changed) calc();
-  });
-}
 
 // ========== MAP POSITIONS SYNC ==========
-let syncTimer=null;
+var syncTimer=null;
 function syncPositions(){
   if(isShared) return;
   clearTimeout(syncTimer);
   syncTimer=setTimeout(function(){
-    const pts=positions.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
+    var pts=positions.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
     db.ref('positions/day'+currentDay).set(pts);
   },500);
 }
-// Shared: listen for position updates
-if(isShared){
-  db.ref('positions/day'+currentDay).on('value',function(snap){
-    const d=snap.val();
-    if(!d||!d.length) return;
-    positions=d.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
-    drawRouteLine();
-    calc();
+
+// ========== START ALL DAY-DEPENDENT LISTENERS (called after initMap) ==========
+function startDayListeners(){
+  // Grupo actual
+  db.ref('grupoActual/day'+currentDay).on('value',function(snap){
+    var d=snap.val();
+    if(!d){currentGrupoActual=0;liveGrupoData=null;updateGrupoUI();return;}
+    currentGrupoActual=d.cambio||0;
+    liveGrupoData=d;
+    updateGrupoUI();
+    if(typeof renderLive==='function') renderLive();
   });
+  // Config sync
+  if(!isShared){
+    ['cS','cH','cMn'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el) el.addEventListener('change',function(){setTimeout(syncConfig,100);});
+    });
+  }
+  if(isShared){
+    db.ref('config/day'+currentDay).on('value',function(snap){
+      var d=snap.val();
+      if(!d) return;
+      var changed=false;
+      if(d.s&&+document.getElementById('cS').value!==d.s){document.getElementById('cS').value=d.s;changed=true;}
+      if(d.h&&+document.getElementById('cH').value!==d.h){document.getElementById('cH').value=d.h;changed=true;}
+      if(d.mn&&+document.getElementById('cMn').value!==d.mn){document.getElementById('cMn').value=d.mn;changed=true;}
+      if(changed) calc();
+    });
+  }
+  // Positions sync
+  if(isShared){
+    db.ref('positions/day'+currentDay).on('value',function(snap){
+      var d=snap.val();
+      if(!d||!d.length) return;
+      positions=d.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
+      drawRouteLine();
+      calc();
+    });
+  }
 }
 
 </script>
