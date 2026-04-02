@@ -1420,7 +1420,7 @@ function renderLive(){
     bannerDisplay='block';
     var bTot=liveGrupoData.tot||changes.length;
     if(liveGrupoData.cambio>bTot){
-      var bcc=cfg();bannerGrp='✅ Entró Grupo #'+((bcc.s-1+bTot-1)%bcc.t+1);
+      var bSacaH=daySaca[currentDay]||17;bannerGrp='✅ Entró Grupo #'+(((bSacaH-1+bTot-1)%21)+1);
     } else {
       bannerGrp='Grupo #'+(liveGrupoData.grp||liveGrupoData.cambio);
       bannerProg=liveGrupoData.nombre||'';
@@ -1437,7 +1437,7 @@ function renderLive(){
     var adminGText='-';
     if(liveGrupoData&&liveGrupoData.cambio>0){
       var adminTot=liveGrupoData.tot||changes.length;
-      if(liveGrupoData.cambio>adminTot){var cc2=cfg();adminGText='✅#'+((cc2.s-1+adminTot-1)%cc2.t+1);}
+      if(liveGrupoData.cambio>adminTot){var sacaH2=daySaca[currentDay]||17;adminGText='✅#'+(((sacaH2-1+adminTot-1)%21)+1);}
       else{adminGText=liveGrupoData.grp>0?'#'+liveGrupoData.grp:'#'+liveGrupoData.cambio;}
     }
     h+='<span id="grupoActualAdmin" onclick="setGrupoManual()" style="font-size:20px;font-weight:700;color:#c084fc;min-width:40px;text-align:center;cursor:pointer;text-decoration:underline">'+adminGText+'</span>';
@@ -2038,17 +2038,17 @@ function advanceGrupo(delta){
   if(changes.length===0&&positions.length>0) calc();
   var tot=changes.length;
   if(tot===0) tot=positions.length;
-  if(tot===0) return; // nothing to do
+  if(tot===0) return;
   var maxCambio=tot+virgenDesfase;
   currentGrupoActual=Math.max(0,Math.min(maxCambio,currentGrupoActual+delta));
+  // Jesus grupo ALWAYS uses 21 groups and hombres saca
+  var sacaH=daySaca[currentDay]||17;
   var grp=0,nombre='';
   if(currentGrupoActual>0&&currentGrupoActual<=changes.length){
-    var ch=changes[currentGrupoActual-1];
-    grp=ch.grp;nombre=ch.n||'';
+    grp=((sacaH-1+currentGrupoActual-1)%21)+1;
+    nombre=changes[currentGrupoActual-1].n||'';
   } else if(currentGrupoActual>0){
-    // Past last change - calculate grupo manually
-    var cc=cfg();
-    grp=((cc.s-1+currentGrupoActual-1)%cc.t)+1;
+    grp=((sacaH-1+Math.min(currentGrupoActual,tot)-1)%21)+1;
   }
   liveGrupoData={cambio:currentGrupoActual,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
   try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
@@ -2065,8 +2065,9 @@ function setGrupoManual(){
   var num=parseInt(input);
   if(isNaN(num)||num<0||num>tot){alert('Numero invalido');return;}
   currentGrupoActual=num;
+  var sacaH=daySaca[currentDay]||17;
   var grp=0,nombre='';
-  if(num>0&&num<=changes.length){var ch=changes[num-1];grp=ch.grp;nombre=ch.n||'';}
+  if(num>0&&num<=changes.length){grp=((sacaH-1+num-1)%21)+1;nombre=changes[num-1].n||'';}
   liveGrupoData={cambio:num,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
   try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
   saveAll();
@@ -2106,9 +2107,9 @@ function updateGrupoUI(){
     if(liveGrupoData&&liveGrupoData.cambio>0){
       var adminTot=liveGrupoData.tot||changes.length;
       if(liveGrupoData.cambio>adminTot){
-        // Jesus finished - show last group
-        var cc=cfg();
-        var lastG=((cc.s-1+adminTot-1)%cc.t)+1;
+        // Jesus finished - show last group (always 21 groups)
+        var sacaH3=daySaca[currentDay]||17;
+        var lastG=((sacaH3-1+adminTot-1)%21)+1;
         adminEl.textContent='✅#'+lastG;
       } else {
         adminEl.textContent=liveGrupoData.grp>0?'#'+liveGrupoData.grp:'#'+liveGrupoData.cambio;
@@ -2126,9 +2127,9 @@ function updateGrupoUI(){
     if(liveGrupoData&&liveGrupoData.cambio>0){
       var tot=liveGrupoData.tot||changes.length;
       if(liveGrupoData.cambio>tot){
-        // Jesus finished - show entering group
-        var cc=cfg();
-        var lastGrpH=((cc.s-1+tot-1)%21)+1;
+        // Jesus finished - show entering group (always 21 groups)
+        var sacaH4=daySaca[currentDay]||17;
+        var lastGrpH=((sacaH4-1+tot-1)%21)+1;
         txtEl.textContent='✅ Entró Grupo #'+lastGrpH;
         var progHtml='';
         if(!isShared){
