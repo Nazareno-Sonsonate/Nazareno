@@ -764,6 +764,15 @@ function distToSegment(p,a,b){
 }
 
 // Snap a GPS point to the nearest position on the route
+// Get effective cambio for current user (Virgen is ~5 behind Jesus)
+function getEffCambio(){
+  if(!window.liveGrupoData||!window.liveGrupoData.cambio) return 0;
+  var c=window.liveGrupoData.cambio;
+  var cc=cfg();
+  if(cc.t===27) c=Math.max(0,c-5); // cargadoras: Virgen ~5 behind
+  return c;
+}
+
 function snapToRoute(p){
   var pts=positions;
   if(!pts||pts.length<2){
@@ -774,8 +783,9 @@ function snapToRoute(p){
   
   // If grupo actual is set, only search nearby segments (±15 changes)
   var startIdx=0, endIdx=pts.length-1;
-  if(window.liveGrupoData&&window.liveGrupoData.cambio>0){
-    var curr=window.liveGrupoData.cambio-1;
+  var effSnap=getEffCambio();
+  if(effSnap>0){
+    var curr=effSnap-1;
     startIdx=Math.max(0,curr-15);
     endIdx=Math.min(pts.length-1,curr+15);
   }
@@ -1295,9 +1305,9 @@ function renderLive(){
   
   const total=myCarries.length;
   const manualDone=doneCount();
-  const grupoDone=window.liveGrupoData&&window.liveGrupoData.cambio>0?myCarries.filter(mc=>mc.num<=window.liveGrupoData.cambio).length:0;
+  const effCambio=getEffCambio();const grupoDone=effCambio>0?myCarries.filter(mc=>mc.num<=effCambio).length:0;
   const done=Math.max(manualDone,grupoDone);
-  const pending=myCarries.filter(mc=>!isDone(mc.ci)&&!(window.liveGrupoData&&window.liveGrupoData.cambio>0&&mc.num<=window.liveGrupoData.cambio));
+  const pending=myCarries.filter(mc=>!isDone(mc.ci)&&!(effCambio>0&&mc.num<=effCambio));
   const nextCarry=pending[0];
   const pct=total>0?Math.round(done/total*100):0;
 
@@ -1422,7 +1432,7 @@ function renderLive(){
       }
     }
     const mcDone=isDone(mc.ci);
-    const passedByGrupo=!mcDone&&window.liveGrupoData&&window.liveGrupoData.cambio>0&&mc.num<=window.liveGrupoData.cambio;
+    const passedByGrupo=!mcDone&&effCambio>0&&mc.num<=effCambio;
     const isCurrent=nextCarry&&mc.ci===nextCarry.ci;
     const cls=mcDone?'done':(passedByGrupo?'done':(isCurrent?'current':'pending'));
     const ref=mc.n||nearWP(mc);
@@ -1564,7 +1574,7 @@ function startCountdown(){
 function updateCountdown(){
   const el=document.getElementById('countdownText');
   if(!el||!myCarries.length) return;
-  const pending=myCarries.filter(mc=>!isDone(mc.ci)&&!(window.liveGrupoData&&window.liveGrupoData.cambio>0&&mc.num<=window.liveGrupoData.cambio));
+  const pending=myCarries.filter(mc=>!isDone(mc.ci)&&!(effCambio>0&&mc.num<=effCambio));
   if(pending.length===0){el.textContent='';hideAlert();return;}
   const next=pending[0];
   const est=getEstimate(next);
@@ -1957,11 +1967,13 @@ function updateGrupoUI(){
   if(vBanner&&vTxt){
     if(liveGrupoData&&liveGrupoData.cambio>5){
       var vCambio=liveGrupoData.cambio-5;
+      var cc=cfg();
+      var vGrp=((cc.s-1+vCambio-1)%27)+1;
       var vNombre='';
       if(changes.length>0&&vCambio>0&&vCambio<=changes.length){
         vNombre=changes[vCambio-1].n||'';
       }
-      vTxt.textContent='~Cambio #'+vCambio+(vNombre?' · '+vNombre:'');
+      vTxt.textContent='Grupo #'+vGrp+(vNombre?' · '+vNombre:'');
       vBanner.style.display='block';
     } else {
       vBanner.style.display='none';
