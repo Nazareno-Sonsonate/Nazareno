@@ -1374,9 +1374,8 @@ function renderLive(){
     h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
     h+='<span style="font-size:12px;color:#f59e0b">Movidos Virgen:</span>';
     h+='<button onclick="changeMovidos(-1)" style="padding:4px 10px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:14px;cursor:pointer">−</button>';
-    h+='<span id="movidosNum" style="font-size:16px;font-weight:700;color:#f59e0b;min-width:30px;text-align:center">'+virgenMovidos+'</span>';
+    h+='<span id="movidosNum" style="font-size:16px;font-weight:700;color:#f59e0b;min-width:30px;text-align:center">'+(virgenMovidos>0?'+':'')+virgenMovidos+'</span>';
     h+='<button onclick="changeMovidos(1)" style="padding:4px 10px;border:1px solid #f59e0b;border-radius:6px;background:rgba(245,158,11,.2);color:#f59e0b;font-size:14px;cursor:pointer">+</button>';
-    h+='<span style="font-size:10px;color:#888">saltados</span>';
     h+='</div>';
   }
   // Chronometer (everyone sees)
@@ -1985,10 +1984,10 @@ function changeDesfase(delta){
 }
 
 function changeMovidos(delta){
-  virgenMovidos=Math.max(0,virgenMovidos+delta);
+  virgenMovidos=virgenMovidos+delta;
   if(liveGrupoData){liveGrupoData.movidos=virgenMovidos;}
   var el=document.getElementById('movidosNum');
-  if(el) el.textContent=virgenMovidos;
+  if(el) el.textContent=(virgenMovidos>0?'+':'')+virgenMovidos;
   if(liveGrupoData&&liveGrupoData.cambio>0){
     db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
   }
@@ -2054,17 +2053,17 @@ function updateGrupoUI(){
       var vCambio=Math.max(1,liveGrupoData.cambio-desf);
       var vCambioGrp=Math.max(1,vCambio-mov); // group rotation adjusted
       if(vCambio>=totV){
-        var lastGrpM=((sacaM-1+totV-1-mov)%27)+1;
+        var lastGrpM=(((sacaM-1+totV-1-mov)%27)+27)%27+1;
         vTxt.textContent='✅ Entró Grupo #'+lastGrpM;
-        if(vProg) vProg.textContent='Saca #'+sacaM+(mov>0?' · '+mov+' movidos':'');
+        if(vProg) vProg.textContent='Saca #'+sacaM+(!isShared&&mov>0?' · '+mov+' movidos':'');
       } else {
-        var vGrp=((sacaM-1+vCambioGrp-1)%27)+1;
+        var vGrp=(((sacaM-1+vCambioGrp-1)%27)+27)%27+1;
         var vNombre='';
         if(changes.length>0&&vCambio>0&&vCambio<=changes.length){
           vNombre=changes[vCambio-1].n||'';
         }
         vTxt.textContent='Grupo #'+vGrp+(vNombre?' · '+vNombre:'');
-        if(vProg) vProg.textContent='⚠️ Estimado · ~'+desf+' detrás · Saca #'+sacaM+(mov>0?' · '+mov+' movidos':'');
+        if(vProg) vProg.textContent='⚠️ Estimado'+(isShared?'':' · ~'+desf+' detrás · Saca #'+sacaM+(!isShared&&mov>0?' · '+mov+' movidos':''));
       }
       vBanner.style.display='block';
     } else {
