@@ -1316,8 +1316,8 @@ function renderLive(){
   }
   if(!isShared) h+='<div style="text-align:center;margin-bottom:6px;font-size:10px;color:#e08080">⚠️ Las horas son aproximadas y se ajustan con cada registro</div>';
 
-  // Live grupo tracking banner (everyone sees)
-  h+='<div id="grupoActualBanner" style="display:none;text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:11px;color:#aaa">En este momento carga</div><div id="grupoActualText" style="font-size:22px;font-weight:700;color:#c084fc"></div><div id="grupoActualProgress" style="font-size:11px;color:#aaa"></div></div>';
+  // Live grupo tracking banner (admin only)
+  if(!isShared) h+='<div id="grupoActualBanner" style="display:none;text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:11px;color:#aaa">En este momento carga</div><div id="grupoActualText" style="font-size:22px;font-weight:700;color:#c084fc"></div><div id="grupoActualProgress" style="font-size:11px;color:#aaa"></div></div>';
 
   // Admin: control to advance grupo actual
   if(!isShared){
@@ -1429,6 +1429,7 @@ function renderLive(){
 
   $('livePanel').innerHTML=h;
   updateCountdown();
+  if(typeof updateGrupoUI==='function') updateGrupoUI();
 }
 function nearWP(p){
   const wps = getWPs();
