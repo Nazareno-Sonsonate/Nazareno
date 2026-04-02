@@ -1516,6 +1516,7 @@ function renderLive(){
   $('livePanel').innerHTML=h;
   updateCountdown();
   if(typeof updateGrupoUI==='function') updateGrupoUI();
+  if(typeof startCrono==='function') startCrono();
 }
 function nearWP(p){
   const wps = getWPs();
@@ -1944,16 +1945,19 @@ var liveGrupoData=null;
 var virgenDesfase=5;
 var virgenMovidos=0;
 var daySacaMuj=[19,27,13,22]; // saca de mujeres por día
-// Load from localStorage immediately
-try{
-  var savedGrupo=localStorage.getItem('grupoActual_day');
-  if(savedGrupo){
-    var sg=JSON.parse(savedGrupo);
-    if(sg&&sg.cambio){currentGrupoActual=sg.cambio;liveGrupoData=sg;}
-    if(sg&&sg.desfase!==undefined) virgenDesfase=sg.desfase;
-    if(sg&&sg.movidos!==undefined) virgenMovidos=sg.movidos;
-  }
-}catch(e){}
+
+function loadGrupoFromStorage(){
+  try{
+    var savedGrupo=localStorage.getItem('grupoActual_day'+currentDay);
+    if(savedGrupo){
+      var sg=JSON.parse(savedGrupo);
+      if(sg&&sg.cambio){currentGrupoActual=sg.cambio;liveGrupoData=sg;}
+      if(sg&&sg.desfase!==undefined) virgenDesfase=sg.desfase;
+      if(sg&&sg.movidos!==undefined) virgenMovidos=sg.movidos;
+    }
+  }catch(e){}
+}
+
 var cronoInterval=null;
 
 function updateCrono(){
@@ -2138,6 +2142,8 @@ function syncPositions(){
 
 // ========== START ALL DAY-DEPENDENT LISTENERS (called after initMap) ==========
 function startDayListeners(){
+  // Load grupo actual from localStorage for correct day
+  if(typeof loadGrupoFromStorage==='function') loadGrupoFromStorage();
   // Grupo actual
   db.ref('grupoActual/day'+currentDay).on('value',function(snap){
     var d=snap.val();
@@ -2147,7 +2153,7 @@ function startDayListeners(){
     if(d.desfase!==undefined) virgenDesfase=d.desfase;
     if(d.movidos!==undefined) virgenMovidos=d.movidos;
     if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
-    try{localStorage.setItem('grupoActual_day',JSON.stringify(d));}catch(e){}
+    try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(d));}catch(e){}
     updateGrupoUI();
     if(typeof renderLive==='function') renderLive();
   });
