@@ -783,8 +783,7 @@ function getEffCambio(){
   var cc=cfg();
   if(cc.t===27){
     var desf=window.liveGrupoData.desfase!==undefined?window.liveGrupoData.desfase:virgenDesfase;
-    var mov=window.liveGrupoData.movidos||0;
-    c=Math.max(0,c-desf-mov);
+    c=Math.max(0,c-desf);
   }
   return c;
 }
