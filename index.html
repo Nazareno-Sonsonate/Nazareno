@@ -1316,6 +1316,19 @@ function renderLive(){
   }
   if(!isShared) h+='<div style="text-align:center;margin-bottom:6px;font-size:10px;color:#e08080">⚠️ Las horas son aproximadas y se ajustan con cada registro</div>';
 
+  // Live grupo tracking banner (everyone sees)
+  h+='<div id="grupoActualBanner" style="display:none;text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:11px;color:#aaa">En este momento carga</div><div id="grupoActualText" style="font-size:22px;font-weight:700;color:#c084fc"></div><div id="grupoActualProgress" style="font-size:11px;color:#aaa"></div></div>';
+
+  // Admin: control to advance grupo actual
+  if(!isShared){
+    h+='<div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;justify-content:center">';
+    h+='<span style="font-size:12px;color:#aaa">Grupo actual:</span>';
+    h+='<button onclick="advanceGrupo(-1)" style="padding:6px 14px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#ccc;font-size:16px;font-weight:700;cursor:pointer">−</button>';
+    h+='<span id="grupoActualAdmin" onclick="setGrupoManual()" style="font-size:20px;font-weight:700;color:#c084fc;min-width:40px;text-align:center;cursor:pointer;text-decoration:underline">-</span>';
+    h+='<button onclick="advanceGrupo(1)" style="padding:6px 14px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.3);color:#c084fc;font-size:16px;font-weight:700;cursor:pointer">+</button>';
+    h+='</div>';
+  }
+
   // Progress
   h+='<div class="live-progress"><div class="live-progress-bar" style="width:'+pct+'%">'+done+'/'+total+'</div></div>';
 
@@ -1838,6 +1851,68 @@ function sendBroadcast(){
 function clearBroadcast(){
   db.ref('broadcast').remove();
 }
+
+// ========== GRUPO ACTUAL (admin marks current group) ==========
+let currentGrupoActual=0;
+
+function advanceGrupo(delta){
+  const tot=positions.length||1;
+  currentGrupoActual=Math.max(0,Math.min(tot,currentGrupoActual+delta));
+  db.ref('grupoActual/day'+currentDay).set({cambio:currentGrupoActual,t:Date.now()});
+  updateGrupoUI();
+}
+
+function setGrupoManual(){
+  const input=prompt('¿En qué cambio van? (número del 1 al '+changes.length+')');
+  if(!input) return;
+  const num=parseInt(input);
+  if(isNaN(num)||num<0||num>changes.length){alert('Número inválido');return;}
+  currentGrupoActual=num;
+  db.ref('grupoActual/day'+currentDay).set({cambio:currentGrupoActual,t:Date.now()});
+  updateGrupoUI();
+}
+
+function updateGrupoUI(){
+  const tot=changes.length;
+  // Admin display
+  const adminEl=document.getElementById('grupoActualAdmin');
+  if(adminEl){
+    if(currentGrupoActual>0&&currentGrupoActual<=tot){
+      const ch=changes[currentGrupoActual-1];
+      adminEl.textContent='#'+ch.grp;
+    } else {
+      adminEl.textContent='-';
+    }
+  }
+  // Everyone banner
+  const banner=document.getElementById('grupoActualBanner');
+  const txtEl=document.getElementById('grupoActualText');
+  const progEl=document.getElementById('grupoActualProgress');
+  if(banner&&txtEl&&progEl){
+    if(currentGrupoActual>0&&currentGrupoActual<=tot){
+      const ch=changes[currentGrupoActual-1];
+      var procPct=Math.round(currentGrupoActual/tot*100);
+      txtEl.textContent='Grupo #'+ch.grp;
+      var progHtml='Cambio '+currentGrupoActual+' de '+tot+(ch.n?' · '+ch.n:'');
+      if(!isShared){
+        progHtml+='<div style="margin-top:6px;height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+procPct+'%;background:linear-gradient(90deg,#c084fc,#7c3aed);border-radius:4px;transition:width .5s"></div></div>'
+          +'<div style="margin-top:2px;font-size:10px;color:#c084fc">'+procPct+'% de la procesión</div>';
+      }
+      progEl.innerHTML=progHtml;
+      banner.style.display='block';
+    } else {
+      banner.style.display='none';
+    }
+  }
+}
+
+// Everyone listens
+db.ref('grupoActual/day'+currentDay).on('value',function(snap){
+  var d=snap.val();
+  if(!d){currentGrupoActual=0;updateGrupoUI();return;}
+  currentGrupoActual=d.cambio||0;
+  updateGrupoUI();
+});
 
 // ========== CONFIG SYNC ==========
 // Admin: push config changes to Firebase
