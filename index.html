@@ -775,7 +775,10 @@ function getEffCambio(){
   if(!window.liveGrupoData||!window.liveGrupoData.cambio) return 0;
   var c=window.liveGrupoData.cambio;
   var cc=cfg();
-  if(cc.t===27) c=Math.max(0,c-5); // cargadoras: Virgen ~5 behind
+  if(cc.t===27){
+    var desf=window.liveGrupoData.desfase!==undefined?window.liveGrupoData.desfase:virgenDesfase;
+    c=Math.max(0,c-desf);
+  }
   return c;
 }
 
@@ -1350,10 +1353,17 @@ function renderLive(){
   // Admin: control to advance grupo actual
   if(!isShared){
     h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
-    h+='<span style="font-size:12px;color:#aaa">Grupo actual:</span>';
+    h+='<span style="font-size:12px;color:#aaa">Jesús:</span>';
     h+='<button onclick="advanceGrupo(-1)" style="padding:6px 14px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#ccc;font-size:16px;font-weight:700;cursor:pointer">−</button>';
     h+='<span id="grupoActualAdmin" onclick="setGrupoManual()" style="font-size:20px;font-weight:700;color:#c084fc;min-width:40px;text-align:center;cursor:pointer;text-decoration:underline">-</span>';
     h+='<button onclick="advanceGrupo(1)" style="padding:6px 14px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.3);color:#c084fc;font-size:16px;font-weight:700;cursor:pointer">+</button>';
+    h+='</div>';
+    h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
+    h+='<span style="font-size:12px;color:#93c5fd">Desfase Virgen:</span>';
+    h+='<button onclick="changeDesfase(-1)" style="padding:4px 10px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:14px;cursor:pointer">−</button>';
+    h+='<span id="desfaseNum" style="font-size:16px;font-weight:700;color:#93c5fd;min-width:30px;text-align:center">'+virgenDesfase+'</span>';
+    h+='<button onclick="changeDesfase(1)" style="padding:4px 10px;border:1px solid #3b82f6;border-radius:6px;background:rgba(59,130,246,.2);color:#93c5fd;font-size:14px;cursor:pointer">+</button>';
+    h+='<span style="font-size:10px;color:#888">cambios</span>';
     h+='</div>';
   }
   // Chronometer (everyone sees)
@@ -1886,12 +1896,15 @@ function clearBroadcast(){
 // ========== GRUPO ACTUAL (admin marks current group) ==========
 let currentGrupoActual=0;
 var liveGrupoData=null;
+var virgenDesfase=5;
+var daySacaMuj=[19,27,13,19]; // saca de mujeres por día
 // Load from localStorage immediately
 try{
   var savedGrupo=localStorage.getItem('grupoActual_day');
   if(savedGrupo){
     var sg=JSON.parse(savedGrupo);
     if(sg&&sg.cambio){currentGrupoActual=sg.cambio;liveGrupoData=sg;}
+    if(sg&&sg.desfase!==undefined) virgenDesfase=sg.desfase;
   }
 }catch(e){}
 var cronoInterval=null;
@@ -1924,7 +1937,7 @@ function advanceGrupo(delta){
     var ch=changes[currentGrupoActual-1];
     grp=ch.grp;nombre=ch.n||'';
   }
-  liveGrupoData={cambio:currentGrupoActual,grp:grp,nombre:nombre,tot:tot,t:Date.now()};
+  liveGrupoData={cambio:currentGrupoActual,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,t:Date.now()};
   updateGrupoUI();
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
 }
@@ -1939,9 +1952,21 @@ function setGrupoManual(){
   currentGrupoActual=num;
   var grp=0,nombre='';
   if(num>0&&num<=changes.length){var ch=changes[num-1];grp=ch.grp;nombre=ch.n||'';}
-  liveGrupoData={cambio:num,grp:grp,nombre:nombre,tot:tot,t:Date.now()};
+  liveGrupoData={cambio:num,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,t:Date.now()};
   updateGrupoUI();
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+}
+
+function changeDesfase(delta){
+  virgenDesfase=Math.max(0,Math.min(20,virgenDesfase+delta));
+  if(liveGrupoData) liveGrupoData.desfase=virgenDesfase;
+  var el=document.getElementById('desfaseNum');
+  if(el) el.textContent=virgenDesfase;
+  // Save to Firebase
+  if(liveGrupoData&&liveGrupoData.cambio>0){
+    db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+  }
+  updateGrupoUI();
 }
 
 function updateGrupoUI(){
@@ -1977,16 +2002,19 @@ function updateGrupoUI(){
   // Virgen estimated banner
   var vBanner=document.getElementById('grupoVirgenBanner');
   var vTxt=document.getElementById('grupoVirgenText');
+  var vProg=document.getElementById('grupoVirgenProgress');
   if(vBanner&&vTxt){
-    if(liveGrupoData&&liveGrupoData.cambio>5){
-      var vCambio=liveGrupoData.cambio-5;
-      var cc=cfg();
-      var vGrp=((cc.s-1+vCambio-1)%27)+1;
+    var desf=liveGrupoData&&liveGrupoData.desfase!==undefined?liveGrupoData.desfase:virgenDesfase;
+    if(liveGrupoData&&liveGrupoData.cambio>desf){
+      var vCambio=liveGrupoData.cambio-desf;
+      var sacaM=daySacaMuj[currentDay]||13;
+      var vGrp=((sacaM-1+vCambio-1)%27)+1;
       var vNombre='';
       if(changes.length>0&&vCambio>0&&vCambio<=changes.length){
         vNombre=changes[vCambio-1].n||'';
       }
       vTxt.textContent='Grupo #'+vGrp+(vNombre?' · '+vNombre:'');
+      if(vProg) vProg.textContent='⚠️ Estimado · ~'+desf+' cambios detrás de Jesús';
       vBanner.style.display='block';
     } else {
       vBanner.style.display='none';
@@ -2024,6 +2052,7 @@ function startDayListeners(){
     if(!d){currentGrupoActual=0;liveGrupoData=null;updateGrupoUI();return;}
     currentGrupoActual=d.cambio||0;
     liveGrupoData=d;
+    if(d.desfase!==undefined) virgenDesfase=d.desfase;
     try{localStorage.setItem('grupoActual_day',JSON.stringify(d));}catch(e){}
     updateGrupoUI();
     if(typeof renderLive==='function') renderLive();
