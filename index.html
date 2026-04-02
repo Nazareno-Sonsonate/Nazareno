@@ -1106,10 +1106,23 @@ function deleteChange(ci) {
 }
 
 // ========== TABLE ==========
+function getCarryRef(mc){
+  var cc=cfg();
+  if(cc.t===27&&window.liveGrupoData&&window.liveGrupoData.movidos){
+    var adjIdx=mc.num-1-window.liveGrupoData.movidos;
+    if(adjIdx>=0&&adjIdx<positions.length){
+      var adjName=positions[adjIdx].n||'';
+      if(adjName) return adjName;
+      return nearWP({lat:positions[adjIdx].lat,lng:positions[adjIdx].lng});
+    }
+  }
+  return mc.n||nearWP(mc);
+}
+
 function renderTable() {
   let h='<div class="th"><span>#</span><span>Ubicación / Referencia</span><span style="text-align:right">Hora</span></div>';
   myCarries.forEach((mc,i)=>{
-    const ref=mc.n||nearWP(mc);
+    const ref=getCarryRef(mc);
     const label=mc.carryLabel||'';
     h+='<div class="tr" onclick="zoomTo('+i+')"><span class="rn">'+mc.ci+'</span><div><div style="font-weight:600">'+ref+'</div><div class="rs">Cambio #'+mc.num+(label?' · '+label:'')+'</div></div><div class="rt">'+mc.time+'</div></div>';
   });
@@ -1496,7 +1509,7 @@ function renderLive(){
     const passedByGrupo=!mcDone&&effCambio>0&&mc.num<=effCambio;
     const isCurrent=nextCarry&&mc.ci===nextCarry.ci;
     const cls=mcDone?'done':(passedByGrupo?'done':(isCurrent?'current':'pending'));
-    const ref=mc.n||nearWP(mc);
+    const ref=getCarryRef(mc);
     const label=mc.carryLabel||'';
     const icon=mcDone?'✅':(passedByGrupo?'☑️':(isCurrent?'✝️':'⏳'));
     const entry=getEntry(mc.ci);
