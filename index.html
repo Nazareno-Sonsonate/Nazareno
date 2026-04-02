@@ -368,7 +368,6 @@ let daySacaManual = [true, true, false, false];
 
 function detectToday(){
   const now=new Date();
-  // If before 5 AM, consider it still the previous day's procession
   let checkDate=new Date(now);
   if(now.getHours()<5){
     checkDate.setDate(checkDate.getDate()-1);
@@ -376,6 +375,14 @@ function detectToday(){
   const today=checkDate.toISOString().slice(0,10);
   let todayIdx=-1;
   dayDates.forEach((d,i)=>{if(d===today)todayIdx=i;});
+  // If no exact match, find next upcoming or most recent day
+  if(todayIdx===-1){
+    var todayStr=checkDate.toISOString().slice(0,10);
+    for(var i=0;i<dayDates.length;i++){
+      if(dayDates[i]>=todayStr){todayIdx=i;break;}
+    }
+    if(todayIdx===-1) todayIdx=dayDates.length-1; // default to last day
+  }
   // Mark past/today on tabs
   document.querySelectorAll('.day').forEach((btn,i)=>{
     const date=new Date(dayDates[i]+'T12:00:00');
@@ -385,7 +392,7 @@ function detectToday(){
     if(dayDates[i]===today) btn.classList.add('today');
   });
   return todayIdx;
-} // true if user manually set saca
+}
 
 let savedPositions = [null, null, null, null];
 let savedRefs = [null, null, null, null];
@@ -637,9 +644,9 @@ function initMap() {
   });
   const hasSaved = loadSaved();
   readParams();
-  // Auto-detect today's day
+  // Auto-detect today's day (always override for non-shared)
   const todayIdx = detectToday();
-  if(!hasSaved && !isShared && todayIdx>=0){
+  if(!isShared && todayIdx>=0){
     currentDay = todayIdx;
   }
   // Hide edit tools and admin config for shared users
@@ -1441,7 +1448,7 @@ function renderLive(){
   }
   h+='<div id="grupoActualBanner" style="display:'+bannerDisplay+';text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:11px;color:#aaa">Venerada Imagen de Jesús Nazareno</div><div style="font-size:11px;color:#ccc">En este momento carga</div><div id="grupoActualText" style="font-size:22px;font-weight:700;color:#c084fc">'+bannerGrp+'</div><div id="grupoActualProgress" style="font-size:11px;color:#aaa">'+bannerProg+'</div></div>';
   if(isPastDay){
-    h+='<div class="live-card" style="text-align:center;border-color:#4CAF50"><div style="font-size:14px;color:#4CAF50">✅ PROCESIÓN FINALIZADA</div><div style="font-size:11px;color:#aaa;margin-top:4px">Datos guardados para el próximo año</div></div>';
+    h+='<div class="live-card" style="text-align:center;border-color:#4CAF50"><div style="font-size:14px;color:#4CAF50">✅ Procesión entregada</div><div style="font-size:11px;color:#aaa;margin-top:4px">La Venerada Imagen ha sido entregada al templo</div></div>';
   } else {
   h+='<div id="grupoVirgenBanner" style="display:none;text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div style="font-size:11px;color:#93c5fd">María Santísima</div><div style="font-size:11px;color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:22px;font-weight:700;color:#93c5fd"></div><div id="grupoVirgenProgress" style="font-size:10px;color:#ff9800">⚠️ Estimado · ~5 cambios detrás de Jesús</div></div>';
 
@@ -1493,7 +1500,7 @@ function renderLive(){
 
   if(done>=total){
     // ===== FINAL SUMMARY =====
-    h+='<div class="live-next" style="border-color:#4CAF50"><div class="ln-label" style="color:#4CAF50">🎉 ¡COMPLETADO!</div><div class="ln-num" style="color:#4CAF50;font-size:28px">Todas las cargadas</div></div>';
+    h+='<div class="live-next" style="border-color:#4CAF50"><div class="ln-label" style="color:#4CAF50">✅ ¡Entregada!</div><div class="ln-num" style="color:#4CAF50;font-size:22px">Todas las cargadas completadas</div><div style="font-size:11px;color:#aaa;margin-top:4px">La Venerada Imagen ha sido entregada al templo</div></div>';
     const times=[];
     myCarries.forEach(mc=>{const e=getEntry(mc.ci);if(e)times.push({ci:mc.ci,num:mc.num,t:e.t,colorIcon:mc.colorIcon||''});});
     times.sort((a,b)=>a.num-b.num);
