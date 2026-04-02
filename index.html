@@ -862,7 +862,7 @@ function snapToRoute(p){
 
 // ========== CALCULATE ==========
 // Viernes special timing
-const VIER_CORTESIAS_CHANGE = 32; // cortesías start after this change (~11:25 AM)
+const VIER_CORTESIAS_CHANGE = 39; // cortesías start after this change (Grupo #13 con saca #17)
 const VIER_CORTESIAS_MIN = 45;    // 45 min pause (11:30-12:00)
 const VIER_LAST_EXTRA = 0.10;     // last change 10% longer
 
@@ -1533,8 +1533,11 @@ function renderLive(){
     // Check if we're near cortesías
     const cortChange=changes.find(ch=>ch.cortesia);
     if(cortChange){
+      // Cortesías always shows hombres grupo (Nazareno)
+      var sacaCort=daySaca[currentDay]||17;
+      var cortGrp=((sacaCort-1+cortChange.num-1)%21)+1;
       const cortDone=cortChange.num<=Math.max(...myCarries.filter(mc=>isDone(mc.ci)).map(mc=>mc.num),0);
-      const cortStatus=cortDone?'✅ Cortesías completadas':'✝️ Cortesías · Grupo #'+cortChange.grp+' (~'+cortChange.time+')';
+      const cortStatus=cortDone?'✅ Cortesías completadas':'✝️ Cortesías · Grupo #'+cortGrp+' (~'+cortChange.time+')';
       h+='<div style="text-align:center;padding:8px;margin-bottom:8px;border-radius:8px;background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.3)"><span style="font-size:13px;color:#ff9800;font-weight:700">'+cortStatus+'</span><br><span style="font-size:11px;color:#ccc">Encuentro de las imágenes y drama de crucifixión · ~45 min</span>';
       if(isMuj) h+='<br><span style="font-size:10px;color:#f59e0b">⚠️ Cargadoras: las cortesías aplican al Nazareno. La Virgen puede llevar un recorrido diferente</span>';
       h+='</div>';
