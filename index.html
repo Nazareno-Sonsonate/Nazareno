@@ -486,8 +486,6 @@ function loadSaved() {
       if(d.ga.data.movidos!==undefined) virgenMovidos=d.ga.data.movidos;
       if(d.ga.data.sacaMuj) daySacaMuj[currentDay]=d.ga.data.sacaMuj;
     }
-    // DEBUG - TEMPORARY
-    alert('DIA:'+currentDay+' GA:'+(d.ga?'d='+d.ga.d+' cambio='+(d.ga.data?d.ga.data.cambio:'null'):'NULL')+' LIVE:'+(liveGrupoData?liveGrupoData.cambio:'null'));
     if(savedRefs[0]&&savedRefs[0].length){LUN_WP_REF.length=0;savedRefs[0].forEach(r=>LUN_WP_REF.push(r));}
     if(savedRefs[1]&&savedRefs[1].length){MART_WP_REF.length=0;savedRefs[1].forEach(r=>MART_WP_REF.push(r));}
     if(savedRefs[2]&&savedRefs[2].length){MIER_WP_REF.length=0;savedRefs[2].forEach(r=>MIER_WP_REF.push(r));}
@@ -659,8 +657,8 @@ function initMap() {
   if(typeof showUrnaButton==='function') showUrnaButton();
   if(typeof showAdminTools==='function') showAdminTools();
   if(typeof startDayListeners==='function') startDayListeners();
-  // DEBUG 2 - check after everything loads
-  setTimeout(function(){alert('AFTER: DIA:'+currentDay+' LIVE:'+(liveGrupoData?liveGrupoData.cambio:'null')+' CHANGES:'+changes.length);},3000);
+  // Ensure grupo actual displays after everything loads
+  if(typeof updateGrupoUI==='function') setTimeout(updateGrupoUI,500);
 }
 
 // ========== DAY SWITCHING ==========
@@ -2081,6 +2079,7 @@ function changeMovidos(delta){
     db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
   }
   updateGrupoUI();
+  setTimeout(function(){if(typeof renderLive==='function') renderLive();},100);
 }
 
 function updateGrupoUI(){
@@ -2088,7 +2087,15 @@ function updateGrupoUI(){
   var adminEl=document.getElementById('grupoActualAdmin');
   if(adminEl){
     if(liveGrupoData&&liveGrupoData.cambio>0){
-      adminEl.textContent=liveGrupoData.grp>0?'#'+liveGrupoData.grp:'#'+liveGrupoData.cambio;
+      var adminTot=liveGrupoData.tot||changes.length;
+      if(liveGrupoData.cambio>adminTot){
+        // Jesus finished - show last group
+        var cc=cfg();
+        var lastG=((cc.s-1+adminTot-1)%cc.t)+1;
+        adminEl.textContent='✅#'+lastG;
+      } else {
+        adminEl.textContent=liveGrupoData.grp>0?'#'+liveGrupoData.grp:'#'+liveGrupoData.cambio;
+      }
     } else {
       adminEl.textContent='-';
     }
