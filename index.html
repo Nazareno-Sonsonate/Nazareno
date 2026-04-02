@@ -1535,7 +1535,9 @@ function renderLive(){
     if(cortChange){
       const cortDone=cortChange.num<=Math.max(...myCarries.filter(mc=>isDone(mc.ci)).map(mc=>mc.num),0);
       const cortStatus=cortDone?'✅ Cortesías completadas':'✝️ Cortesías · Grupo #'+cortChange.grp+' (~'+cortChange.time+')';
-      h+='<div style="text-align:center;padding:8px;margin-bottom:8px;border-radius:8px;background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.3)"><span style="font-size:13px;color:#ff9800;font-weight:700">'+cortStatus+'</span><br><span style="font-size:11px;color:#ccc">Encuentro de las imágenes y drama de crucifixión · ~45 min</span></div>';
+      h+='<div style="text-align:center;padding:8px;margin-bottom:8px;border-radius:8px;background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.3)"><span style="font-size:13px;color:#ff9800;font-weight:700">'+cortStatus+'</span><br><span style="font-size:11px;color:#ccc">Encuentro de las imágenes y drama de crucifixión · ~45 min</span>';
+      if(isMuj) h+='<br><span style="font-size:10px;color:#f59e0b">⚠️ Cargadoras: las cortesías aplican al Nazareno. La Virgen puede llevar un recorrido diferente</span>';
+      h+='</div>';
     }
   }
 
@@ -2157,6 +2159,7 @@ function changeDesfase(delta){
   if(el) el.textContent=virgenDesfase;
   if(liveGrupoData&&liveGrupoData.cambio>0){
     try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+    saveAll();
     db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
   }
   updateGrupoUI();
@@ -2169,6 +2172,7 @@ function changeMovidos(delta){
   if(el) el.textContent=(virgenMovidos>0?'+':'')+virgenMovidos;
   if(liveGrupoData&&liveGrupoData.cambio>0){
     try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+    saveAll();
     db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
   }
   updateGrupoUI();
