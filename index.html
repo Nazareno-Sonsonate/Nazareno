@@ -1859,24 +1859,31 @@ var liveGrupoData=null;
 
 function advanceGrupo(delta){
   var tot=changes.length;
+  if(tot===0) tot=positions.length;
   currentGrupoActual=Math.max(0,Math.min(tot,currentGrupoActual+delta));
   var grp=0,nombre='';
-  if(currentGrupoActual>0&&currentGrupoActual<=tot){
+  if(currentGrupoActual>0&&currentGrupoActual<=changes.length){
     var ch=changes[currentGrupoActual-1];
     grp=ch.grp;nombre=ch.n||'';
   }
-  db.ref('grupoActual/day'+currentDay).set({cambio:currentGrupoActual,grp:grp,nombre:nombre,tot:tot,t:Date.now()});
+  liveGrupoData={cambio:currentGrupoActual,grp:grp,nombre:nombre,tot:tot,t:Date.now()};
+  updateGrupoUI();
+  db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
 }
 
 function setGrupoManual(){
-  var input=prompt('En que cambio van? (numero del 1 al '+changes.length+')');
+  var tot=changes.length;
+  if(tot===0) tot=positions.length;
+  var input=prompt('En que cambio van? (1 al '+tot+')');
   if(!input) return;
   var num=parseInt(input);
-  if(isNaN(num)||num<0||num>changes.length){alert('Numero invalido');return;}
+  if(isNaN(num)||num<0||num>tot){alert('Numero invalido');return;}
   currentGrupoActual=num;
-  var tot=changes.length,grp=0,nombre='';
-  if(num>0&&num<=tot){var ch=changes[num-1];grp=ch.grp;nombre=ch.n||'';}
-  db.ref('grupoActual/day'+currentDay).set({cambio:num,grp:grp,nombre:nombre,tot:tot,t:Date.now()});
+  var grp=0,nombre='';
+  if(num>0&&num<=changes.length){var ch=changes[num-1];grp=ch.grp;nombre=ch.n||'';}
+  liveGrupoData={cambio:num,grp:grp,nombre:nombre,tot:tot,t:Date.now()};
+  updateGrupoUI();
+  db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
 }
 
 function updateGrupoUI(){
