@@ -696,24 +696,19 @@ function readParams(){
     currentDay=4;
     var seEdit=p.has('edit');
     isShared=!seEdit;
-    // Show SE tab, hide others
-    document.querySelectorAll('.day').forEach(b=>b.style.display='none');
-    var seTab=document.getElementById('seTab');
-    if(seTab){seTab.style.display='block';seTab.classList.add('a');}
     // Change theme to gold
     document.body.style.background='#0a0a0a';
-    document.querySelector('.hdr h1').textContent='SANTO ENTIERRO DE CRISTO';
+    document.querySelector('.hdr h1').textContent='⚰️ SANTO ENTIERRO DE CRISTO';
     document.querySelector('.hdr h1').style.color='#d4af37';
     document.querySelector('.hdr').style.borderBottomColor='rgba(212,175,55,.3)';
-    var crossEl=document.querySelector('.hdr div');
-    if(crossEl){crossEl.textContent='⚰️';crossEl.style.color='#d4af37';}
-    // Change purple to gold
-    document.querySelectorAll('.vtab').forEach(function(t){t.style.color=t.classList.contains('a')?'#d4af37':'#888';});
-    // Hide day tabs bar
+    // Hide day selector row, replace with SE header
+    var dayRow=document.getElementById('daySelector');
+    if(dayRow) dayRow.parentElement.style.display='none';
+    // Hide old day tabs
     document.querySelector('.days').style.display='none';
     // Apply gold theme via CSS override
     var seStyle=document.createElement('style');
-    seStyle.textContent='.day.a{color:#d4af37!important;background:rgba(212,175,55,.1)!important;border-bottom-color:#d4af37!important}.vtab.a{color:#d4af37!important;border-bottom-color:#d4af37!important}.btn{border-color:#8B7355!important;color:#d4af37!important;background:rgba(212,175,55,.12)!important}#grupoActualBanner{background:rgba(212,175,55,.12)!important;border-color:rgba(212,175,55,.3)!important}#grupoActualText{color:#d4af37!important}.live-next .ln-num{color:#d4af37!important}.live-next{border-color:#d4af37!important;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.05))!important}.live-progress-bar{background:linear-gradient(90deg,#d4af37,#8B7355)!important}.bar{background:rgba(212,175,55,.08)!important}.bar .v{color:#d4af37!important}.cfg.open{border-color:rgba(212,175,55,.3)!important}.live-btn-done{background:#8B7355!important}.live-btn-undo{border-color:#8B7355!important;color:#d4af37!important}';
+    seStyle.textContent='.vtab.a{color:#d4af37!important;border-bottom-color:#d4af37!important}.btn{border-color:#8B7355!important;color:#d4af37!important;background:rgba(212,175,55,.12)!important}#grupoActualBanner{background:rgba(212,175,55,.12)!important;border-color:rgba(212,175,55,.3)!important}#grupoActualText{color:#d4af37!important}.live-next .ln-num{color:#d4af37!important}.live-next{border-color:#d4af37!important;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.05))!important}.live-progress-bar{background:linear-gradient(90deg,#d4af37,#8B7355)!important}.bar{background:rgba(212,175,55,.08)!important}.bar .v{color:#d4af37!important}.cfg.open{border-color:rgba(212,175,55,.3)!important}.live-btn-done{background:#8B7355!important}.live-btn-undo{border-color:#8B7355!important;color:#d4af37!important}.hdr{border-bottom-color:rgba(212,175,55,.3)!important}.vtabs{border-bottom-color:rgba(212,175,55,.15)!important}';
     document.head.appendChild(seStyle);
     if(seEdit){
       // Editor mode: no modal, show controls
