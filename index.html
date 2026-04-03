@@ -21,8 +21,8 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
-.hdr{text-align:center;padding:8px 8px 4px;border-bottom:1px solid rgba(178,102,255,.2)}
-.hdr h1{font-size:13px;color:#c084fc;letter-spacing:2px}
+.hdr{text-align:center;padding:4px 8px 2px;border-bottom:1px solid rgba(178,102,255,.2)}
+.hdr h1{font-size:12px;color:#c084fc;letter-spacing:2px}
 .hdr .s{font-size:11px;color:#ccc}
 .days{display:flex;gap:0;border-bottom:2px solid rgba(178,102,255,.2)}
 .day{flex:1;padding:10px 4px;text-align:center;cursor:pointer;font-size:10px;font-weight:700;color:#888;background:none;border:none;font-family:inherit;line-height:1.3}
@@ -41,12 +41,12 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
 .cfg.open{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}
 .cfg label{font-size:11px;color:#ccc;display:block;margin-bottom:2px}
 .cfg input{background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;text-align:center;font-size:16px}
-#map{width:100%;height:52vh;min-height:280px}
+#map{width:100%;height:calc(100vh - 110px);min-height:300px}
 .mapbtn{background:rgba(0,0,0,.75);border:1px solid #666;color:#fff;padding:8px 10px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;backdrop-filter:blur(4px)}
 .notice{text-align:center;padding:6px;font-size:13px;color:#c084fc;background:rgba(178,102,255,.08);display:none}
 .notice.show{display:block}
 .vtabs{display:flex;border-bottom:1px solid rgba(178,102,255,.15)}
-.vtab{flex:1;padding:8px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:#888;border:none;background:none}
+.vtab{flex:1;padding:6px;text-align:center;cursor:pointer;font-size:12px;font-weight:600;color:#888;border:none;background:none}
 .vtab.a{color:#c084fc;border-bottom:2px solid #c084fc;margin-bottom:-1px}
 .pnl{display:none}.pnl.a{display:block}
 .tbl{margin:6px;background:rgba(0,0,0,.2);border-radius:6px;border:1px solid rgba(178,102,255,.15);overflow:hidden;max-height:50vh;overflow-y:auto}
@@ -90,9 +90,8 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
 <body>
 
 <div class="hdr">
-  <div style="font-size:16px;color:#c084fc">✝</div>
-  <h1>SEMANA SANTA · SONSONATE</h1>
-  <div class="s" id="hSub"></div>
+  <h1>✝ SEMANA SANTA · SONSONATE</h1>
+  <div class="s" id="hSub" style="font-size:10px"></div>
   <div id="onlineCounter" style="display:none;font-size:10px;color:#4CAF50;margin-top:2px"></div>
 </div>
 
@@ -119,18 +118,26 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
   <span onclick="event.stopPropagation();dismissInstall()" style="position:absolute;right:10px;top:8px;color:#666;font-size:16px;cursor:pointer">✕</span>
 </div>
 
-<div class="days">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px;background:rgba(0,0,0,.3)">
+  <select id="daySelector" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:6px 10px;border-radius:6px;font-size:12px;font-weight:700;font-family:inherit">
+    <option value="0">Ⓛ Lunes</option>
+    <option value="1">Ⓜ Martes</option>
+    <option value="2">Ⓜ Miércoles</option>
+    <option value="3" selected>Ⓥ Viernes</option>
+    <option value="4" id="seOpt" style="display:none">⚰️ Santo Entierro</option>
+  </select>
+  <div style="display:flex;gap:4px">
+    <button class="btn" onclick="document.getElementById('cfgP').classList.toggle('open')" style="padding:5px 8px;font-size:11px">⚙️</button>
+    <button class="btn" onclick="shareWhatsApp()" style="padding:5px 8px;font-size:11px">📤</button>
+    <button class="btn" onclick="resetData()" style="border-color:#914444;color:#e08080;padding:5px 8px;font-size:11px">🗑️</button>
+  </div>
+</div>
+<div class="days" style="display:none">
   <button class="day a" onclick="switchDay(0)"><span class="di">Ⓛ</span>LUN</button>
   <button class="day" onclick="switchDay(1)"><span class="di">Ⓜ</span>MAR</button>
   <button class="day" onclick="switchDay(2)"><span class="di">Ⓜ</span>MIÉ</button>
   <button class="day" onclick="switchDay(3)"><span class="di">Ⓥ</span>VIE</button>
   <button class="day" onclick="switchDay(4)" id="seTab" style="display:none"><span class="di">Ⓢ</span>SE</button>
-</div>
-
-<div class="tools">
-  <button class="btn" onclick="document.getElementById('cfgP').classList.toggle('open')">⚙️ Mi Grupo</button>
-  <button class="btn" onclick="shareWhatsApp()">📤 Compartir</button>
-  <button class="btn" onclick="resetData()" style="border-color:#914444;color:#e08080">🗑️</button>
 </div>
 <div class="cfg" id="cfgP">
   <div><label>¿Cargadores de?</label><select id="cType" onchange="onTypeChange()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="21">Hombres (21 grupos)</option><option value="27">Mujeres (27 grupos)</option></select></div>
@@ -150,6 +157,8 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
   <div class="notice" id="noti"></div>
   <div style="position:relative">
     <div id="map"></div>
+    <div id="streetView" style="display:none;width:100%;height:calc(100vh - 110px);min-height:300px"></div>
+    <button id="bStreet" onclick="closeStreetView()" class="mapbtn" style="display:none;position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:1001;background:rgba(220,38,38,.85);border-color:#dc2626">✕ Cerrar Street View</button>
     <!-- Right side: edit controls -->
     <div id="mapEditBar" style="position:absolute;top:8px;right:8px;z-index:1000;display:flex;flex-direction:column;gap:5px">
       <button id="bEdit" onclick="toggleEdit()" class="mapbtn">✏️ Editar</button>
@@ -865,10 +874,10 @@ function initMap() {
     center:{lat:13.721,lng:-89.726}, zoom:15,
     mapTypeControl:false, streetViewControl:false, fullscreenControl:false,
     gestureHandling:'greedy',
-    minZoom:14, maxZoom:21,
+    minZoom:15, maxZoom:21,
     restriction:{
-      latLngBounds:{north:13.735,south:13.712,east:-89.715,west:-89.738},
-      strictBounds:false
+      latLngBounds:{north:13.732,south:13.714,east:-89.718,west:-89.735},
+      strictBounds:true
     },
     styles:[]
   });
@@ -942,6 +951,8 @@ function switchDay(d) {
 
   currentDay = d;
   document.querySelectorAll('.day').forEach((b,i) => b.classList.toggle('a',i===d));
+  var ds=document.getElementById('daySelector');
+  if(ds) ds.value=d;
 
   // Restore config for this day
   var isM=(+$('cType').value===27);
@@ -1220,7 +1231,8 @@ function renderWPmarkers() {
       const ren=editMode?'<br><button onclick="renameRef('+i+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#7c3aed;color:#fff;font-size:12px;font-weight:600;cursor:pointer">✏️ Renombrar</button>':'';
       const del=editMode?'<br><button onclick="deleteRef('+i+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🗑️ Eliminar</button>':'';
       const drag=(dragMode&&editMode)?'<br><i style="font-size:11px;color:#777">Arrastrá para mover</i>':'';
-      infoWin.setContent('<div style="text-align:center;font-family:Georgia;color:#111;font-size:13px"><b style="font-size:15px">'+wp.n+'</b><br><span style="font-size:12px;color:#555">Referencia</span>'+drag+ren+del+'</div>');
+      const svBtn='<br><button onclick="openStreetView('+wp.lat+','+wp.lng+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#1a73e8;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🛣️ Street View</button>';
+      infoWin.setContent('<div style="text-align:center;font-family:Georgia;color:#111;font-size:13px"><b style="font-size:15px">'+wp.n+'</b><br><span style="font-size:12px;color:#555">Referencia</span>'+drag+ren+del+svBtn+'</div>');
       infoWin.open(gmap,mk);
     });
     if(dragMode&&editMode){
@@ -1343,7 +1355,8 @@ function renderMarkers() {
       const drag=(dragMode&&editMode)?'<br><i style="font-size:11px;color:#777">Arrastrá para mover</i>':'';
       const ren=editMode?'<br><button onclick="renameChange('+ci+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#7c3aed;color:#fff;font-size:12px;font-weight:600;cursor:pointer">✏️ Renombrar</button>':'';
       const del=editMode?'<br><button onclick="deleteChange('+ci+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🗑️ Eliminar</button>':'';
-      infoWin.setContent('<div style="text-align:center;font-family:Georgia;min-width:150px;color:#111;font-size:13px"><b style="font-size:15px">Grupo #'+ch.grp+'</b><br>Cambio #'+ch.num+'<br><b>~'+ch.time+'</b>'+tag+colorTag+ref+cort+drag+ren+del+'</div>');
+      const svBtn2='<br><button onclick="openStreetView('+positions[ci].lat+','+positions[ci].lng+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#1a73e8;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🛣️ Street View</button>';
+      infoWin.setContent('<div style="text-align:center;font-family:Georgia;min-width:150px;color:#111;font-size:13px"><b style="font-size:15px">Grupo #'+ch.grp+'</b><br>Cambio #'+ch.num+'<br><b>~'+ch.time+'</b>'+tag+colorTag+ref+cort+drag+ren+del+svBtn2+'</div>');
       infoWin.open(gmap,mk);
     });
     if(dragMode&&editMode){
@@ -1673,7 +1686,9 @@ function renderLive(){
   // Buscar Andas
   const jBtn='onclick="buscarAnda(\'jesus\')" style="flex:1;padding:8px;border:1px solid #dc2626;border-radius:8px;background:rgba(220,38,38,.15);color:#f87171;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit"';
   const vBtn='onclick="buscarAnda(\'virgen\')" style="flex:1;padding:8px;border:1px solid #3b82f6;border-radius:8px;background:rgba(59,130,246,.15);color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit"';
-  if(isMuj){
+  if(isSEMode){
+    h+='<div style="display:flex;gap:8px;margin-bottom:8px"><button onclick="buscarAnda(\'jesus\')" style="flex:1;padding:8px;border:1px solid #d4af37;border-radius:8px;background:rgba(212,175,55,.15);color:#d4af37;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">⚰️ Buscar Santo Entierro</button></div>';
+  } else if(isMuj){
     h+='<div style="display:flex;gap:8px;margin-bottom:8px"><button '+vBtn+'>🔵 Buscar Virgen</button><button '+jBtn+'>🔴 Buscar Jesús</button></div>';
   } else {
     h+='<div style="display:flex;gap:8px;margin-bottom:8px"><button '+jBtn+'>🔴 Buscar Jesús</button><button '+vBtn+'>🔵 Buscar Virgen</button></div>';
@@ -1695,7 +1710,9 @@ function renderLive(){
     bannerGrp='Grupo #'+sacaBnr;
     bannerProg='Esperando inicio de la procesión';
   }
-  h+='<div id="grupoActualBanner" style="display:'+bannerDisplay+';text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:11px;color:#aaa">Venerada Imagen de Jesús Nazareno</div><div style="font-size:11px;color:#ccc">En este momento carga</div><div id="grupoActualText" style="font-size:22px;font-weight:700;color:#c084fc">'+bannerGrp+'</div><div id="grupoActualProgress" style="font-size:11px;color:#aaa">'+bannerProg+'</div></div>';
+  var bannerLabel1=isSEMode?'Santo Entierro de Cristo':'Venerada Imagen de Jesús Nazareno';
+  var bannerLabel2=isSEMode?'En este momento carga':'En este momento carga';
+  h+='<div id="grupoActualBanner" style="display:'+bannerDisplay+';text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:11px;color:#aaa">'+bannerLabel1+'</div><div style="font-size:11px;color:#ccc">'+bannerLabel2+'</div><div id="grupoActualText" style="font-size:22px;font-weight:700;color:#c084fc">'+bannerGrp+'</div><div id="grupoActualProgress" style="font-size:11px;color:#aaa">'+bannerProg+'</div></div>';
   if(isPastDay){
     // Past day: show solemn message with grupo that entered
     var sacaPast=daySaca[currentDay]||17;
@@ -1731,7 +1748,7 @@ function renderLive(){
     if(vCambioB>=vTotB){
       var lastGrpMB=(((vSacaM-1+vTotB-1-vMovB)%27)+27)%27+1;
       vBannerGrp='✅ Asentó Grupo #'+lastGrpMB;
-      vBannerProg='Saca #'+vSacaM;
+      vBannerProg='';
     } else {
       var vGrpB=(((vSacaM-1+vCambioGrpB-1)%27)+27)%27+1;
       var vNomB=changes.length>0&&vCambioB>0&&vCambioB<=changes.length?changes[vCambioB-1].n||'':'';
@@ -1739,12 +1756,14 @@ function renderLive(){
       vBannerProg='⚠️ Estimado';
     }
   }
+  if(!isSEMode){
   h+='<div id="grupoVirgenBanner" style="display:'+vBannerDisplay+';text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div style="font-size:11px;color:#93c5fd">María Santísima</div><div style="font-size:11px;color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:22px;font-weight:700;color:#93c5fd">'+vBannerGrp+'</div><div id="grupoVirgenProgress" style="font-size:10px;color:#ff9800">'+vBannerProg+'</div></div>';
+  }
 
   // Admin: control to advance grupo actual
   if(!isShared){
     h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
-    h+='<span style="font-size:12px;color:#aaa">Jesús:</span>';
+    h+='<span style="font-size:12px;color:#aaa">'+(isSEMode?'SE:':'Jesús:')+'</span>';
     h+='<button onclick="advanceGrupo(-1)" style="padding:6px 14px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#ccc;font-size:16px;font-weight:700;cursor:pointer">−</button>';
     var sacaDef=daySaca[currentDay]||16;
     var adminGText='#'+sacaDef;
@@ -1756,6 +1775,7 @@ function renderLive(){
     h+='<span id="grupoActualAdmin" onclick="setGrupoManual()" style="font-size:20px;font-weight:700;color:#c084fc;min-width:40px;text-align:center;cursor:pointer;text-decoration:underline">'+adminGText+'</span>';
     h+='<button onclick="advanceGrupo(1)" style="padding:6px 14px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.3);color:#c084fc;font-size:16px;font-weight:700;cursor:pointer">+</button>';
     h+='</div>';
+    if(!isSEMode){
     h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
     h+='<span style="font-size:12px;color:#93c5fd">Desfase Virgen:</span>';
     h+='<button onclick="changeDesfase(-1)" style="padding:4px 10px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:14px;cursor:pointer">−</button>';
@@ -1769,6 +1789,7 @@ function renderLive(){
     h+='<span id="movidosNum" style="font-size:16px;font-weight:700;color:#f59e0b;min-width:30px;text-align:center">'+(virgenMovidos>0?'+':'')+virgenMovidos+'</span>';
     h+='<button onclick="changeMovidos(1)" style="padding:4px 10px;border:1px solid #f59e0b;border-radius:6px;background:rgba(245,158,11,.2);color:#f59e0b;font-size:14px;cursor:pointer">+</button>';
     h+='</div>';
+    }
   }
   // Chronometer (everyone sees)
   h+='<div style="text-align:center;margin-bottom:8px"><span id="grupoCrono" style="font-size:18px;font-weight:700;color:#ff9800;font-family:monospace">⏱ 0:00</span><br><span id="grupoLastUpdate" style="font-size:10px;color:#888"></span></div>';
@@ -2497,7 +2518,7 @@ function updateGrupoUI(){
       if(vCambio>=totV){
         var lastGrpM=(((sacaM-1+totV-1-mov)%27)+27)%27+1;
         vTxt.textContent='✅ Asentó Grupo #'+lastGrpM;
-        if(vProg) vProg.textContent='Saca #'+sacaM+(!isShared&&mov>0?' · '+mov+' movidos':'');
+        if(vProg) vProg.textContent='';
       } else {
         var vGrp=(((sacaM-1+vCambioGrp-1)%27)+27)%27+1;
         var vNombre='';
@@ -2505,7 +2526,7 @@ function updateGrupoUI(){
           vNombre=changes[vCambio-1].n||'';
         }
         vTxt.textContent='Grupo #'+vGrp+(vNombre?' · '+vNombre:'');
-        if(vProg) vProg.textContent='⚠️ Estimado'+(isShared?'':' · ~'+desf+' detrás · Saca #'+sacaM+(!isShared&&mov>0?' · '+mov+' movidos':''));
+        if(vProg) vProg.textContent='⚠️ Estimado';
       }
       vBanner.style.display='block';
     } else {
@@ -2515,6 +2536,40 @@ function updateGrupoUI(){
       vBanner.style.display='block';
     }
   }
+}
+
+// ========== STREET VIEW ==========
+var streetViewPano=null;
+function openStreetView(lat,lng){
+  var sv=document.getElementById('streetView');
+  var mapEl=document.getElementById('map');
+  var btn=document.getElementById('bStreet');
+  if(!sv||!mapEl) return;
+  mapEl.style.display='none';
+  sv.style.display='block';
+  btn.style.display='block';
+  if(!streetViewPano){
+    streetViewPano=new google.maps.StreetViewPanorama(sv,{
+      position:{lat:lat,lng:lng},
+      pov:{heading:0,pitch:0},
+      zoom:1,
+      addressControl:false,
+      fullscreenControl:true,
+      motionTracking:false,
+      motionTrackingControl:false
+    });
+  } else {
+    streetViewPano.setPosition({lat:lat,lng:lng});
+  }
+  infoWin.close();
+}
+function closeStreetView(){
+  var sv=document.getElementById('streetView');
+  var mapEl=document.getElementById('map');
+  var btn=document.getElementById('bStreet');
+  if(sv) sv.style.display='none';
+  if(mapEl) mapEl.style.display='block';
+  if(btn) btn.style.display='none';
 }
 
 // ========== CONFIG SYNC ==========
@@ -2709,6 +2764,7 @@ function globalSync(){
     x.send();
   }catch(e){}
 }
+globalSync();
 setTimeout(globalSync,3000);
 setInterval(globalSync,10000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)globalSync();});
