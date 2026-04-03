@@ -2340,14 +2340,13 @@ function startDayListeners(){
             var syncMsg='🟢 '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+' · FB:'+d.cambio+' Local:'+currentGrupoActual;
             window._lastSync=syncMsg;
             if(ss) ss.textContent=syncMsg;
-            if(d&&(!liveGrupoData||d.cambio!==currentGrupoActual||d.t>liveGrupoData.t)){
+            if(d){
               currentGrupoActual=d.cambio||0;
               liveGrupoData=d;
               if(d.desfase!==undefined) virgenDesfase=d.desfase;
               if(d.movidos!==undefined) virgenMovidos=d.movidos;
               if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
               updateGrupoUI();
-              if(typeof renderLive==='function') renderLive();
             }
           }catch(e){
             var ss2=document.getElementById('syncStatus');
