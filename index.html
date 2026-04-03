@@ -442,7 +442,7 @@ let MART_WP_REF = [
 ];
 
 // ========== LOCAL STORAGE ==========
-const SAVE_KEY = 'semanaSanta_v43';
+const SAVE_KEY = 'semanaSanta_v44';
 function getWPs(){return currentDay===0?LUN_WP_REF:currentDay===1?MART_WP_REF:currentDay===2?MIER_WP_REF:currentDay===3?VIER_WP_REF:[];}
 function saveAll() {
   try {
@@ -467,7 +467,7 @@ function loadSaved() {
   try {
     let raw = localStorage.getItem(SAVE_KEY);
     if(!raw){
-      for(let v=42;v>=13;v--){
+      for(let v=43;v>=13;v--){
         raw=localStorage.getItem('semanaSanta_v'+v);
         if(raw){
           localStorage.setItem(SAVE_KEY,raw);
@@ -1871,7 +1871,7 @@ setTimeout(function(){
 // ========== SERVICE WORKER ==========
 if('serviceWorker' in navigator){
   // Force clear old caches and SW on first load of new version
-  const APP_VERSION='v43';
+  const APP_VERSION='v44';
   if(localStorage.getItem('appVer')!==APP_VERSION){
     // Clear all caches
     if(window.caches) caches.keys().then(ks=>ks.forEach(k=>caches.delete(k)));
