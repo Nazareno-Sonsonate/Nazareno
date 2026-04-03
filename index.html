@@ -124,6 +124,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
   <button class="day" onclick="switchDay(1)"><span class="di">Ⓜ</span>MAR</button>
   <button class="day" onclick="switchDay(2)"><span class="di">Ⓜ</span>MIÉ</button>
   <button class="day" onclick="switchDay(3)"><span class="di">Ⓥ</span>VIE</button>
+  <button class="day" onclick="switchDay(4)" id="seTab" style="display:none"><span class="di">Ⓢ</span>SE</button>
 </div>
 
 <div class="tools">
@@ -356,17 +357,171 @@ const VIER_WP_REF=[
 {n:"Catedral",lat:13.7206883,lng:-89.7275023},
 ];
 
+const SE_PTS=[
+{n:'Grupo 5 (5:00 p.m.)',lat:13.720176844529918,lng:-89.72718212753534},
+{n:'Grupo 6 (5:10 p.m.)',lat:13.720487245232983,lng:-89.72720425575972},
+{n:'Grupo 7 (5:20 p.m.)',lat:13.720654659502582,lng:-89.72751438617706},
+{n:'Grupo 8 (5:30 p.m.)',lat:13.720397023874723,lng:-89.72774639725685},
+{n:'Grupo 9 (5:40 p.m.)',lat:13.720664430759763,lng:-89.72813565284014},
+{n:'Grupo 10 (5:50 p.m.)',lat:13.720844547527644,lng:-89.72841460257769},
+{n:'Grupo 11 (6:00 p.m.)',lat:13.721157878718463,lng:-89.72823422402143},
+{n:'Grupo 12 (6:10 p.m.)',lat:13.721409325067965,lng:-89.72802735865116},
+{n:'Grupo 13 (6:20 p.m.)',lat:13.721169604201897,lng:-89.72764480859041},
+{n:'Grupo 14 (6:29 p.m.)',lat:13.720969945195804,lng:-89.72732964903116},
+{n:'Grupo 15 (6:38 p.m.)',lat:13.720716544124542,lng:-89.72693402320147},
+{n:'Grupo 16 (18:45 p.m.)',lat:13.720509393431142,lng:-89.72658935934305},
+{n:'Grupo 17 (6:50 p.m.)',lat:13.72084487323596,lng:-89.72635667771101},
+{n:'Grupo 18 (6:55 p.m.)',lat:13.721170255617624,lng:-89.7261169552803},
+{n:'Grupo 19 (7:00 p.m.)',lat:13.721510294381202,lng:-89.72589734941721},
+{n:'Grupo 20 (7:05 p.m.)',lat:13.72188192622113,lng:-89.72566433250904},
+{n:'Grupo 21 (7:10 p.m.)',lat:13.722109595217074,lng:-89.72599290311337},
+{n:'Grupo 1 (7:15 p.m.)',lat:13.722352572185093,lng:-89.72634997218847},
+{n:'Grupo 2 (7:20 p.m.)',lat:13.722564281134416,lng:-89.72666077315807},
+{n:'Grupo 3 (7:25 p.m.)',lat:13.722785435355922,lng:-89.72699336707592},
+{n:'Grupo 4 (7:30 p.m.)',lat:13.723065542023596,lng:-89.72736820578575},
+{n:'Grupo 5 (7:35 p.m.)',lat:13.723290604231721,lng:-89.72770113497972},
+{n:'Grupo 6 (7:40 p.m.)',lat:13.723501660925383,lng:-89.72803205251694},
+{n:'Grupo 7 (7:45 p.m.)',lat:13.72377655547009,lng:-89.72844310104847},
+{n:'Grupo 8 (7:50 p.m.)',lat:13.72400357121976,lng:-89.72876161336899},
+{n:'Grupo 9 (7:55 p.m.)',lat:13.724216255790235,lng:-89.7290888428688},
+{n:'Grupo 10 (8:00 p.m.)',lat:13.723872963907112,lng:-89.72932487726212},
+{n:'Grupo 11 (8:05 p.m.)',lat:13.723568430364555,lng:-89.72953744232655},
+{n:'Grupo 12 (8:10 p.m.)',lat:13.723199406836201,lng:-89.729776494205},
+{n:'Grupo 13 (8:15 p.m.)',lat:13.72284243383284,lng:-89.73000951111317},
+{n:'Grupo 14 (8:20 p.m.)',lat:13.722497511409491,lng:-89.73020564764738},
+{n:'Grupo 15 (8:25 p.m.)',lat:13.722146400055484,lng:-89.730408154428},
+{n:'Grupo 16 (8:30 p.m.)',lat:13.7217151642413,lng:-89.7306552529335},
+{n:'Grupo 17 (8:35 p.m.)',lat:13.721701810249506,lng:-89.73014529794455},
+{n:'Grupo 18 (8:40 p.m.)',lat:13.721656211247424,lng:-89.7297677770257},
+{n:'Grupo 19 (8:45 p.m.)',lat:13.721441244403946,lng:-89.72944356501102},
+{n:'Grupo 20 (8:50 p.m.)',lat:13.721246145537643,lng:-89.72914215177298},
+{n:'Grupo 21 (8:55 p.m.)',lat:13.721075148902083,lng:-89.72884174436331},
+{n:'Grupo 1 (9:00 p.m.)',lat:13.720838359069566,lng:-89.72844779491425},
+{n:'Grupo 2 (9:05 p.m.)',lat:13.72062762568893,lng:-89.72813934087753},
+{n:'Grupo 3 (9:10 p.m.)',lat:13.720357287381027,lng:-89.72774337977171},
+{n:'Grupo 4 (9:15 p.m.)',lat:13.719975881841114,lng:-89.72798075526953},
+{n:'Grupo 5 (21:20 p.m.)',lat:13.71958144727892,lng:-89.7282325476408},
+{n:'Grupo 6 (9:25 p.m.)',lat:13.719200040478109,lng:-89.7285021096468},
+{n:'Grupo 7 (9:32 p.m.)',lat:13.718877261053146,lng:-89.72873479127884},
+{n:'Grupo 8 (9:39 p.m.)',lat:13.718597475097567,lng:-89.72892388701439},
+{n:'Grupo 9 (9:45 p.m.)',lat:13.718271763436944,lng:-89.72913779318333},
+{n:'Grupo 10 (9:50 p.m.)',lat:13.718026502258176,lng:-89.72884174436331},
+{n:'Grupo 11 (9:55 p.m.)',lat:13.717759743792705,lng:-89.72853496670723},
+{n:'Grupo 12 (10:00 p.m.)',lat:13.71814571290298,lng:-89.72826942801476},
+{n:'Grupo 13 (10:05 p.m.)',lat:13.71847403043139,lng:-89.7280478104949},
+{n:'Grupo 14 (10:10 p.m.)',lat:13.71879485614395,lng:-89.72781546413898},
+{n:'Grupo 15 (10:15 p.m.)',lat:13.719178869288271,lng:-89.72755294293165},
+{n:'Grupo 16 (10:20 p.m.)',lat:13.719501322588265,lng:-89.72732193768024},
+{n:'Grupo 17 (10:25 p.m.)',lat:13.71989315160803,lng:-89.72705405205488},
+{n:'Grupo 18 (10:29 p.m.)',lat:13.719663200492016,lng:-89.72670402377844},
+{n:'Grupo 19 (10:33 p.m.)',lat:13.719397421017739,lng:-89.72632817924023},
+{n:'Grupo 20 (10:37 p.m.)',lat:13.719092881666777,lng:-89.7258996963501},
+{n:'Grupo 21 (10:41 p.m.)',lat:13.718868792565793,lng:-89.72558554261923},
+{n:'Grupo 1 (10:45 p.m.)',lat:13.718674668694877,lng:-89.72526300698519},
+{n:'Grupo 2 (10:49 p.m.)',lat:13.71844634494324,lng:-89.72490459680557},
+{n:'Grupo 3 (10:53 p.m.)',lat:13.718263946351541,lng:-89.72463168203831},
+{n:'Grupo 4 (10:58 p.m.)',lat:13.718037250761418,lng:-89.72427394241095},
+{n:'Grupo 5 (11:05 p.m.)',lat:13.71776658375713,lng:-89.72385853528976},
+{n:'Grupo 6 (11:08 p.m.)',lat:13.718193592571144,lng:-89.7235668450594},
+{n:'Grupo 7 (11:11 p.m.)',lat:13.718498784512121,lng:-89.72334790974855},
+{n:'Grupo 8 (11:15 p.m.)',lat:13.71823495799087,lng:-89.72287081182003},
+{n:'Grupo 9 (11:20 p.m.)',lat:13.718015428042191,lng:-89.72246713936329},
+{n:'Grupo 10 (11:25 p.m.)',lat:13.718294563267897,lng:-89.72223345190287},
+{n:'Grupo 11 (11:30 p.m.)',lat:13.718553178338283,lng:-89.72201820462942},
+{n:'Grupo 12 (23:35 p.m.)',lat:13.718921883462249,lng:-89.72176607698202},
+{n:'Grupo 13 (11:41 p.m.)',lat:13.718631674795711,lng:-89.7213925793767},
+{n:'Grupo 14 (11:47 p.m.)',lat:13.718370454117846,lng:-89.72107574343681},
+{n:'Grupo 15 (11:53 p.m.)',lat:13.718124215905922,lng:-89.7207636013627},
+{n:'Grupo 16 (12:00 a.m.)',lat:13.717807297827056,lng:-89.72036261111498},
+{n:'Grupo 17 (12:07 a.m.)',lat:13.718324528756645,lng:-89.72005616873503},
+{n:'Grupo 18 (12:14 a.m.)',lat:13.718614,lng:-89.719745},
+{n:'Grupo 19 (12:21 a.m.)',lat:13.719032299459988,lng:-89.71954889595509},
+{n:'Grupo 20 (12:30 a.m.)',lat:13.719369,lng:-89.719423},
+{n:'Grupo 21 (12:36 a.m.)',lat:13.719546,lng:-89.71984},
+{n:'Grupo 1 (12:42 a.m.)',lat:13.719651,lng:-89.72014},
+{n:'Grupo 2 (12:48 a.m.)',lat:13.719812375604278,lng:-89.72057551145554},
+{n:'Grupo 3 (12:54 a.m.)',lat:13.719954385011699,lng:-89.72098387777805},
+{n:'Grupo 4 (1:00 a.m.)',lat:13.720442948830366,lng:-89.72064021974802},
+{n:'Grupo 5 (1:05 a.m.)',lat:13.720453371514088,lng:-89.7210244461894},
+{n:'Grupo 6 (1:10 a.m.)',lat:13.720455977184935,lng:-89.72148142755032},
+{n:'Grupo 7 (1:15 a.m.)',lat:13.720487570941794,lng:-89.72182877361774},
+{n:'Grupo 8 (1:20 a.m.)',lat:13.720642933993425,lng:-89.72210638225079},
+{n:'Grupo 9 (1:25 a.m.)',lat:13.72096636240622,lng:-89.72256034612656},
+{n:'Grupo 10 (1:30 a.m.)',lat:13.72121455188293,lng:-89.72293149679899},
+{n:'Grupo 11 (1:35 a.m.)',lat:13.721532768190174,lng:-89.72337942570448},
+{n:'Grupo 12 (1:39 a.m.)',lat:13.721791379692093,lng:-89.72370967268944},
+{n:'Grupo 13 (1:43 a.m.)',lat:13.72199983208065,lng:-89.72400639206171},
+{n:'Grupo 14 (1:48 a.m.)',lat:13.722121081101054,lng:-89.7242207147344},
+{n:'Grupo 15 (1:54 a.m.)',lat:13.72242813601662,lng:-89.72442548722029},
+{n:'Grupo 16 (2:00  a.m.)',lat:13.722630399428667,lng:-89.7246303409338},
+{n:'Grupo 17 (2:04  a.m.)',lat:13.722881192789236,lng:-89.72494181245565},
+{n:'Grupo 18 (2:08  a.m.)',lat:13.723229371698645,lng:-89.72470879554749},
+{n:'Grupo 19 (2:16 a.m.)',lat:13.72358699552231,lng:-89.72447041422129},
+{n:'Grupo 20 (2:20 a.m.)',lat:13.724028650421102,lng:-89.72413547337055},
+{n:'Grupo 21 (2:24 a.m.)',lat:13.72440483811946,lng:-89.72385752946138},
+{n:'Grupo 1 (2:28 a.m.)',lat:13.724874501914375,lng:-89.72354337573051},
+{n:'Grupo 2 (2:32  a.m.)',lat:13.725357844255528,lng:-89.72320809960365},
+{n:'Grupo 3 (2:36 a.m.)',lat:13.725764645764116,lng:-89.72294323146343},
+{n:'Grupo 4 (2:40  a.m.)',lat:13.726170795165407,lng:-89.72267601639032},
+{n:'Grupo 5 (2:45  a.m.)',lat:13.726489330450786,lng:-89.7224560752511},
+{n:'Grupo 6 (2:50  a.m.)',lat:13.726831967105129,lng:-89.72220327705145},
+{n:'Grupo 7 (2:55  a.m.)',lat:13.727203916214659,lng:-89.72196087241173},
+{n:'Grupo 8 (3:00  a.m.)',lat:13.72761625140328,lng:-89.72166683524847},
+{n:'Grupo 9 (3:05  a.m.)',lat:13.727954652331663,lng:-89.72142174839973},
+{n:'Grupo 10 (3:10  a.m.)',lat:13.728284258926305,lng:-89.72118068486452},
+{n:'Grupo 11 (3:16  a.m.)',lat:13.728603117039015,lng:-89.72093928605318},
+{n:'Grupo 12 (3:22  a.m.)',lat:13.729015101021028,lng:-89.72096033206779},
+{n:'Grupo 13 (3:28  a.m.)',lat:13.729160562732929,lng:-89.7205575431613},
+{n:'Grupo 14 (3:34  a.m.)',lat:13.728893319049938,lng:-89.72019770292873},
+{n:'Grupo 15 (3:40  a.m.)',lat:13.728471592111369,lng:-89.72033351358968},
+{n:'Grupo 16 (3:46 a.m.)',lat:13.728253317615481,lng:-89.72054734826088},
+{n:'Grupo 17 (3:52  a.m.)',lat:13.727782619463616,lng:-89.72064924438621},
+{n:'Grupo 18 (3:58  a.m.)',lat:13.727511702028318,lng:-89.72075689584017},
+{n:'Grupo 19 (4:04  a.m.)',lat:13.727098063857369,lng:-89.72098287194967},
+{n:'Grupo 20 (4:10  a.m.)',lat:13.726817962004533,lng:-89.72049470990896},
+{n:'Grupo 21 (4:16)',lat:13.726387386178496,lng:-89.72067844122648},
+{n:'Grupo 1 (4:22  a.m.)',lat:13.726582806469823,lng:-89.72098186612129},
+{n:'Grupo 2 (4:28  a.m.)',lat:13.726744028087593,lng:-89.72122494131327},
+{n:'Grupo 3 (4:34  a.m.)',lat:13.726966481168166,lng:-89.72157698124647},
+{n:'Grupo 4 (4:40  a.m.)',lat:13.727231926368907,lng:-89.72194042056799},
+{n:'Grupo 5 (4:45  a.m.)',lat:13.727472618137853,lng:-89.72229480743408},
+{n:'Grupo 6 (4:52  a.m.)',lat:13.727082104574729,lng:-89.72269479185343},
+{n:'Grupo 7 (5:00  a.m.)',lat:13.726779,lng:-89.723023},
+{n:'Grupo 8 (5:07 a.m.)',lat:13.726384,lng:-89.723397},
+{n:'Grupo 9 (5:14 a.m.)',lat:13.726054,lng:-89.723652},
+{n:'Grupo 10 (5:21  a.m.)',lat:13.72571,lng:-89.72389},
+{n:'Grupo 11 (5:28  a.m.)',lat:13.725305,lng:-89.724191},
+{n:'Grupo 12 (5:35  a.m.)',lat:13.724793727625476,lng:-89.7245230525732},
+{n:'Grupo 13 (5:42  a.m.)',lat:13.724391809984159,lng:-89.72483485937119},
+{n:'Grupo 14 (5:50  a.m.)',lat:13.724027021901623,lng:-89.72511615604162},
+{n:'Grupo 15 (5:58  a.m.)',lat:13.723704574820681,lng:-89.72533609718084},
+{n:'Grupo 16 (6:06  a.m.)',lat:13.723292884166149,lng:-89.72561907023191},
+{n:'Grupo 17 (6:14  a.m.)',lat:13.722969133254791,lng:-89.72585912793875},
+{n:'Grupo 18 (6:22  a.m.)',lat:13.72269912335024,lng:-89.7260569408536},
+{n:'Grupo 19 (6:30  a.m.)',lat:13.72234084676078,lng:-89.72630504518747},
+{n:'Grupo 20 (6:38  a.m.)',lat:13.721967261407146,lng:-89.72657293081284},
+{n:'Grupo 21 (6:46  a.m.)',lat:13.721650999932331,lng:-89.72678113728762},
+{n:'Grupo 1 (6:54  a.m.)',lat:13.721301190142391,lng:-89.72703762352467},
+{n:'Grupo 2 (7:00  a.m.)',lat:13.72094453995935,lng:-89.72728203982115},
+{n:'Grupo 3 (7:10  a.m.)',lat:13.72066768784541,lng:-89.72747448831797},
+{n:'Grupo 4 (7:20  a.m.)',lat:13.720462817070816,lng:-89.72722504287958}
+];
+const SE_WP_REF=[
+{n:'Catedral',lat:13.7205,lng:-89.7272},
+{n:'Sto Domingo',lat:13.7212,lng:-89.7266}
+];
+
 // ========== STATE ==========
 let gmap, infoWin, routeLine, routeClickLine;
-let currentDay = 0; // 0=lunes,1=martes,2=miercoles,3=viernes
+let currentDay = 0; // 0=lunes,1=martes,2=miercoles,3=viernes,4=santo_entierro
 let positions = [];
 let changes = [], myCarries = [];
 let allMarkers = [], wpMarkers = [], showAll = true, dragMode = false;
-let dayNames = ['Lunes Santo','Martes Santo','Miércoles Santo','Viernes Mañana'];
-let dayDates = ['2026-03-30','2026-03-31','2026-04-01','2026-04-03']; // Semana Santa 2026
-let dayHours = [15, 15, 15, 6];
-let daySaca = [19, 17, 13, 16];
-let daySacaManual = [true, true, false, false];
+let dayNames = ['Lunes Santo','Martes Santo','Miércoles Santo','Viernes Mañana','Santo Entierro'];
+let dayDates = ['2026-03-30','2026-03-31','2026-04-01','2026-04-03','2026-04-03']; // Semana Santa 2026
+let dayHours = [15, 15, 15, 6, 17];
+let daySaca = [19, 17, 13, 16, 5];
+let daySacaManual = [true, true, false, false, true];
 
 function detectToday(){
   const now=new Date();
@@ -377,6 +532,8 @@ function detectToday(){
   const today=checkDate.toISOString().slice(0,10);
   let todayIdx=-1;
   dayDates.forEach((d,i)=>{if(d===today)todayIdx=i;});
+  // If April 3 and after 2 PM, switch to Santo Entierro (disabled until ready)
+  // if(todayIdx===3&&now.getHours()>=14) todayIdx=4;
   // If no exact match, find next upcoming or most recent day
   if(todayIdx===-1){
     var todayStr=checkDate.toISOString().slice(0,10);
@@ -396,8 +553,8 @@ function detectToday(){
   return todayIdx;
 }
 
-let savedPositions = [null, null, null, null];
-let savedRefs = [null, null, null, null];
+let savedPositions = [null, null, null, null, null];
+let savedRefs = [null, null, null, null, null];
 
 // ========== MARTES: 80 puntos exactos del KML ==========
 const MART_PTS=[
@@ -443,7 +600,7 @@ let MART_WP_REF = [
 
 // ========== LOCAL STORAGE ==========
 const SAVE_KEY = 'semanaSanta_v45';
-function getWPs(){return currentDay===0?LUN_WP_REF:currentDay===1?MART_WP_REF:currentDay===2?MIER_WP_REF:currentDay===3?VIER_WP_REF:[];}
+function getWPs(){return currentDay===0?LUN_WP_REF:currentDay===1?MART_WP_REF:currentDay===2?MIER_WP_REF:currentDay===3?VIER_WP_REF:currentDay===4?SE_WP_REF:[];}
 function saveAll() {
   try {
     savedPositions[currentDay] = positions.map(p=>({lat:p.lat,lng:p.lng,n:p.n||''}));
@@ -503,6 +660,7 @@ function loadSaved() {
     if(savedRefs[1]&&savedRefs[1].length){MART_WP_REF.length=0;savedRefs[1].forEach(r=>MART_WP_REF.push(r));}
     if(savedRefs[2]&&savedRefs[2].length){MIER_WP_REF.length=0;savedRefs[2].forEach(r=>MIER_WP_REF.push(r));}
     if(savedRefs[3]&&savedRefs[3].length){VIER_WP_REF.length=0;savedRefs[3].forEach(r=>VIER_WP_REF.push(r));}
+    if(savedRefs[4]&&savedRefs[4].length){SE_WP_REF.length=0;savedRefs[4].forEach(r=>SE_WP_REF.push(r));}
     return true;
   } catch(e){return false;}
 }
@@ -612,8 +770,8 @@ function cfg() {
   return {g:+$('cG').value||5, t:+$('cType').value||21, s:+$('cS').value||19, h:+$('cH').value||15, mn:+$('cMn').value||6, color:+($('cColor')?$('cColor').value:0)};
 }
 // Default sacas: [lun, mar, mie, vie] per type
-const defaultSacaH = [19, 17, 13, 16]; // hombres 21 grupos
-const defaultSacaM = [19, 27, 13, 22]; // mujeres 27 grupos
+const defaultSacaH = [19, 17, 13, 16, 5]; // hombres 21 grupos
+const defaultSacaM = [19, 27, 13, 22, 5]; // mujeres 27 grupos
 function onTypeChange(){
   $('colorDiv').style.display=(+$('cType').value===27)?'block':'none';
   const isM=(+$('cType').value===27);
@@ -685,7 +843,7 @@ function getLastGroup(day){
   // Calculate which group "enters" (last change) for a given day
   const s=daySaca[day]||19;
   const t=+$('cType').value||21;
-  const pts=day===0?LUN_PTS:day===1?MART_PTS:day===2?MIER_PTS:day===3?VIER_PTS:[];
+  const pts=day===0?LUN_PTS:day===1?MART_PTS:day===2?MIER_PTS:day===3?VIER_PTS:day===4?SE_PTS:[];
   const tot=pts.length;
   if(tot===0) return s;
   return ((s-1+tot-1)%t)+1;
@@ -737,7 +895,7 @@ function loadDay(d) {
   $('noti').classList.remove('show');
 
   // Admin: load saved edits if available. Shared: always KML
-  const dayPts=[LUN_PTS,MART_PTS,MIER_PTS,VIER_PTS];
+  const dayPts=[LUN_PTS,MART_PTS,MIER_PTS,VIER_PTS,SE_PTS];
   if(!isShared && savedPositions[d] && savedPositions[d].length>0){
     positions = savedPositions[d].map(p=>({lat:p.lat,lng:p.lng,n:p.n||''}));
   } else if(dayPts[d] && dayPts[d].length>0){
@@ -838,7 +996,7 @@ function getEffCambio(){
 function snapToRoute(p){
   var pts=positions;
   if(!pts||pts.length<2){
-    var dayPtsArr=[LUN_PTS,MART_PTS,MIER_PTS,VIER_PTS];
+    var dayPtsArr=[LUN_PTS,MART_PTS,MIER_PTS,VIER_PTS,SE_PTS];
     pts=dayPtsArr[currentDay]||[];
   }
   if(pts.length<2) return p;
@@ -870,7 +1028,7 @@ function snapToRoute(p){
 // ========== CALCULATE ==========
 // Viernes special timing
 const VIER_CORTESIAS_CHANGE = 40; // cortesías at this change (Grupo #13 con saca #16)
-const VIER_CORTESIAS_MIN = 45;    // 45 min pause (11:30-12:00)
+const VIER_CORTESIAS_MIN = 45;    // 45 min pause (11:30-12:15)
 const VIER_LAST_EXTRA = 0.10;     // last change 10% longer
 
 function calcTime(num, tot, c) {
@@ -878,23 +1036,23 @@ function calcTime(num, tot, c) {
     // Simple: fixed min/change
     return c.h * 60 + num * c.mn;
   }
-  // VIERNES: variable timing
-  // Total time = 480 min (6AM-2PM), minus 45 cortesías = 450 carrying min
-  const totalMin = 480;
-  const carryMin = totalMin - VIER_CORTESIAS_MIN;
-  // 43 normal + 1 at 130% = 44.3 units
-  const units = (tot - 1) + 1.3;
-  const minPerChange = carryMin / units;
-  const lastMin = minPerChange * 1.3;
+  // VIERNES: 6AM start, cortesías at 11:30 (change 40), asienta ~1:30PM
+  // Before cortesías: 330 min for 40 changes = 8.25 min/cambio
+  // Cortesías: 45 min break
+  // After cortesías: 75 min for 4 remaining changes = 18.75 min/cambio
+  var beforeCort = 330; // 6AM to 11:30AM
+  var mpcBefore = beforeCort / VIER_CORTESIAS_CHANGE; // 8.25
+  var afterCort = 75; // 12:15PM to 1:30PM
+  var remaining = tot - VIER_CORTESIAS_CHANGE;
+  var mpcAfter = remaining > 0 ? afterCort / remaining : mpcBefore;
 
   let elapsed = 0;
   for(let i = 1; i <= num; i++) {
-    if(i === tot) {
-      elapsed += lastMin; // last change is longer
+    if(i <= VIER_CORTESIAS_CHANGE) {
+      elapsed += mpcBefore;
     } else {
-      elapsed += minPerChange;
+      elapsed += mpcAfter;
     }
-    // Add cortesías pause after the cortesías change
     if(i === VIER_CORTESIAS_CHANGE) {
       elapsed += VIER_CORTESIAS_MIN;
     }
@@ -940,7 +1098,7 @@ function calc() {
 
   // Estimated end time - use real average if available
   let endTime=tot>0?calcTime(tot,tot,c):c.h*60;
-  let endLabel='Entra (est.)';
+  let endLabel='Asienta (est.)';
   const realAvg=getRealAvg();
   if(realAvg && doneCount()>0){
     // Project from last recorded carry
@@ -952,15 +1110,15 @@ function calc() {
       const estDate=new Date(estMs);
       const h=estDate.getHours(),m=estDate.getMinutes();
       endTime=h*60+m;
-      endLabel='Entra (real)';
+      endLabel='Asienta (real)';
     }
   }
   // Last group that enters
   const lastGrp=((c.s-1+tot-1)%c.t)+1;
 
-  let extra=currentDay===3?' · ✝️ Cortesías ~11:30':'';
+  let extra=currentDay===3?' · ✝️ Cortesías ~11:30-12:00':'';
   const dateStr=dayDates[currentDay]?dayDates[currentDay].slice(5).replace('-','/'):'';
-  $('hSub').textContent=dayNames[currentDay]+' '+dateStr+' · Grupo #'+c.g+' · Saca #'+c.s+' → Entra #'+lastGrp+extra;
+  $('hSub').textContent=dayNames[currentDay]+' '+dateStr+' · Grupo #'+c.g+' · Saca #'+c.s+' → Asienta #'+lastGrp+extra;
   const isMuj=c.t===27;
 
   renderTable();
@@ -1402,7 +1560,7 @@ function renderLive(){
   // Check if this day is in the past
   var dayDate=new Date(dayDates[currentDay]+'T23:59:00');
   var now=new Date();
-  var isPastDay=(dayDate<now&&currentDay!==3);
+  var isPastDay=(dayDate<now&&currentDay!==3&&currentDay!==4);
   
   // For past days, auto-set grupo actual to last cambio
   if(isPastDay&&changes.length>0){
@@ -1438,7 +1596,7 @@ function renderLive(){
   h+='<div style="display:flex;justify-content:space-around;margin-bottom:8px;padding:8px;background:rgba(124,58,237,.08);border-radius:10px">';
   h+='<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#c084fc">'+grupoInfo+'</div><div style="font-size:9px;color:#aaa">Tu grupo</div></div>';
   h+='<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#fff">'+cargaInfo+'</div><div style="font-size:9px;color:#aaa">'+cargaLabel+'</div></div>';
-  h+='<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#fff">#'+lastGrpLive+'</div><div style="font-size:9px;color:#aaa">Entra</div></div>';
+  h+='<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#fff">#'+lastGrpLive+'</div><div style="font-size:9px;color:#aaa">Asienta</div></div>';
   h+='</div>';
   // Buscar Andas
   const jBtn='onclick="buscarAnda(\'jesus\')" style="flex:1;padding:8px;border:1px solid #dc2626;border-radius:8px;background:rgba(220,38,38,.15);color:#f87171;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit"';
@@ -1548,7 +1706,7 @@ function renderLive(){
       var sacaCort=daySaca[currentDay]||17;
       var cortGrp=((sacaCort-1+cortChange.num-1)%21)+1;
       const cortDone=cortChange.num<=Math.max(...myCarries.filter(mc=>isDone(mc.ci)).map(mc=>mc.num),0);
-      const cortStatus=cortDone?'✅ Cortesías completadas':'✝️ Cortesías · Grupo #'+cortGrp+' (~'+cortChange.time+')';
+      const cortStatus=cortDone?'✅ Cortesías completadas':'✝️ Cortesías · Grupo #'+cortGrp+' (~11:30 AM)';
       h+='<div style="text-align:center;padding:8px;margin-bottom:8px;border-radius:8px;background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.3)"><span style="font-size:13px;color:#ff9800;font-weight:700">'+cortStatus+'</span><br><span style="font-size:11px;color:#ccc">Encuentro de las imágenes y drama de crucifixión · ~45 min</span>';
       if(isMuj) h+='<br><span style="font-size:10px;color:#f59e0b">⚠️ Cargadoras: las cortesías aplican al Nazareno. La Virgen puede llevar un recorrido diferente</span>';
       h+='</div>';
@@ -2071,7 +2229,7 @@ let currentGrupoActual=0;
 var liveGrupoData=null;
 var virgenDesfase=5;
 var virgenMovidos=0;
-var daySacaMuj=[19,27,13,22]; // saca de mujeres por día
+var daySacaMuj=[19,27,13,22,5]; // saca de mujeres por día
 
 function loadGrupoFromStorage(){
   try{
