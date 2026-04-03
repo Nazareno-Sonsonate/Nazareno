@@ -1650,6 +1650,8 @@ function renderLive(){
 
   h+='<div id="syncStatus" style="text-align:center;font-size:9px;color:#555;margin-top:8px"></div>';
   $('livePanel').innerHTML=h;
+  // Restore sync status after render
+  if(window._lastSync){var ss=document.getElementById('syncStatus');if(ss)ss.textContent=window._lastSync;}
   updateCountdown();
   if(typeof updateGrupoUI==='function') updateGrupoUI();
   if(typeof startCrono==='function') startCrono();
@@ -2332,11 +2334,11 @@ function startDayListeners(){
           try{
             var d=JSON.parse(xhr.responseText);
             // Show sync status
+            var now=new Date();
             var ss=document.getElementById('syncStatus');
-            if(ss){
-              var now=new Date();
-              ss.textContent='🔄 '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+' · FB:'+(d?'cambio='+d.cambio:'vacío');
-            }
+            var syncMsg='🔄 '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+' · FB:'+(d?'cambio='+d.cambio:'vacío');
+            window._lastSync=syncMsg;
+            if(ss) ss.textContent=syncMsg;
             if(d&&(!liveGrupoData||d.t>liveGrupoData.t)){
               currentGrupoActual=d.cambio||0;
               liveGrupoData=d;
