@@ -2331,10 +2331,11 @@ function startDayListeners(){
     updateGrupoUI();
     if(typeof renderLive==='function') renderLive();
   });
-  // Fallback: poll Firebase every 30s in case listener misses
-  setInterval(function(){
-    db.ref('grupoActual/day'+currentDay).once('value',function(snap){
-      var d=snap.val();
+  // REST API sync - immediate + every 15s (bypasses SW cache)
+  function fetchGrupoREST(){
+    fetch('https://procesion-sonsonate-default-rtdb.firebaseio.com/grupoActual/day'+currentDay+'.json',{cache:'no-store'})
+    .then(function(r){return r.json();})
+    .then(function(d){
       if(!d) return;
       if(!liveGrupoData||d.t>liveGrupoData.t){
         currentGrupoActual=d.cambio||0;
@@ -2345,14 +2346,13 @@ function startDayListeners(){
         updateGrupoUI();
         if(typeof renderLive==='function') renderLive();
       }
-    });
-  },30000);
-  // Also fetch once immediately to ensure data loads
+    }).catch(function(){});
+  }
+  fetchGrupoREST();
+  setInterval(fetchGrupoREST,15000);
+  // Also fetch once via SDK
   db.ref('grupoActual/day'+currentDay).once('value',function(snap){
     var d=snap.val();
-    // Show connection status
-    var hSub=document.getElementById('hSub');
-    if(hSub) hSub.textContent=hSub.textContent+' · 🟢 FB:'+(d?d.cambio:'vacío');
     if(d&&(!liveGrupoData||d.t>=liveGrupoData.t)){
       currentGrupoActual=d.cambio||0;
       liveGrupoData=d;
