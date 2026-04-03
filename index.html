@@ -1648,6 +1648,7 @@ function renderLive(){
 
   h+='<div style="text-align:center;margin-top:12px"><button onclick="resetLive()" style="background:none;border:1px solid #914444;color:#e08080;padding:6px 14px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit">🗑️ Reiniciar cargadas</button></div>';
 
+  h+='<div id="syncStatus" style="text-align:center;font-size:9px;color:#555;margin-top:8px"></div>';
   $('livePanel').innerHTML=h;
   updateCountdown();
   if(typeof updateGrupoUI==='function') updateGrupoUI();
@@ -2328,16 +2329,24 @@ function startDayListeners(){
       xhr.open('GET','https://procesion-sonsonate-default-rtdb.firebaseio.com/grupoActual/day'+currentDay+'.json?t='+Date.now(),true);
       xhr.onload=function(){
         if(xhr.status===200){
-          var d=JSON.parse(xhr.responseText);
-          if(d&&(!liveGrupoData||d.t>liveGrupoData.t)){
-            currentGrupoActual=d.cambio||0;
-            liveGrupoData=d;
-            if(d.desfase!==undefined) virgenDesfase=d.desfase;
-            if(d.movidos!==undefined) virgenMovidos=d.movidos;
-            if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
-            updateGrupoUI();
-            if(typeof renderLive==='function') renderLive();
-          }
+          try{
+            var d=JSON.parse(xhr.responseText);
+            // Show sync status
+            var ss=document.getElementById('syncStatus');
+            if(ss){
+              var now=new Date();
+              ss.textContent='🔄 '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+' · FB:'+(d?'cambio='+d.cambio:'vacío');
+            }
+            if(d&&(!liveGrupoData||d.t>liveGrupoData.t)){
+              currentGrupoActual=d.cambio||0;
+              liveGrupoData=d;
+              if(d.desfase!==undefined) virgenDesfase=d.desfase;
+              if(d.movidos!==undefined) virgenMovidos=d.movidos;
+              if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
+              updateGrupoUI();
+              if(typeof renderLive==='function') renderLive();
+            }
+          }catch(e){}
         }
       };
       xhr.send();
