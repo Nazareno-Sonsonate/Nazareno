@@ -726,7 +726,7 @@ function readParams(){
     // Update SE group selector images
     var step1El=document.getElementById('step1');
     if(step1El){
-      step1El.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#d4af37;font-weight:700;margin-bottom:4px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#ccc;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div style="display:flex;gap:12px;justify-content:center"><div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-entierro.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">21 grupos</div></div><div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-virgen.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">27 grupos</div></div></div>';
+      step1El.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#d4af37;font-weight:700;margin-bottom:4px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#ccc;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div style="display:flex;gap:12px;justify-content:center"><div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-entierro.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">21 grupos</div></div><div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-virgen.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">23 grupos</div></div></div>';
     }
     // Hide day selector dropdown only, keep buttons visible
     var dayRow=document.getElementById('daySelector');
@@ -743,6 +743,9 @@ function readParams(){
       $('cS').value=5;
       $('cH').value=17;
       $('cMn').value=10;
+      // Update women's group count label for SE
+      var opts=$('cType').options;
+      for(var oi=0;oi<opts.length;oi++){if(opts[oi].value==='27') opts[oi].textContent='Mujeres (23 grupos)';}
     } else {
       // Shared mode
       const saved=localStorage.getItem('sharedUserSE');
@@ -813,9 +816,10 @@ function pickColor(c){
 function showGroupGrid(t){
   $('step3').style.display='block';
   const colores=['🟡','🔴','🔵'];
-  $('step3label').textContent=isSEMode?'21 grupos · Santo Entierro':t===27?'Cargadora '+colores[sharedPickedColor]+' · '+t+' grupos':t+' grupos';
+  var gridCount=(t===27&&isSEMode)?23:t;
+  $('step3label').textContent=isSEMode?(t===27?'23 grupos · Virgen Dolorosa':'21 grupos · Santo Entierro'):t===27?'Cargadora '+colores[sharedPickedColor]+' · '+t+' grupos':t+' grupos';
   let h='';
-  for(let i=1;i<=t;i++){
+  for(let i=1;i<=gridCount;i++){
     const isLast=(i===sharedLastGroup);
     const goldBg=isSEMode?(isLast?'background:#d4af37;color:#000;border-color:#d4af37':'background:rgba(212,175,55,.15);color:#d4af37;border-color:#8B7355'):'';
     const purpleBg=!isSEMode?(isLast?'background:#7c3aed;color:#fff;border-color:#c084fc':'background:rgba(124,58,237,.15);color:#c084fc;border-color:#7c3aed'):'';
@@ -877,11 +881,13 @@ function shareWhatsApp(){
 
 const $ = id => document.getElementById(id);
 function cfg() {
-  return {g:+$('cG').value||5, t:+$('cType').value||21, s:+$('cS').value||19, h:+$('cH').value||15, mn:+$('cMn').value||6, color:+($('cColor')?$('cColor').value:0)};
+  var mujGrupos=isSEMode?23:27;
+  return {g:+$('cG').value||5, t:+$('cType').value||21, s:+$('cS').value||19, h:+$('cH').value||15, mn:+$('cMn').value||6, color:+($('cColor')?$('cColor').value:0), mujG:mujGrupos};
 }
+function getMujCount(){return isSEMode?23:27;}
 // Default sacas: [lun, mar, mie, vie] per type
 const defaultSacaH = [19, 17, 13, 16, 5]; // hombres 21 grupos
-const defaultSacaM = [19, 27, 13, 22, 5]; // mujeres 27 grupos
+const defaultSacaM = [19, 27, 13, 22, 6]; // mujeres 27 grupos
 function onTypeChange(){
   $('colorDiv').style.display=(+$('cType').value===27)?'block':'none';
   const isM=(+$('cType').value===27);
@@ -1675,6 +1681,33 @@ function fmtClock(ts){
 }
 
 function renderLive(){
+  // Check if this day is in the past
+  var dayDate=new Date(dayDates[currentDay]+'T23:59:00');
+  var now=new Date();
+  var isPastDay=(dayDate<now&&currentDay!==3&&currentDay!==4);
+  
+  // For past days with no carries, still show completion info
+  if(isPastDay&&changes.length>0&&!myCarries.length){
+    var sacaPD2=daySaca[currentDay]||17;
+    var totPD2=changes.length;
+    var lastGrpPD2=((sacaPD2-1+totPD2-1)%21)+1;
+    var sacaPDM2=daySacaMuj[currentDay]||22;
+    var lastGrpPDM2=(((sacaPDM2-1+totPD2-1)%getMujCount())+getMujCount())%getMujCount()+1;
+    var ph='<div style="text-align:center;padding:8px;margin-bottom:8px"><span style="font-size:20px">✝️</span><br><span style="font-size:13px;color:#c084fc;font-weight:700">'+dayNames[currentDay].toUpperCase()+'</span></div>';
+    ph+='<div style="text-align:center;padding:16px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(76,175,80,.08),rgba(46,125,50,.15));border:1px solid rgba(76,175,80,.4)">';
+    ph+='<div style="font-size:11px;color:#aaa;letter-spacing:1px">VENERADA IMAGEN DE JESÚS NAZARENO</div>';
+    ph+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">✝️ Asentada en el Templo</div>';
+    ph+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#4CAF50">#'+lastGrpPD2+'</b></div>';
+    ph+='<div style="font-size:11px;color:#888;margin-top:6px;font-style:italic">Gloria y honor a Jesús Nazareno de Sonsonate</div>';
+    ph+='</div>';
+    ph+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(59,130,246,.15));border:1px solid rgba(59,130,246,.3)">';
+    ph+='<div style="font-size:11px;color:#93c5fd;letter-spacing:1px">MARÍA SANTÍSIMA</div>';
+    ph+='<div style="font-size:16px;font-weight:700;color:#93c5fd;margin:6px 0">✝️ Asentada en el Templo</div>';
+    ph+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#93c5fd">#'+lastGrpPDM2+'</b></div>';
+    ph+='</div>';
+    $('livePanel').innerHTML=ph;return;
+  }
+
   if(!myCarries.length){$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">No hay cargadas. Verificá la configuración.</p></div>';return;}
   
   // Check if this day is in the past
@@ -1767,7 +1800,7 @@ function renderLive(){
     h+='</div>';
     // Virgen past day info
     var sacaPastM=daySacaMuj[currentDay]||22;
-    var lastGrpPastM=(((sacaPastM-1+totPast-1)%27)+27)%27+1;
+    var lastGrpPastM=(((sacaPastM-1+totPast-1)%getMujCount())+getMujCount())%getMujCount()+1;
     h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(59,130,246,.15));border:1px solid rgba(59,130,246,.3)">';
     h+='<div style="font-size:11px;color:#93c5fd;letter-spacing:1px">MARÍA SANTÍSIMA</div>';
     h+='<div style="font-size:16px;font-weight:700;color:#93c5fd;margin:6px 0">✝️ Asentada en el Templo</div>';
@@ -1787,11 +1820,11 @@ function renderLive(){
     var vMovB=liveGrupoData.movidos||0;
     var vCambioGrpB=Math.max(1,vCambioB-vMovB);
     if(vCambioB>=vTotB){
-      var lastGrpMB=(((vSacaM-1+vTotB-1-vMovB)%27)+27)%27+1;
+      var lastGrpMB=(((vSacaM-1+vTotB-1-vMovB)%getMujCount())+getMujCount())%getMujCount()+1;
       vBannerGrp='✅ Asentó Grupo #'+lastGrpMB;
       vBannerProg='';
     } else {
-      var vGrpB=(((vSacaM-1+vCambioGrpB-1)%27)+27)%27+1;
+      var vGrpB=(((vSacaM-1+vCambioGrpB-1)%getMujCount())+getMujCount())%getMujCount()+1;
       var vNomB=changes.length>0&&vCambioB>0&&vCambioB<=changes.length?changes[vCambioB-1].n||'':'';
       vBannerGrp='Grupo #'+vGrpB+(vNomB?' · '+vNomB:'');
       vBannerProg='⚠️ Estimado';
@@ -1880,7 +1913,7 @@ function renderLive(){
     if(!isSEMode){
       var sacaDoneM=daySacaMuj[currentDay]||22;
       var movDone=liveGrupoData?liveGrupoData.movidos||0:0;
-      var lastGrpDoneM=(((sacaDoneM-1+totDone-1-movDone)%27)+27)%27+1;
+      var lastGrpDoneM=(((sacaDoneM-1+totDone-1-movDone)%getMujCount())+getMujCount())%getMujCount()+1;
       h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(59,130,246,.15));border:1px solid rgba(59,130,246,.3)">';
       h+='<div style="font-size:11px;color:#93c5fd;letter-spacing:1px">MARÍA SANTÍSIMA</div>';
       h+='<div style="font-size:16px;font-weight:700;color:#93c5fd;margin:6px 0">✝️ Asentada en el Templo</div>';
@@ -2430,7 +2463,7 @@ let currentGrupoActual=0;
 var liveGrupoData=null;
 var virgenDesfase=5;
 var virgenMovidos=0;
-var daySacaMuj=[19,27,13,22,5]; // saca de mujeres por día
+var daySacaMuj=[19,27,13,22,6]; // saca de mujeres por día
 
 function loadGrupoFromStorage(){
   try{
@@ -2616,11 +2649,11 @@ function updateGrupoUI(){
       var vCambio=Math.max(1,liveGrupoData.cambio-desf);
       var vCambioGrp=Math.max(1,vCambio-mov); // group rotation adjusted
       if(vCambio>=totV){
-        var lastGrpM=(((sacaM-1+totV-1-mov)%27)+27)%27+1;
+        var lastGrpM=(((sacaM-1+totV-1-mov)%getMujCount())+getMujCount())%getMujCount()+1;
         vTxt.textContent='✅ Asentó Grupo #'+lastGrpM;
         if(vProg) vProg.textContent='';
       } else {
-        var vGrp=(((sacaM-1+vCambioGrp-1)%27)+27)%27+1;
+        var vGrp=(((sacaM-1+vCambioGrp-1)%getMujCount())+getMujCount())%getMujCount()+1;
         var vNombre='';
         if(changes.length>0&&vCambio>0&&vCambio<=changes.length){
           vNombre=changes[vCambio-1].n||'';
