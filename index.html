@@ -2371,20 +2371,70 @@ function buscarAnda(tipo){
 // ========== GPS AUTO-ADVANCE ==========
 var autoAdvanceGPS=true;
 
-function findNearestCambio(lat,lng){
-  if(positions.length===0) return -1;
-  var startIdx=Math.max(0,currentGrupoActual);
-  var endIdx=Math.min(positions.length,currentGrupoActual+10); // Only check next 10 points
-  var minDist=Infinity,nearest=-1;
-  for(var i=startIdx;i<endIdx;i++){
-    var dlat=lat-positions[i].lat;
-    var dlng=lng-positions[i].lng;
-    var dist=dlat*dlat+dlng*dlng;
-    if(dist<minDist){minDist=dist;nearest=i;}
+// Track progress along the route as a "rail"
+var railProgress=0; // distance along route in meters from start
+
+function getRouteDistances(){
+  // Pre-calculate cumulative distances along route
+  var dists=[0];
+  for(var i=1;i<positions.length;i++){
+    var dlat=(positions[i].lat-positions[i-1].lat)*111320;
+    var dlng=(positions[i].lng-positions[i-1].lng)*111320*Math.cos(positions[i].lat*Math.PI/180);
+    dists.push(dists[i-1]+Math.sqrt(dlat*dlat+dlng*dlng));
   }
-  // Only auto-advance if within ~50 meters
-  if(minDist>0.0005*0.0005) return -1;
-  return nearest+1;
+  return dists;
+}
+
+function projectOnRail(lat,lng){
+  // Find where GPS projects onto the route line and return distance from start
+  if(positions.length<2) return {dist:0,cambio:0};
+  var bestDist=Infinity,bestRailDist=0;
+  var cosLat=Math.cos(lat*Math.PI/180);
+  var cumDist=0;
+  
+  for(var i=0;i<positions.length-1;i++){
+    var ax=positions[i].lng,ay=positions[i].lat;
+    var bx=positions[i+1].lng,by=positions[i+1].lat;
+    // Project point onto segment
+    var dx=bx-ax,dy=by-ay;
+    var segLen=Math.sqrt(dx*dx+dy*dy);
+    if(segLen===0) continue;
+    var t=Math.max(0,Math.min(1,((lng-ax)*dx+(lat-ay)*dy)/(dx*dx+dy*dy)));
+    var px=ax+t*dx,py=ay+t*dy;
+    // Distance from GPS to projected point (in meters approx)
+    var distM=Math.sqrt(Math.pow((lat-py)*111320,2)+Math.pow((lng-px)*111320*cosLat,2));
+    
+    if(distM<bestDist){
+      bestDist=distM;
+      // Distance along route to this projected point
+      var segDistM=Math.sqrt(Math.pow((by-ay)*111320,2)+Math.pow((bx-ax)*111320*cosLat,2));
+      bestRailDist=cumDist+t*segDistM;
+    }
+    var segDistFull=Math.sqrt(Math.pow((by-ay)*111320,2)+Math.pow((bx-ax)*111320*cosLat,2));
+    cumDist+=segDistFull;
+  }
+  // Only valid if within 60 meters of route
+  if(bestDist>60) return {dist:-1,cambio:-1};
+  
+  // Find which cambio this distance corresponds to
+  var dists=getRouteDistances();
+  var cambio=0;
+  for(var j=0;j<dists.length;j++){
+    if(bestRailDist>=dists[j]) cambio=j+1;
+  }
+  return {dist:bestRailDist,cambio:cambio,distFromRoute:bestDist};
+}
+
+function findNearestCambio(lat,lng){
+  if(positions.length<2) return -1;
+  var proj=projectOnRail(lat,lng);
+  if(proj.dist<0) return -1; // Too far from route
+  // Rail logic: only advance, never go back
+  if(proj.dist<=railProgress) return -1; // Already passed this point
+  railProgress=proj.dist;
+  // Only advance by 1 at a time
+  if(proj.cambio>currentGrupoActual+1) return currentGrupoActual+1;
+  return proj.cambio;
 }
 
 function listenAnda(tipo,imgUrl,color,zIdx){
@@ -2404,8 +2454,8 @@ function listenAnda(tipo,imgUrl,color,zIdx){
         position:ll, map:gmap, zIndex:zIdx,
         icon:{
           url:imgUrl,
-          scaledSize:new google.maps.Size(60,60),
-          anchor:new google.maps.Point(30,30)
+          scaledSize:new google.maps.Size(54,66),
+          anchor:new google.maps.Point(27,66)
         }
       });
       urnaMarkers[tipo]._ring=new google.maps.Circle({
@@ -2438,8 +2488,8 @@ function listenAnda(tipo,imgUrl,color,zIdx){
     }
   });
 }
-listenAnda('jesus',isSEMode?'se-entierro-marker.jpg':'jesus-marker.jpg',isSEMode?'#d4af37':'#dc2626',10000);
-listenAnda('virgen',isSEMode?'se-virgen-marker.jpg':'maria-marker.jpg',isSEMode?'#d4af37':'#3b82f6',9998);
+listenAnda('jesus',isSEMode?'se-entierro-marker.png':'jesus-marker.png',isSEMode?'#d4af37':'#dc2626',10000);
+listenAnda('virgen',isSEMode?'se-virgen-marker.png':'maria-marker.png',isSEMode?'#d4af37':'#3b82f6',9998);
 
 // AHSEC GPS tracking for SE mode
 var _isSE=new URLSearchParams(window.location.search).has('se');
@@ -2468,7 +2518,7 @@ if(_isSE){
           // Update SE marker
           if(gmap){
             if(!urnaMarkers.jesus){
-              urnaMarkers.jesus=new google.maps.Marker({position:ll,map:gmap,zIndex:10000,icon:{url:'se-entierro-marker.jpg',scaledSize:new google.maps.Size(60,60),anchor:new google.maps.Point(30,30)}});
+              urnaMarkers.jesus=new google.maps.Marker({position:ll,map:gmap,zIndex:10000,icon:{url:'se-entierro-marker.png',scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)}});
               urnaMarkers.jesus._ring=new google.maps.Circle({center:ll,map:gmap,radius:15,fillColor:'#d4af37',fillOpacity:0.25,strokeColor:'#d4af37',strokeWeight:5,strokeOpacity:0.9,zIndex:9999});
             } else {
               urnaMarkers.jesus.setPosition(ll);
@@ -2515,7 +2565,7 @@ if(_isSE){
           var llV={lat:+latV,lng:+lngV};
           if(gmap){
             if(!urnaMarkers.virgen){
-              urnaMarkers.virgen=new google.maps.Marker({position:llV,map:gmap,zIndex:9998,icon:{url:'se-virgen-marker.jpg',scaledSize:new google.maps.Size(60,60),anchor:new google.maps.Point(30,30)}});
+              urnaMarkers.virgen=new google.maps.Marker({position:llV,map:gmap,zIndex:9998,icon:{url:'se-virgen-marker.png',scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)}});
               urnaMarkers.virgen._ring=new google.maps.Circle({center:llV,map:gmap,radius:15,fillColor:'#3b82f6',fillOpacity:0.25,strokeColor:'#3b82f6',strokeWeight:5,strokeOpacity:0.9,zIndex:9997});
             } else {
               urnaMarkers.virgen.setPosition(llV);
@@ -3003,6 +3053,8 @@ function globalSync(){
               }
               if(bannerDiv) bannerDiv.style.display='block';
             }
+            // Re-render live panel for shared users
+            if(typeof window.renderLive==='function'&&window.isShared) window.renderLive();
           }
         }catch(e){if(el) el.textContent='❌ Parse: '+e.message;}
       } else {if(el) el.textContent='❌ HTTP '+x.status;}
