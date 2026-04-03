@@ -1648,7 +1648,7 @@ function renderLive(){
 
   h+='<div style="text-align:center;margin-top:12px"><button onclick="resetLive()" style="background:none;border:1px solid #914444;color:#e08080;padding:6px 14px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit">🗑️ Reiniciar cargadas</button></div>';
 
-  h+='<div id="syncStatus" style="text-align:center;font-size:9px;color:#555;margin-top:8px"></div>';
+  h+='<div id="syncStatus" style="text-align:center;font-size:14px;color:#ff9800;padding:10px;margin-top:8px;background:rgba(255,152,0,.1);border-radius:8px">⏳ Conectando...</div>';
   $('livePanel').innerHTML=h;
   // Restore sync status after render
   if(window._lastSync){var ss=document.getElementById('syncStatus');if(ss)ss.textContent=window._lastSync;}
@@ -2329,6 +2329,7 @@ function startDayListeners(){
     try{
       var xhr=new XMLHttpRequest();
       xhr.open('GET','https://procesion-sonsonate-default-rtdb.firebaseio.com/grupoActual/day'+currentDay+'.json?t='+Date.now(),true);
+      xhr.timeout=5000;
       xhr.onload=function(){
         if(xhr.status===200){
           try{
@@ -2336,7 +2337,7 @@ function startDayListeners(){
             // Show sync status
             var now=new Date();
             var ss=document.getElementById('syncStatus');
-            var syncMsg='🔄 '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+' · FB:'+(d?'cambio='+d.cambio:'vacío');
+            var syncMsg='🟢 '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+' · cambio:'+(d?d.cambio:'vacío');
             window._lastSync=syncMsg;
             if(ss) ss.textContent=syncMsg;
             if(d&&(!liveGrupoData||d.t>liveGrupoData.t)){
@@ -2348,11 +2349,28 @@ function startDayListeners(){
               updateGrupoUI();
               if(typeof renderLive==='function') renderLive();
             }
-          }catch(e){}
+          }catch(e){
+            var ss2=document.getElementById('syncStatus');
+            if(ss2) ss2.textContent='❌ Error: '+e.message;
+          }
+        } else {
+          var ss3=document.getElementById('syncStatus');
+          if(ss3) ss3.textContent='❌ HTTP '+xhr.status;
         }
       };
+      xhr.onerror=function(){
+        var ss4=document.getElementById('syncStatus');
+        if(ss4) ss4.textContent='❌ Sin conexión a Firebase';
+      };
+      xhr.ontimeout=function(){
+        var ss5=document.getElementById('syncStatus');
+        if(ss5) ss5.textContent='❌ Timeout';
+      };
       xhr.send();
-    }catch(e){}
+    }catch(e){
+      var ss6=document.getElementById('syncStatus');
+      if(ss6) ss6.textContent='❌ XHR Error: '+e.message;
+    }
   }
   syncGrupo();
   setInterval(syncGrupo,10000);
@@ -2394,5 +2412,26 @@ function startDayListeners(){
 
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_lMqEQiLroj-jhx-a9d_o-6uWFfOCbg0&libraries=geometry&callback=initMap" async defer></script>
+<div id="fbTest" style="position:fixed;bottom:0;left:0;right:0;background:#000;color:#0f0;font-size:11px;padding:4px 8px;z-index:9999;font-family:monospace">⏳ Conectando Firebase...</div>
+<script>
+// Standalone Firebase test - runs independently
+setTimeout(function(){
+  try{
+    var x=new XMLHttpRequest();
+    x.open('GET','https://procesion-sonsonate-default-rtdb.firebaseio.com/grupoActual/day3.json?_='+Date.now(),true);
+    x.onload=function(){
+      document.getElementById('fbTest').textContent='✅ FB OK: '+x.responseText.substring(0,80);
+      document.getElementById('fbTest').style.background='#001a00';
+    };
+    x.onerror=function(){
+      document.getElementById('fbTest').textContent='❌ XHR ERROR';
+      document.getElementById('fbTest').style.background='#1a0000';
+    };
+    x.send();
+  }catch(e){
+    document.getElementById('fbTest').textContent='❌ CATCH: '+e.message;
+  }
+},3000);
+</script>
 </body>
 </html>
