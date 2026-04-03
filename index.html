@@ -743,6 +743,7 @@ function readParams(){
       $('cS').value=5;
       $('cH').value=17;
       $('cMn').value=10;
+      daySacaMuj[4]=6; // Virgen saca for SE
       // Update women's group count label for SE
       var opts=$('cType').options;
       for(var oi=0;oi<opts.length;oi++){if(opts[oi].value==='27') opts[oi].textContent='Mujeres (23 grupos)';}
@@ -2425,6 +2426,98 @@ function listenAnda(tipo,imgUrl,color,zIdx){
 listenAnda('jesus',isSEMode?'se-entierro-marker.jpg':'jesus-marker.jpg',isSEMode?'#d4af37':'#dc2626',10000);
 listenAnda('virgen',isSEMode?'se-virgen-marker.jpg':'maria-marker.jpg',isSEMode?'#d4af37':'#3b82f6',9998);
 
+// AHSEC GPS tracking for SE mode
+if(isSEMode){
+  // Fetch GPS positions only (not full database)
+  function fetchAHSECGPS(){
+    try{
+      // Fetch SE position
+      var xhr=new XMLHttpRequest();
+      xhr.open('GET','https://bd-recorrido-ahsec-default-rtdb.firebaseio.com/latitud.json?_='+Date.now(),true);
+      xhr.timeout=5000;
+      xhr.onload=function(){
+        if(xhr.status!==200) return;
+        var lat=JSON.parse(xhr.responseText);
+        if(!lat) return;
+        // Now fetch longitude
+        var xhr2=new XMLHttpRequest();
+        xhr2.open('GET','https://bd-recorrido-ahsec-default-rtdb.firebaseio.com/longitud.json?_='+Date.now(),true);
+        xhr2.timeout=5000;
+        xhr2.onload=function(){
+          if(xhr2.status!==200) return;
+          var lng=JSON.parse(xhr2.responseText);
+          if(!lng) return;
+          var ll={lat:+lat,lng:+lng};
+          // Update SE marker
+          if(gmap){
+            if(!urnaMarkers.jesus){
+              urnaMarkers.jesus=new google.maps.Marker({position:ll,map:gmap,zIndex:10000,icon:{url:'se-entierro-marker.jpg',scaledSize:new google.maps.Size(60,60),anchor:new google.maps.Point(30,30)}});
+              urnaMarkers.jesus._ring=new google.maps.Circle({center:ll,map:gmap,radius:15,fillColor:'#d4af37',fillOpacity:0.25,strokeColor:'#d4af37',strokeWeight:5,strokeOpacity:0.9,zIndex:9999});
+            } else {
+              urnaMarkers.jesus.setPosition(ll);
+              if(urnaMarkers.jesus._ring) urnaMarkers.jesus._ring.setCenter(ll);
+            }
+            // GPS Auto-advance
+            if(autoAdvanceGPS&&!isShared){
+              var near=findNearestCambio(ll.lat,ll.lng);
+              if(near>0&&near>currentGrupoActual){
+                currentGrupoActual=near;
+                var sacaH=daySaca[currentDay]||5;
+                var tot=positions.length;
+                var grp=((sacaH-1+near-1)%21)+1;
+                var nombre=near<=changes.length?changes[near-1].n||'':'';
+                liveGrupoData={cambio:near,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
+                try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+                saveAll();updateGrupoUI();
+                db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+                if(typeof renderLive==='function') renderLive();
+              }
+            }
+          }
+          var el=document.getElementById('ahsecStatus');
+          if(el) el.textContent='⚰️ SE: '+lat.toFixed(4)+','+lng.toFixed(4);
+        };
+        xhr2.send();
+      };
+      xhr.send();
+      // Fetch Virgen position
+      var xhrV=new XMLHttpRequest();
+      xhrV.open('GET','https://bd-recorrido-ahsec-default-rtdb.firebaseio.com/latitud_V.json?_='+Date.now(),true);
+      xhrV.timeout=5000;
+      xhrV.onload=function(){
+        if(xhrV.status!==200) return;
+        var latV=JSON.parse(xhrV.responseText);
+        if(!latV) return;
+        var xhrV2=new XMLHttpRequest();
+        xhrV2.open('GET','https://bd-recorrido-ahsec-default-rtdb.firebaseio.com/longitud_V.json?_='+Date.now(),true);
+        xhrV2.timeout=5000;
+        xhrV2.onload=function(){
+          if(xhrV2.status!==200) return;
+          var lngV=JSON.parse(xhrV2.responseText);
+          if(!lngV) return;
+          var llV={lat:+latV,lng:+lngV};
+          if(gmap){
+            if(!urnaMarkers.virgen){
+              urnaMarkers.virgen=new google.maps.Marker({position:llV,map:gmap,zIndex:9998,icon:{url:'se-virgen-marker.jpg',scaledSize:new google.maps.Size(60,60),anchor:new google.maps.Point(30,30)}});
+              urnaMarkers.virgen._ring=new google.maps.Circle({center:llV,map:gmap,radius:15,fillColor:'#3b82f6',fillOpacity:0.25,strokeColor:'#3b82f6',strokeWeight:5,strokeOpacity:0.9,zIndex:9997});
+            } else {
+              urnaMarkers.virgen.setPosition(llV);
+              if(urnaMarkers.virgen._ring) urnaMarkers.virgen._ring.setCenter(llV);
+            }
+          }
+          var el=document.getElementById('ahsecStatus');
+          if(el) el.textContent=(el.textContent||'')+' · 👑 V: '+latV.toFixed(4)+','+lngV.toFixed(4);
+        };
+        xhrV2.send();
+      };
+      xhrV.send();
+    }catch(e){}
+  }
+  var ahsEl=document.getElementById('ahsecStatus');if(ahsEl)ahsEl.style.display='block';
+  fetchAHSECGPS();
+  setInterval(fetchAHSECGPS,10000);
+}
+
 // ========== ONLINE COUNTER (admin only) ==========
 // Register presence
 const myPresRef=db.ref('online/'+Math.random().toString(36).substr(2,9));
@@ -2843,6 +2936,7 @@ function startDayListeners(){
 
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_lMqEQiLroj-jhx-a9d_o-6uWFfOCbg0&libraries=geometry&callback=initMap" async defer></script>
+<div id="ahsecStatus" style="position:fixed;bottom:20px;left:0;right:0;background:#1a1000;color:#d4af37;font-size:10px;padding:3px 8px;z-index:9999;font-family:monospace;display:none"></div>
 <div id="fbTest" style="position:fixed;bottom:0;left:0;right:0;background:#000;color:#0f0;font-size:11px;padding:4px 8px;z-index:9999;font-family:monospace">⏳ Conectando...</div>
 <script>
 // Sync: fetch Firebase and UPDATE UI every 10 seconds
