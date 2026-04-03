@@ -1451,16 +1451,19 @@ function renderLive(){
   h+='<div style="text-align:center;margin-bottom:6px;font-size:10px;color:#e08080">⚠️ Las horas son aproximadas y se ajustan en tiempo real</div>';
 
   // Live grupo tracking banner (everyone sees)
-  var bannerDisplay='none';var bannerGrp='';var bannerProg='';
+  var bannerDisplay='block';var bannerGrp='';var bannerProg='';
+  var sacaBnr=daySaca[currentDay]||16;
   if(liveGrupoData&&liveGrupoData.cambio>0){
-    bannerDisplay='block';
     var bTot=liveGrupoData.tot||changes.length;
     if(liveGrupoData.cambio>bTot){
-      var bSacaH=daySaca[currentDay]||17;bannerGrp='✅ Entró Grupo #'+(((bSacaH-1+bTot-1)%21)+1);
+      bannerGrp='✅ Entró Grupo #'+(((sacaBnr-1+bTot-1)%21)+1);
     } else {
-      bannerGrp='Grupo #'+(liveGrupoData.grp||liveGrupoData.cambio);
+      bannerGrp='Grupo #'+(((sacaBnr-1+liveGrupoData.cambio-1)%21)+1);
       bannerProg=liveGrupoData.nombre||'';
     }
+  } else {
+    bannerGrp='Grupo #'+sacaBnr;
+    bannerProg='Esperando inicio de la procesión';
   }
   h+='<div id="grupoActualBanner" style="display:'+bannerDisplay+';text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:11px;color:#aaa">Venerada Imagen de Jesús Nazareno</div><div style="font-size:11px;color:#ccc">En este momento carga</div><div id="grupoActualText" style="font-size:22px;font-weight:700;color:#c084fc">'+bannerGrp+'</div><div id="grupoActualProgress" style="font-size:11px;color:#aaa">'+bannerProg+'</div></div>';
   if(isPastDay){
@@ -1478,10 +1481,11 @@ function renderLive(){
     h+='<div style="text-align:center;margin-bottom:8px"><span style="font-size:12px;color:#aaa">Jesús: </span><span style="font-size:20px;font-weight:700;color:#4CAF50">✅ #'+lastGrpPast+'</span></div>';
   } else {
   // Virgen banner - pre-render with data
-  var vBannerDisplay='none',vBannerGrp='',vBannerProg='';
+  var vSacaDef=daySacaMuj[currentDay]||22;
+  var vBannerDisplay='block',vBannerGrp='Grupo #'+vSacaDef,vBannerProg='Esperando inicio';
   if(liveGrupoData&&liveGrupoData.cambio>0){
     var vDesf=liveGrupoData.desfase||0;
-    var vSacaM=liveGrupoData.sacaMuj||daySacaMuj[currentDay]||22;
+    var vSacaM=liveGrupoData.sacaMuj||vSacaDef;
     var vTotB=liveGrupoData.tot||changes.length;
     var vCambioB=Math.max(1,liveGrupoData.cambio-vDesf);
     var vMovB=liveGrupoData.movidos||0;
@@ -1496,7 +1500,6 @@ function renderLive(){
       vBannerGrp='Grupo #'+vGrpB+(vNomB?' · '+vNomB:'');
       vBannerProg='⚠️ Estimado';
     }
-    vBannerDisplay='block';
   }
   h+='<div id="grupoVirgenBanner" style="display:'+vBannerDisplay+';text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div style="font-size:11px;color:#93c5fd">María Santísima</div><div style="font-size:11px;color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:22px;font-weight:700;color:#93c5fd">'+vBannerGrp+'</div><div id="grupoVirgenProgress" style="font-size:10px;color:#ff9800">'+vBannerProg+'</div></div>';
 
@@ -1868,27 +1871,14 @@ setTimeout(function(){
   if(!deferredPrompt) showInstallBanner();
 },3000);
 
-// ========== SERVICE WORKER ==========
+// ========== SERVICE WORKER - DISABLED FOR SYNC RELIABILITY ==========
 if('serviceWorker' in navigator){
-  // Force clear old caches and SW on first load of new version
-  const APP_VERSION='v44';
-  if(localStorage.getItem('appVer')!==APP_VERSION){
-    // Clear all caches
-    if(window.caches) caches.keys().then(ks=>ks.forEach(k=>caches.delete(k)));
-    // Unregister old SW then register new one
-    navigator.serviceWorker.getRegistrations().then(function(regs){
-      return Promise.all(regs.map(r=>r.unregister()));
-    }).then(function(){
-      localStorage.setItem('appVer',APP_VERSION);
-      navigator.serviceWorker.register('sw.js').then(setupSWUpdates);
-    });
-  } else {
-    navigator.serviceWorker.register('sw.js').then(setupSWUpdates);
-  }
-  function setupSWUpdates(reg){
-    setInterval(()=>reg.update(),30000);
-    // No auto-reload — update applies next time user opens the app
-  }
+  // Unregister ALL service workers to prevent caching issues
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    regs.forEach(function(r){r.unregister();});
+  });
+  // Clear ALL caches
+  if(window.caches) caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});
 }
 </script>
 <!-- Firebase SDK -->
@@ -2331,55 +2321,31 @@ function startDayListeners(){
     updateGrupoUI();
     if(typeof renderLive==='function') renderLive();
   });
-  // REST API sync - immediate + every 15s (bypasses SW cache)
-  function fetchGrupoREST(){
-    fetch('https://procesion-sonsonate-default-rtdb.firebaseio.com/grupoActual/day'+currentDay+'.json',{cache:'no-store'})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(!d) return;
-      if(!liveGrupoData||d.t>liveGrupoData.t){
-        currentGrupoActual=d.cambio||0;
-        liveGrupoData=d;
-        if(d.desfase!==undefined) virgenDesfase=d.desfase;
-        if(d.movidos!==undefined) virgenMovidos=d.movidos;
-        if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
-        updateGrupoUI();
-        if(typeof renderLive==='function') renderLive();
-      }
-    }).catch(function(){});
-  }
-  fetchGrupoREST();
-  setInterval(fetchGrupoREST,15000);
-  // Also fetch once via SDK
-  db.ref('grupoActual/day'+currentDay).once('value',function(snap){
-    var d=snap.val();
-    if(d&&(!liveGrupoData||d.t>=liveGrupoData.t)){
-      currentGrupoActual=d.cambio||0;
-      liveGrupoData=d;
-      if(d.desfase!==undefined) virgenDesfase=d.desfase;
-      if(d.movidos!==undefined) virgenMovidos=d.movidos;
-      if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
-      updateGrupoUI();
-      if(typeof renderLive==='function') renderLive();
-    }
-  });
-  // Re-fetch when app becomes visible (user switches back to tab)
-  document.addEventListener('visibilitychange',function(){
-    if(!document.hidden){
-      db.ref('grupoActual/day'+currentDay).once('value',function(snap){
-        var d=snap.val();
-        if(d&&(!liveGrupoData||d.t>liveGrupoData.t)){
-          currentGrupoActual=d.cambio||0;
-          liveGrupoData=d;
-          if(d.desfase!==undefined) virgenDesfase=d.desfase;
-          if(d.movidos!==undefined) virgenMovidos=d.movidos;
-          if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
-          updateGrupoUI();
-          if(typeof renderLive==='function') renderLive();
+  // Simple sync via XMLHttpRequest (bypasses Service Worker completely)
+  function syncGrupo(){
+    try{
+      var xhr=new XMLHttpRequest();
+      xhr.open('GET','https://procesion-sonsonate-default-rtdb.firebaseio.com/grupoActual/day'+currentDay+'.json?t='+Date.now(),true);
+      xhr.onload=function(){
+        if(xhr.status===200){
+          var d=JSON.parse(xhr.responseText);
+          if(d&&(!liveGrupoData||d.t>liveGrupoData.t)){
+            currentGrupoActual=d.cambio||0;
+            liveGrupoData=d;
+            if(d.desfase!==undefined) virgenDesfase=d.desfase;
+            if(d.movidos!==undefined) virgenMovidos=d.movidos;
+            if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
+            updateGrupoUI();
+            if(typeof renderLive==='function') renderLive();
+          }
         }
-      });
-    }
-  });
+      };
+      xhr.send();
+    }catch(e){}
+  }
+  syncGrupo();
+  setInterval(syncGrupo,10000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)syncGrupo();});
   // Config sync
   if(!isShared){
     ['cS','cH','cMn'].forEach(function(id){
