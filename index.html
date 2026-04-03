@@ -442,7 +442,7 @@ let MART_WP_REF = [
 ];
 
 // ========== LOCAL STORAGE ==========
-const SAVE_KEY = 'semanaSanta_v42';
+const SAVE_KEY = 'semanaSanta_v43';
 function getWPs(){return currentDay===0?LUN_WP_REF:currentDay===1?MART_WP_REF:currentDay===2?MIER_WP_REF:currentDay===3?VIER_WP_REF:[];}
 function saveAll() {
   try {
@@ -1870,7 +1870,7 @@ setTimeout(function(){
 // ========== SERVICE WORKER ==========
 if('serviceWorker' in navigator){
   // Force clear old caches and SW on first load of new version
-  const APP_VERSION='v42';
+  const APP_VERSION='v43';
   if(localStorage.getItem('appVer')!==APP_VERSION){
     // Clear all caches
     if(window.caches) caches.keys().then(ks=>ks.forEach(k=>caches.delete(k)));
@@ -2201,7 +2201,9 @@ function updateGrupoUI(){
         var lastG=((sacaH3-1+adminTot-1)%21)+1;
         adminEl.textContent='✅#'+lastG;
       } else {
-        adminEl.textContent=liveGrupoData.grp>0?'#'+liveGrupoData.grp:'#'+liveGrupoData.cambio;
+        var sacaAdm=daySaca[currentDay]||16;
+        var admGrp=((sacaAdm-1+liveGrupoData.cambio-1)%21)+1;
+        adminEl.textContent='#'+admGrp;
       }
     } else {
       adminEl.textContent='-';
@@ -2215,6 +2217,9 @@ function updateGrupoUI(){
   if(banner&&txtEl&&progEl){
     if(liveGrupoData&&liveGrupoData.cambio>0){
       var tot=liveGrupoData.tot||changes.length;
+      // Always recalculate grupo from current saca (not Firebase grp)
+      var sacaH3=daySaca[currentDay]||16;
+      var currentGrp=((sacaH3-1+Math.min(liveGrupoData.cambio,tot)-1)%21)+1;
       if(liveGrupoData.cambio>tot){
         // Jesus finished - show entering group (always 21 groups)
         var sacaH4=daySaca[currentDay]||17;
@@ -2227,7 +2232,7 @@ function updateGrupoUI(){
         }
         progEl.innerHTML=progHtml;
       } else {
-        txtEl.textContent='Grupo #'+liveGrupoData.grp;
+        txtEl.textContent='Grupo #'+currentGrp;
         var progHtml=liveGrupoData.nombre||'';
         if(!isShared){
           var procPct=Math.round(liveGrupoData.cambio/tot*100);
