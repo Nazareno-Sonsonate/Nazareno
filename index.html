@@ -2330,6 +2330,35 @@ function startDayListeners(){
     updateGrupoUI();
     if(typeof renderLive==='function') renderLive();
   });
+  // Fallback: poll Firebase every 30s in case listener misses
+  setInterval(function(){
+    db.ref('grupoActual/day'+currentDay).once('value',function(snap){
+      var d=snap.val();
+      if(!d) return;
+      if(!liveGrupoData||d.t>liveGrupoData.t){
+        currentGrupoActual=d.cambio||0;
+        liveGrupoData=d;
+        if(d.desfase!==undefined) virgenDesfase=d.desfase;
+        if(d.movidos!==undefined) virgenMovidos=d.movidos;
+        if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
+        updateGrupoUI();
+        if(typeof renderLive==='function') renderLive();
+      }
+    });
+  },30000);
+  // Also fetch once immediately to ensure data loads
+  db.ref('grupoActual/day'+currentDay).once('value',function(snap){
+    var d=snap.val();
+    if(d&&(!liveGrupoData||d.t>=liveGrupoData.t)){
+      currentGrupoActual=d.cambio||0;
+      liveGrupoData=d;
+      if(d.desfase!==undefined) virgenDesfase=d.desfase;
+      if(d.movidos!==undefined) virgenMovidos=d.movidos;
+      if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
+      updateGrupoUI();
+      if(typeof renderLive==='function') renderLive();
+    }
+  });
   // Config sync
   if(!isShared){
     ['cS','cH','cMn'].forEach(function(id){
