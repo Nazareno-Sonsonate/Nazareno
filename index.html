@@ -678,8 +678,65 @@ function isZoom() { return Date.now()-lastMulti<500; }
 
 // ========== URL PARAMS & SHARING ==========
 let isShared = false;
+let isSEMode = false;
 function readParams(){
   const p = new URLSearchParams(window.location.search);
+  // Santo Entierro mode
+  if(p.has('se')){
+    isSEMode=true;
+    currentDay=4;
+    var seEdit=p.has('edit');
+    isShared=!seEdit;
+    // Show SE tab, hide others
+    document.querySelectorAll('.day').forEach(b=>b.style.display='none');
+    var seTab=document.getElementById('seTab');
+    if(seTab){seTab.style.display='block';seTab.classList.add('a');}
+    // Change theme to gold
+    document.body.style.background='#0a0a0a';
+    document.querySelector('.hdr h1').textContent='SANTO ENTIERRO DE CRISTO';
+    document.querySelector('.hdr h1').style.color='#d4af37';
+    document.querySelector('.hdr').style.borderBottomColor='rgba(212,175,55,.3)';
+    var crossEl=document.querySelector('.hdr div');
+    if(crossEl){crossEl.textContent='⚰️';crossEl.style.color='#d4af37';}
+    // Change purple to gold
+    document.querySelectorAll('.vtab').forEach(function(t){t.style.color=t.classList.contains('a')?'#d4af37':'#888';});
+    // Hide day tabs bar
+    document.querySelector('.days').style.display='none';
+    // Apply gold theme via CSS override
+    var seStyle=document.createElement('style');
+    seStyle.textContent='.day.a{color:#d4af37!important;background:rgba(212,175,55,.1)!important;border-bottom-color:#d4af37!important}.vtab.a{color:#d4af37!important;border-bottom-color:#d4af37!important}.btn{border-color:#8B7355!important;color:#d4af37!important;background:rgba(212,175,55,.12)!important}#grupoActualBanner{background:rgba(212,175,55,.12)!important;border-color:rgba(212,175,55,.3)!important}#grupoActualText{color:#d4af37!important}.live-next .ln-num{color:#d4af37!important}.live-next{border-color:#d4af37!important;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.05))!important}.live-progress-bar{background:linear-gradient(90deg,#d4af37,#8B7355)!important}.bar{background:rgba(212,175,55,.08)!important}.bar .v{color:#d4af37!important}.cfg.open{border-color:rgba(212,175,55,.3)!important}.live-btn-done{background:#8B7355!important}.live-btn-undo{border-color:#8B7355!important;color:#d4af37!important}';
+    document.head.appendChild(seStyle);
+    if(seEdit){
+      // Editor mode: no modal, show controls
+      $('cType').value=21;
+      $('cS').value=5;
+      $('cH').value=17;
+      $('cMn').value=10;
+    } else {
+      // Shared mode: show modal for group selection
+      $('sharedModal').style.display='flex';
+      $('sharedDayLabel').textContent='Santo Entierro de Cristo';
+      $('step1').style.display='none';
+      const saved=localStorage.getItem('sharedUserSE');
+      if(saved){
+        const s=JSON.parse(saved);
+        sharedPickedType=21;
+        sharedLastGroup=+s.g||0;
+        $('cType').value=21;
+        $('cG').value=s.g;
+      }
+      sharedPickedType=21;
+      showGroupGrid(21);
+      // Hide back button in SE mode
+      var backBtns=$('step3').querySelectorAll('button');
+      if(backBtns.length>0) backBtns[backBtns.length-1].style.display='none';
+      // Add SE title above grid
+      var seTitle=document.createElement('div');
+      seTitle.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#d4af37;font-weight:700;margin-bottom:12px">SANTO ENTIERRO DE CRISTO</div>';
+      $('step3').insertBefore(seTitle,$('step3').firstChild);
+    }
+    return;
+  }
   if(p.has('saca')||p.has('dia')){
     isShared=true;
     if(p.has('saca')) $('cS').value=p.get('saca');
@@ -727,11 +784,13 @@ function pickColor(c){
 function showGroupGrid(t){
   $('step3').style.display='block';
   const colores=['🟡','🔴','🔵'];
-  $('step3label').textContent=t===27?'Cargadora '+colores[sharedPickedColor]+' · '+t+' grupos':t+' grupos';
+  $('step3label').textContent=isSEMode?'21 grupos · Santo Entierro':t===27?'Cargadora '+colores[sharedPickedColor]+' · '+t+' grupos':t+' grupos';
   let h='';
   for(let i=1;i<=t;i++){
     const isLast=(i===sharedLastGroup);
-    const bg=isLast?'background:#7c3aed;color:#fff;border-color:#c084fc':'background:rgba(124,58,237,.15);color:#c084fc;border-color:#7c3aed';
+    const goldBg=isSEMode?(isLast?'background:#d4af37;color:#000;border-color:#d4af37':'background:rgba(212,175,55,.15);color:#d4af37;border-color:#8B7355'):'';
+    const purpleBg=!isSEMode?(isLast?'background:#7c3aed;color:#fff;border-color:#c084fc':'background:rgba(124,58,237,.15);color:#c084fc;border-color:#7c3aed'):'';
+    const bg=isSEMode?goldBg:purpleBg;
     h+='<button onclick="pickGroup('+i+')" style="padding:10px 0;border:1px solid;border-radius:8px;'+bg+';font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">'+i+'</button>';
   }
   $('groupGrid').innerHTML=h;
@@ -744,15 +803,28 @@ function pickGroup(g){
   $('colorDiv').style.display=(sharedPickedType===27)?'block':'none';
   const isM=(sharedPickedType===27);
   $('cS').value=isM?defaultSacaM[currentDay]:defaultSacaH[currentDay];
-  localStorage.setItem('sharedUser',JSON.stringify({t:sharedPickedType,g:g,color:sharedPickedColor}));
+  localStorage.setItem(isSEMode?'sharedUserSE':'sharedUser',JSON.stringify({t:sharedPickedType,g:g,color:sharedPickedColor}));
   $('sharedModal').style.display='none';
   calc();
 }
 
 function shareWhatsApp(){
   const c=cfg();
-  const sacaH=daySaca[currentDay]||17;
   const base=window.location.origin+window.location.pathname;
+  // Santo Entierro share
+  if(currentDay===4){
+    const link=base+'?se=1';
+    const msg='⚰️ *Santo Entierro de Cristo · Sonsonate*\n\n'
+      +'Rastreo en vivo del Santo Entierro\n'
+      +'Abrí el link y elegí tu grupo:\n'+link;
+    if(navigator.share){
+      navigator.share({title:'Santo Entierro · Sonsonate',text:msg,url:link}).catch(()=>{});
+    } else {
+      window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+    }
+    return;
+  }
+  const sacaH=daySaca[currentDay]||17;
   const link=base+'?saca='+sacaH+'&dia='+currentDay;
   const msg='✝️ *Procesión '+dayNames[currentDay]+'*\n'
     +'Saca: Grupo #'+sacaH+'\n\n'
