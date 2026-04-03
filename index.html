@@ -728,9 +728,9 @@ function readParams(){
     if(step1El){
       step1El.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#d4af37;font-weight:700;margin-bottom:4px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#ccc;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div style="display:flex;gap:12px;justify-content:center"><div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-entierro.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">21 grupos</div></div><div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-virgen.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">27 grupos</div></div></div>';
     }
-    // Hide day selector row, replace with SE header
+    // Hide day selector dropdown only, keep buttons visible
     var dayRow=document.getElementById('daySelector');
-    if(dayRow) dayRow.parentElement.style.display='none';
+    if(dayRow) dayRow.style.display='none';
     // Hide old day tabs
     document.querySelector('.days').style.display='none';
     // Apply gold theme via CSS override
@@ -749,24 +749,17 @@ function readParams(){
       if(saved){
         const s=JSON.parse(saved);
         sharedPickedType=+s.t||21;
+        sharedPickedColor=+s.color||0;
         sharedLastGroup=+s.g||0;
         $('cType').value=s.t||21;
         $('cG').value=s.g;
+        if(s.color!==undefined) $('cColor').value=s.color;
+        $('colorDiv').style.display=(+s.t===27)?'block':'none';
         // Already configured — skip modal
       } else {
-        // First time — show group selector
+        // First time — show type selector (step1 with SE images)
         $('sharedModal').style.display='flex';
         $('sharedDayLabel').textContent='Santo Entierro de Cristo';
-        $('step1').style.display='none';
-        sharedPickedType=21;
-        showGroupGrid(21);
-        // Hide back button in SE mode
-        var backBtns=$('step3').querySelectorAll('button');
-        if(backBtns.length>0) backBtns[backBtns.length-1].style.display='none';
-        // Add SE title above grid
-        var seTitle=document.createElement('div');
-        seTitle.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#d4af37;font-weight:700;margin-bottom:12px">SANTO ENTIERRO DE CRISTO</div>';
-        $('step3').insertBefore(seTitle,$('step3').firstChild);
       }
     }
     return;
@@ -845,15 +838,10 @@ function pickGroup(g){
 }
 
 function reopenGroupSelector(){
-  // Reset modal to step 1
+  // Reset modal to step 1 (type selection)
   $('step1').style.display='block';
   $('step2').style.display='none';
   $('step3').style.display='none';
-  if(isSEMode){
-    $('step1').style.display='none';
-    sharedPickedType=+$('cType').value||21;
-    showGroupGrid(sharedPickedType);
-  }
   $('sharedDayLabel').textContent=isSEMode?'Santo Entierro de Cristo':dayNames[currentDay];
   $('sharedModal').style.display='flex';
 }
