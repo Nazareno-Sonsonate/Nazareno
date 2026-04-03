@@ -2337,10 +2337,10 @@ function startDayListeners(){
             // Show sync status
             var now=new Date();
             var ss=document.getElementById('syncStatus');
-            var syncMsg='🟢 '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+' · cambio:'+(d?d.cambio:'vacío');
+            var syncMsg='🟢 '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+' · FB:'+d.cambio+' Local:'+currentGrupoActual;
             window._lastSync=syncMsg;
             if(ss) ss.textContent=syncMsg;
-            if(d&&(!liveGrupoData||d.t>liveGrupoData.t)){
+            if(d&&(!liveGrupoData||d.cambio!==currentGrupoActual||d.t>liveGrupoData.t)){
               currentGrupoActual=d.cambio||0;
               liveGrupoData=d;
               if(d.desfase!==undefined) virgenDesfase=d.desfase;
