@@ -2411,26 +2411,38 @@ function startDayListeners(){
 
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_lMqEQiLroj-jhx-a9d_o-6uWFfOCbg0&libraries=geometry&callback=initMap" async defer></script>
-<div id="fbTest" style="position:fixed;bottom:0;left:0;right:0;background:#000;color:#0f0;font-size:11px;padding:4px 8px;z-index:9999;font-family:monospace">⏳ Conectando Firebase...</div>
+<div id="fbTest" style="position:fixed;bottom:0;left:0;right:0;background:#000;color:#0f0;font-size:11px;padding:4px 8px;z-index:9999;font-family:monospace">⏳ Conectando...</div>
 <script>
-// Standalone Firebase test - runs independently
-setTimeout(function(){
+// Sync: fetch Firebase and UPDATE UI every 10 seconds
+function globalSync(){
   try{
+    var day=window.currentDay||3;
     var x=new XMLHttpRequest();
-    x.open('GET','https://procesion-sonsonate-default-rtdb.firebaseio.com/grupoActual/day3.json?_='+Date.now(),true);
+    x.open('GET','https://procesion-sonsonate-default-rtdb.firebaseio.com/grupoActual/day'+day+'.json?_='+Date.now(),true);
     x.onload=function(){
-      document.getElementById('fbTest').textContent='✅ FB OK: '+x.responseText.substring(0,80);
-      document.getElementById('fbTest').style.background='#001a00';
+      var el=document.getElementById('fbTest');
+      if(x.status===200){
+        try{
+          var d=JSON.parse(x.responseText);
+          if(el) el.textContent='🟢 FB:cambio='+(d?d.cambio:'?')+' Local:'+(window.currentGrupoActual||0);
+          if(d&&window.liveGrupoData!==undefined){
+            window.currentGrupoActual=d.cambio||0;
+            window.liveGrupoData=d;
+            if(d.desfase!==undefined) window.virgenDesfase=d.desfase;
+            if(d.movidos!==undefined) window.virgenMovidos=d.movidos;
+            if(d.sacaMuj&&window.daySacaMuj) window.daySacaMuj[day]=d.sacaMuj;
+            if(typeof window.updateGrupoUI==='function') window.updateGrupoUI();
+          }
+        }catch(e){if(el) el.textContent='❌ Parse: '+e.message;}
+      } else {if(el) el.textContent='❌ HTTP '+x.status;}
     };
-    x.onerror=function(){
-      document.getElementById('fbTest').textContent='❌ XHR ERROR';
-      document.getElementById('fbTest').style.background='#1a0000';
-    };
+    x.onerror=function(){var el=document.getElementById('fbTest');if(el) el.textContent='❌ Sin conexión';};
     x.send();
-  }catch(e){
-    document.getElementById('fbTest').textContent='❌ CATCH: '+e.message;
-  }
-},3000);
+  }catch(e){}
+}
+setTimeout(globalSync,3000);
+setInterval(globalSync,10000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)globalSync();});
 </script>
 </body>
 </html>
