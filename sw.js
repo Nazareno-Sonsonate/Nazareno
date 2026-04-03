@@ -1,4 +1,4 @@
-const CACHE_NAME = 'semana-santa-v44';
+const CACHE_NAME = 'semana-santa-v45';
 const URLS_TO_CACHE = [
   './',
   './index.html',
@@ -27,11 +27,9 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-  if (url.hostname.includes('googleapis.com') || url.hostname.includes('gstatic.com') || url.hostname.includes('firebaseio.com')) {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
-    );
-    return;
+  // Let Firebase and Google requests pass through WITHOUT interception
+  if (url.hostname.includes('googleapis.com') || url.hostname.includes('gstatic.com') || url.hostname.includes('firebaseio.com') || url.hostname.includes('firebase')) {
+    return; // Don't call event.respondWith - browser handles directly
   }
   // Network first for HTML (always get latest), cache first for images
   if (event.request.url.includes('.html') || event.request.url.endsWith('/procesion/') || event.request.url.endsWith('/procesion')) {
