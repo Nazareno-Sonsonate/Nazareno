@@ -531,7 +531,7 @@ function detectToday(){
   }
   const today=checkDate.toISOString().slice(0,10);
   let todayIdx=-1;
-  dayDates.forEach((d,i)=>{if(d===today)todayIdx=i;});
+  for(var ii=0;ii<dayDates.length;ii++){if(dayDates[ii]===today&&todayIdx===-1)todayIdx=ii;}
   // If April 3 and after 2 PM, switch to Santo Entierro (disabled until ready)
   // if(todayIdx===3&&now.getHours()>=14) todayIdx=4;
   // If no exact match, find next upcoming or most recent day
@@ -1614,7 +1614,7 @@ function renderLive(){
   if(liveGrupoData&&liveGrupoData.cambio>0){
     var bTot=liveGrupoData.tot||changes.length;
     if(liveGrupoData.cambio>bTot){
-      bannerGrp='✅ Entró Grupo #'+(((sacaBnr-1+bTot-1)%21)+1);
+      bannerGrp='✅ Asentó Grupo #'+(((sacaBnr-1+bTot-1)%21)+1);
     } else {
       bannerGrp='Grupo #'+(((sacaBnr-1+liveGrupoData.cambio-1)%21)+1);
       bannerProg=liveGrupoData.nombre||'';
@@ -1631,9 +1631,17 @@ function renderLive(){
     var lastGrpPast=((sacaPast-1+totPast-1)%21)+1;
     h+='<div style="text-align:center;padding:16px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(76,175,80,.08),rgba(46,125,50,.15));border:1px solid rgba(76,175,80,.4)">';
     h+='<div style="font-size:11px;color:#aaa;letter-spacing:1px">VENERADA IMAGEN DE JESÚS NAZARENO</div>';
-    h+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">✝️ Entregada al Templo</div>';
+    h+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">✝️ Asentada en el Templo</div>';
     h+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#4CAF50">#'+lastGrpPast+'</b></div>';
     h+='<div style="font-size:11px;color:#888;margin-top:6px;font-style:italic">Gloria y honor a Jesús Nazareno de Sonsonate</div>';
+    h+='</div>';
+    // Virgen past day info
+    var sacaPastM=daySacaMuj[currentDay]||22;
+    var lastGrpPastM=(((sacaPastM-1+totPast-1)%27)+27)%27+1;
+    h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(59,130,246,.15));border:1px solid rgba(59,130,246,.3)">';
+    h+='<div style="font-size:11px;color:#93c5fd;letter-spacing:1px">MARÍA SANTÍSIMA</div>';
+    h+='<div style="font-size:16px;font-weight:700;color:#93c5fd;margin:6px 0">✝️ Asentada en el Templo</div>';
+    h+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#93c5fd">#'+lastGrpPastM+'</b></div>';
     h+='</div>';
     // Show selector frozen at last group
     h+='<div style="text-align:center;margin-bottom:8px"><span style="font-size:12px;color:#aaa">Jesús: </span><span style="font-size:20px;font-weight:700;color:#4CAF50">✅ #'+lastGrpPast+'</span></div>';
@@ -1650,7 +1658,7 @@ function renderLive(){
     var vCambioGrpB=Math.max(1,vCambioB-vMovB);
     if(vCambioB>=vTotB){
       var lastGrpMB=(((vSacaM-1+vTotB-1-vMovB)%27)+27)%27+1;
-      vBannerGrp='✅ Entró Grupo #'+lastGrpMB;
+      vBannerGrp='✅ Asentó Grupo #'+lastGrpMB;
       vBannerProg='Saca #'+vSacaM;
     } else {
       var vGrpB=(((vSacaM-1+vCambioGrpB-1)%27)+27)%27+1;
@@ -1720,7 +1728,7 @@ function renderLive(){
     var lastGrpDone=((sacaDone-1+totDone-1)%21)+1;
     h+='<div style="text-align:center;padding:16px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(76,175,80,.08),rgba(46,125,50,.15));border:1px solid rgba(76,175,80,.4)">';
     h+='<div style="font-size:11px;color:#aaa;letter-spacing:1px">VENERADA IMAGEN DE JESÚS NAZARENO</div>';
-    h+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">✝️ Entregada al Templo</div>';
+    h+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">✝️ Asentada en el Templo</div>';
     h+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#4CAF50">#'+lastGrpDone+'</b></div>';
     h+='<div style="font-size:11px;color:#888;margin-top:6px;font-style:italic">Gloria y honor a Jesús Nazareno de Sonsonate</div>';
     h+='</div>';
@@ -2376,7 +2384,7 @@ function updateGrupoUI(){
         // Jesus finished - show entering group (always 21 groups)
         var sacaH4=daySaca[currentDay]||17;
         var lastGrpH=((sacaH4-1+tot-1)%21)+1;
-        txtEl.textContent='✅ Entró Grupo #'+lastGrpH;
+        txtEl.textContent='✅ Asentó Grupo #'+lastGrpH;
         var progHtml='';
         if(!isShared){
           progHtml+='<div style="margin-top:6px;height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden"><div style="height:100%;width:100%;background:linear-gradient(90deg,#4CAF50,#2E7D32);border-radius:4px"></div></div>'
@@ -2396,7 +2404,10 @@ function updateGrupoUI(){
       }
       banner.style.display='block';
     } else {
-      banner.style.display='none';
+      var sacaDef2=daySaca[currentDay]||16;
+      txtEl.textContent='Grupo #'+sacaDef2;
+      progEl.textContent='Esperando inicio de la procesión';
+      banner.style.display='block';
     }
   }
   // Virgen estimated banner
@@ -2413,7 +2424,7 @@ function updateGrupoUI(){
       var vCambioGrp=Math.max(1,vCambio-mov); // group rotation adjusted
       if(vCambio>=totV){
         var lastGrpM=(((sacaM-1+totV-1-mov)%27)+27)%27+1;
-        vTxt.textContent='✅ Entró Grupo #'+lastGrpM;
+        vTxt.textContent='✅ Asentó Grupo #'+lastGrpM;
         if(vProg) vProg.textContent='Saca #'+sacaM+(!isShared&&mov>0?' · '+mov+' movidos':'');
       } else {
         var vGrp=(((sacaM-1+vCambioGrp-1)%27)+27)%27+1;
@@ -2426,7 +2437,10 @@ function updateGrupoUI(){
       }
       vBanner.style.display='block';
     } else {
-      vBanner.style.display='none';
+      var vSacaDef2=daySacaMuj[currentDay]||22;
+      vTxt.textContent='Grupo #'+vSacaDef2;
+      if(vProg) vProg.textContent='Esperando inicio';
+      vBanner.style.display='block';
     }
   }
 }
@@ -2608,7 +2622,7 @@ function globalSync(){
             var bannerDiv=document.getElementById('grupoActualBanner');
             if(bannerEl&&d.cambio>0){
               if(d.cambio>tot){
-                bannerEl.textContent='✅ Entró Grupo #'+(((sacaSync-1+tot-1)%21)+1);
+                bannerEl.textContent='✅ Asentó Grupo #'+(((sacaSync-1+tot-1)%21)+1);
               } else {
                 bannerEl.textContent='Grupo #'+syncGrp;
                 if(progEl) progEl.textContent=d.nombre||'';
