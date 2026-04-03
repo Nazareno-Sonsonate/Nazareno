@@ -541,17 +541,34 @@ function detectToday(){
   const today=checkDate.toISOString().slice(0,10);
   let todayIdx=-1;
   for(var ii=0;ii<dayDates.length;ii++){if(dayDates[ii]===today&&todayIdx===-1)todayIdx=ii;}
-  // If April 3 and after 2 PM, switch to Santo Entierro (disabled until ready)
-  // if(todayIdx===3&&now.getHours()>=14) todayIdx=4;
   // If no exact match, find next upcoming or most recent day
   if(todayIdx===-1){
     var todayStr=checkDate.toISOString().slice(0,10);
     for(var i=0;i<dayDates.length;i++){
       if(dayDates[i]>=todayStr){todayIdx=i;break;}
     }
-    if(todayIdx===-1) todayIdx=dayDates.length-1; // default to last day
+    if(todayIdx===-1) todayIdx=dayDates.length-1;
   }
-  // Mark past/today on tabs
+  // Mark HOY in dropdown selector
+  var ds=document.getElementById('daySelector');
+  if(ds){
+    var labels=['Ⓛ Lunes','Ⓜ Martes','Ⓜ Miércoles','Ⓥ Viernes','⚰️ Santo Entierro'];
+    for(var j=0;j<ds.options.length;j++){
+      var opt=ds.options[j];
+      var idx=+opt.value;
+      if(idx===todayIdx){
+        opt.textContent=labels[idx]+' ← HOY';
+      } else {
+        var dateObj=new Date(dayDates[idx]+'T12:00:00');
+        var ref2=new Date();ref2.setHours(12,0,0,0);
+        if(dateObj<ref2&&dayDates[idx]!==today){
+          opt.textContent=labels[idx]+' ✓';
+        }
+      }
+    }
+    ds.value=todayIdx;
+  }
+  // Mark past/today on old tabs (hidden)
   document.querySelectorAll('.day').forEach((btn,i)=>{
     const date=new Date(dayDates[i]+'T12:00:00');
     const ref=new Date();
@@ -908,6 +925,7 @@ function initMap() {
   $('cH').value = dayHours[currentDay];
 
   loadDay(currentDay);
+  window._mapReady=true;
   // Show urna button only for admin (after isShared is set)
   if(typeof showUrnaButton==='function') showUrnaButton();
   if(typeof showAdminTools==='function') showAdminTools();
@@ -2712,7 +2730,10 @@ function startDayListeners(){
 // Sync: fetch Firebase and UPDATE UI every 10 seconds
 function globalSync(){
   try{
-    var day=window.currentDay||3;
+    // Detect day: check URL for SE mode, otherwise use currentDay
+    var params=new URLSearchParams(window.location.search);
+    var day=params.has('se')?4:(window.currentDay!==undefined?window.currentDay:3);
+    if(day===0&&!window._mapReady) return; // Skip sync before map loads
     var x=new XMLHttpRequest();
     x.open('GET','https://procesion-sonsonate-default-rtdb.firebaseio.com/grupoActual/day'+day+'.json?_='+Date.now(),true);
     x.onload=function(){
