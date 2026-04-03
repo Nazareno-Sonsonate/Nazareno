@@ -365,7 +365,7 @@ let allMarkers = [], wpMarkers = [], showAll = true, dragMode = false;
 let dayNames = ['Lunes Santo','Martes Santo','Miércoles Santo','Viernes Mañana'];
 let dayDates = ['2026-03-30','2026-03-31','2026-04-01','2026-04-03']; // Semana Santa 2026
 let dayHours = [15, 15, 15, 6];
-let daySaca = [19, 17, 13, 17];
+let daySaca = [19, 17, 13, 16];
 let daySacaManual = [true, true, false, false];
 
 function detectToday(){
@@ -494,6 +494,10 @@ function loadSaved() {
       if(d.ga.data.desfase!==undefined) virgenDesfase=d.ga.data.desfase;
       if(d.ga.data.movidos!==undefined) virgenMovidos=d.ga.data.movidos;
       if(d.ga.data.sacaMuj) daySacaMuj[currentDay]=d.ga.data.sacaMuj;
+      // Validate: cambio can't exceed day's total points
+      var dayTotals=[LUN_PTS.length,MART_PTS.length,MIER_PTS.length,VIER_PTS.length];
+      var maxForDay=dayTotals[currentDay]||44;
+      if(currentGrupoActual>maxForDay+30){currentGrupoActual=0;liveGrupoData=null;}
     }
     if(savedRefs[0]&&savedRefs[0].length){LUN_WP_REF.length=0;savedRefs[0].forEach(r=>LUN_WP_REF.push(r));}
     if(savedRefs[1]&&savedRefs[1].length){MART_WP_REF.length=0;savedRefs[1].forEach(r=>MART_WP_REF.push(r));}
@@ -608,7 +612,7 @@ function cfg() {
   return {g:+$('cG').value||5, t:+$('cType').value||21, s:+$('cS').value||19, h:+$('cH').value||15, mn:+$('cMn').value||6, color:+($('cColor')?$('cColor').value:0)};
 }
 // Default sacas: [lun, mar, mie, vie] per type
-const defaultSacaH = [19, 17, 13, 17]; // hombres 21 grupos
+const defaultSacaH = [19, 17, 13, 16]; // hombres 21 grupos
 const defaultSacaM = [19, 27, 13, 22]; // mujeres 27 grupos
 function onTypeChange(){
   $('colorDiv').style.display=(+$('cType').value===27)?'block':'none';
@@ -865,7 +869,7 @@ function snapToRoute(p){
 
 // ========== CALCULATE ==========
 // Viernes special timing
-const VIER_CORTESIAS_CHANGE = 39; // cortesías start after this change (Grupo #13 con saca #17)
+const VIER_CORTESIAS_CHANGE = 40; // cortesías at this change (Grupo #13 con saca #16)
 const VIER_CORTESIAS_MIN = 45;    // 45 min pause (11:30-12:00)
 const VIER_LAST_EXTRA = 0.10;     // last change 10% longer
 
