@@ -2373,16 +2373,18 @@ var autoAdvanceGPS=true;
 
 function findNearestCambio(lat,lng){
   if(positions.length===0) return -1;
+  var startIdx=Math.max(0,currentGrupoActual);
+  var endIdx=Math.min(positions.length,currentGrupoActual+10); // Only check next 10 points
   var minDist=Infinity,nearest=-1;
-  for(var i=0;i<positions.length;i++){
+  for(var i=startIdx;i<endIdx;i++){
     var dlat=lat-positions[i].lat;
     var dlng=lng-positions[i].lng;
     var dist=dlat*dlat+dlng*dlng;
     if(dist<minDist){minDist=dist;nearest=i;}
   }
-  // Only auto-advance if within ~50 meters (roughly 0.0005 degrees)
+  // Only auto-advance if within ~50 meters
   if(minDist>0.0005*0.0005) return -1;
-  return nearest+1; // cambio is 1-indexed
+  return nearest+1;
 }
 
 function listenAnda(tipo,imgUrl,color,zIdx){
