@@ -2350,6 +2350,9 @@ function startDayListeners(){
   // Also fetch once immediately to ensure data loads
   db.ref('grupoActual/day'+currentDay).once('value',function(snap){
     var d=snap.val();
+    // Show connection status
+    var hSub=document.getElementById('hSub');
+    if(hSub) hSub.textContent=hSub.textContent+' · 🟢 FB:'+(d?d.cambio:'vacío');
     if(d&&(!liveGrupoData||d.t>=liveGrupoData.t)){
       currentGrupoActual=d.cambio||0;
       liveGrupoData=d;
