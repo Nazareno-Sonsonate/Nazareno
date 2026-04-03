@@ -1706,7 +1706,7 @@ function renderLive(){
     bannerProg='Esperando inicio de la procesión';
   }
   var bannerLabel1=isSEMode?'Santo Entierro de Cristo':'Venerada Imagen de Jesús Nazareno';
-  var bannerLabel2=isSEMode?'En este momento carga':'En este momento carga';
+  var bannerLabel2=(liveGrupoData&&liveGrupoData.cambio>0)?'En este momento carga':'Saca';
   h+='<div id="grupoActualBanner" style="display:'+bannerDisplay+';text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:11px;color:#aaa">'+bannerLabel1+'</div><div style="font-size:11px;color:#ccc">'+bannerLabel2+'</div><div id="grupoActualText" style="font-size:22px;font-weight:700;color:#c084fc">'+bannerGrp+'</div><div id="grupoActualProgress" style="font-size:11px;color:#aaa">'+bannerProg+'</div></div>';
   if(isPastDay){
     // Past day: show solemn message with grupo that entered
