@@ -744,6 +744,8 @@ function readParams(){
       $('cH').value=17;
       $('cMn').value=10;
       daySacaMuj[4]=6; // Virgen saca for SE
+      virgenDesfase=0;
+      virgenMovidos=0;
       // Update women's group count label for SE
       var opts=$('cType').options;
       for(var oi=0;oi<opts.length;oi++){if(opts[oi].value==='27') opts[oi].textContent='Mujeres (23 grupos)';}
@@ -2436,9 +2438,10 @@ if(isSEMode){
       xhr.open('GET','https://bd-recorrido-ahsec-default-rtdb.firebaseio.com/latitud.json?_='+Date.now(),true);
       xhr.timeout=5000;
       xhr.onload=function(){
-        if(xhr.status!==200) return;
+        if(xhr.status!==200){var el=document.getElementById('ahsecStatus');if(el) el.textContent='⚰️ AHSEC HTTP:'+xhr.status;return;}
         var lat=JSON.parse(xhr.responseText);
-        if(!lat) return;
+        var el0=document.getElementById('ahsecStatus');
+        if(!lat||lat===0){if(el0) el0.textContent='⚰️ SE: sin señal GPS (lat='+lat+')';return;}
         // Now fetch longitude
         var xhr2=new XMLHttpRequest();
         xhr2.open('GET','https://bd-recorrido-ahsec-default-rtdb.firebaseio.com/longitud.json?_='+Date.now(),true);
