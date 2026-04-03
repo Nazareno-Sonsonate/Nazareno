@@ -173,6 +173,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
     <div style="position:absolute;top:8px;left:8px;z-index:1000;display:flex;flex-direction:column;gap:5px">
       <button id="bGps" onclick="toggleGps()" class="mapbtn">📍 Mi Ubicación</button>
       <button id="bAll" onclick="toggleAll()" class="mapbtn">👥 Ver otros grupos</button>
+      <button onclick="openStreetView(gmap.getCenter().lat(),gmap.getCenter().lng())" class="mapbtn" style="background:rgba(26,115,232,.8);border-color:#1a73e8">🛣️ Street View</button>
       <button id="bUrna" onclick="toggleUrna('jesus')" class="mapbtn" style="display:none;background:rgba(220,38,38,.8);border-color:#dc2626">✝️ Anda Jesús</button>
       <button id="bUrnaV" onclick="toggleUrna('virgen')" class="mapbtn" style="display:none;background:rgba(59,130,246,.8);border-color:#3b82f6">👑 Anda Virgen</button>
     </div>
@@ -1875,7 +1876,11 @@ function renderLive(){
     h+='<div class="ln-num"'+(nextCarry.colorHex?' style="color:'+nextCarry.colorHex+'"':'')+'>#'+nextCarry.ci+'</div>';
     if(nextCarry.carryLabel) h+='<div style="font-size:14px;margin:4px 0">'+nextCarry.carryLabel+'</div>';
     h+='<div class="ln-ref">📍 '+ref+'</div>';
-    h+='<div class="ln-time">~'+estTime+'</div>';
+    if(isSEMode){
+      h+='<div style="font-size:11px;color:#888;margin-top:2px">Hora estimada: ~'+estTime+'</div>';
+    } else {
+      h+='<div class="ln-time">~'+estTime+'</div>';
+    }
     h+='<div id="countdownText" style="font-size:13px;margin-top:4px"></div>';
     if(realAvg) h+='<div style="font-size:10px;color:#4CAF50;margin-top:2px">⏱️ Promedio: '+realAvg.toFixed(1)+' min/cambio</div>';
     h+='<div style="font-size:10px;color:#aaa;margin-top:4px">Cambio #'+nextCarry.num+'</div>';
@@ -1915,7 +1920,7 @@ function renderLive(){
     h+='<div class="live-carry '+cls+'" style="'+borderColor+'" onclick="zoomTo('+(mc.ci-1)+')">';
     h+='<div class="lc-num">'+icon+'</div>';
     h+='<div class="lc-info"><div class="lc-ref">Cargada #'+mc.ci+' — '+ref+'</div><div class="lc-sub">Cambio #'+mc.num+(label?' · '+label:'')+(realT?' · '+realT:'')+'</div></div>';
-    h+='<div class="lc-time" style="color:'+(mcDone?'#4CAF50':(mc.colorHex||'#c084fc'))+'">'+estT+'</div>';
+    h+='<div class="lc-time" style="color:'+(mcDone?'#4CAF50':(mc.colorHex||'#c084fc'))+';'+(isSEMode?'font-size:11px;':'')+'">'+estT+'</div>';
     h+='</div>';
   });
   h+='</div>';
