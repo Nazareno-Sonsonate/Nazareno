@@ -1505,11 +1505,12 @@ function renderLive(){
     h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
     h+='<span style="font-size:12px;color:#aaa">Jesús:</span>';
     h+='<button onclick="advanceGrupo(-1)" style="padding:6px 14px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#ccc;font-size:16px;font-weight:700;cursor:pointer">−</button>';
-    var adminGText='-';
+    var sacaDef=daySaca[currentDay]||16;
+    var adminGText='#'+sacaDef;
     if(liveGrupoData&&liveGrupoData.cambio>0){
       var adminTot=liveGrupoData.tot||changes.length;
-      if(liveGrupoData.cambio>adminTot){var sacaH2=daySaca[currentDay]||17;adminGText='✅#'+(((sacaH2-1+adminTot-1)%21)+1);}
-      else{adminGText=liveGrupoData.grp>0?'#'+liveGrupoData.grp:'#'+liveGrupoData.cambio;}
+      if(liveGrupoData.cambio>adminTot){adminGText='✅#'+(((sacaDef-1+adminTot-1)%21)+1);}
+      else{adminGText='#'+(((sacaDef-1+liveGrupoData.cambio-1)%21)+1);}
     }
     h+='<span id="grupoActualAdmin" onclick="setGrupoManual()" style="font-size:20px;font-weight:700;color:#c084fc;min-width:40px;text-align:center;cursor:pointer;text-decoration:underline">'+adminGText+'</span>';
     h+='<button onclick="advanceGrupo(1)" style="padding:6px 14px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.3);color:#c084fc;font-size:16px;font-weight:700;cursor:pointer">+</button>';
@@ -2206,7 +2207,7 @@ function updateGrupoUI(){
         adminEl.textContent='#'+admGrp;
       }
     } else {
-      adminEl.textContent='-';
+      adminEl.textContent='#'+(daySaca[currentDay]||16);
     }
   }
   // Update chronometer
@@ -2357,6 +2358,23 @@ function startDayListeners(){
       if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
       updateGrupoUI();
       if(typeof renderLive==='function') renderLive();
+    }
+  });
+  // Re-fetch when app becomes visible (user switches back to tab)
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden){
+      db.ref('grupoActual/day'+currentDay).once('value',function(snap){
+        var d=snap.val();
+        if(d&&(!liveGrupoData||d.t>liveGrupoData.t)){
+          currentGrupoActual=d.cambio||0;
+          liveGrupoData=d;
+          if(d.desfase!==undefined) virgenDesfase=d.desfase;
+          if(d.movidos!==undefined) virgenMovidos=d.movidos;
+          if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
+          updateGrupoUI();
+          if(typeof renderLive==='function') renderLive();
+        }
+      });
     }
   });
   // Config sync
