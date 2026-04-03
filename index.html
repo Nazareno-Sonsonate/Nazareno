@@ -743,9 +743,20 @@ function readParams(){
       $('cS').value=5;
       $('cH').value=17;
       $('cMn').value=10;
-      daySacaMuj[4]=6; // Virgen saca for SE
+      daySacaMuj[4]=6;
       virgenDesfase=0;
       virgenMovidos=0;
+      // Fix Firebase if it has wrong values
+      setTimeout(function(){
+        if(liveGrupoData){
+          liveGrupoData.sacaMuj=6;
+          liveGrupoData.movidos=0;
+          liveGrupoData.desfase=0;
+          db.ref('grupoActual/day4').update({sacaMuj:6,movidos:0,desfase:0});
+          updateGrupoUI();
+          if(typeof renderLive==='function') renderLive();
+        }
+      },2000);
       // Update women's group count label for SE
       var opts=$('cType').options;
       for(var oi=0;oi<opts.length;oi++){if(opts[oi].value==='27') opts[oi].textContent='Mujeres (23 grupos)';}
@@ -2429,7 +2440,8 @@ listenAnda('jesus',isSEMode?'se-entierro-marker.jpg':'jesus-marker.jpg',isSEMode
 listenAnda('virgen',isSEMode?'se-virgen-marker.jpg':'maria-marker.jpg',isSEMode?'#d4af37':'#3b82f6',9998);
 
 // AHSEC GPS tracking for SE mode
-if(isSEMode){
+var _isSE=new URLSearchParams(window.location.search).has('se');
+if(_isSE){
   // Fetch GPS positions only (not full database)
   function fetchAHSECGPS(){
     try{
