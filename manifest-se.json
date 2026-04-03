@@ -1,0 +1,15 @@
+{
+  "name": "Santo Entierro de Cristo · Sonsonate",
+  "short_name": "Santo Entierro",
+  "description": "Rastreo en vivo del Santo Entierro de Cristo en Sonsonate",
+  "start_url": "./index.html?se=1",
+  "id": "santo-entierro-sonsonate",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {"src": "se-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "se-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

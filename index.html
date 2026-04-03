@@ -127,7 +127,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
     <option value="4" id="seOpt" style="display:none">⚰️ Santo Entierro</option>
   </select>
   <div style="display:flex;gap:4px">
-    <button class="btn" onclick="document.getElementById('cfgP').classList.toggle('open')" style="padding:5px 8px;font-size:11px">⚙️</button>
+    <button class="btn" onclick="document.getElementById('cfgP').classList.toggle('open')" style="padding:5px 8px;font-size:11px" id="btnConfig">⚙️</button>
     <button class="btn" onclick="shareWhatsApp()" style="padding:5px 8px;font-size:11px">📤</button>
     <button class="btn" onclick="resetData()" style="border-color:#914444;color:#e08080;padding:5px 8px;font-size:11px">🗑️</button>
   </div>
@@ -719,6 +719,15 @@ function readParams(){
     document.querySelector('.hdr h1').textContent='⚰️ SANTO ENTIERRO DE CRISTO';
     document.querySelector('.hdr h1').style.color='#d4af37';
     document.querySelector('.hdr').style.borderBottomColor='rgba(212,175,55,.3)';
+    // Switch manifest for SE PWA install
+    var mLink=document.querySelector('link[rel="manifest"]');
+    if(mLink) mLink.href='manifest-se.json';
+    document.querySelector('meta[name="theme-color"]').content='#0a0a0a';
+    // Update SE group selector images
+    var step1El=document.getElementById('step1');
+    if(step1El){
+      step1El.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#d4af37;font-weight:700;margin-bottom:4px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#ccc;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div style="display:flex;gap:12px;justify-content:center"><div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-entierro.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">21 grupos</div></div><div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-virgen.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">27 grupos</div></div></div>';
+    }
     // Hide day selector row, replace with SE header
     var dayRow=document.getElementById('daySelector');
     if(dayRow) dayRow.parentElement.style.display='none';
@@ -735,27 +744,30 @@ function readParams(){
       $('cH').value=17;
       $('cMn').value=10;
     } else {
-      // Shared mode: show modal for group selection
-      $('sharedModal').style.display='flex';
-      $('sharedDayLabel').textContent='Santo Entierro de Cristo';
-      $('step1').style.display='none';
+      // Shared mode
       const saved=localStorage.getItem('sharedUserSE');
       if(saved){
         const s=JSON.parse(saved);
-        sharedPickedType=21;
+        sharedPickedType=+s.t||21;
         sharedLastGroup=+s.g||0;
-        $('cType').value=21;
+        $('cType').value=s.t||21;
         $('cG').value=s.g;
+        // Already configured — skip modal
+      } else {
+        // First time — show group selector
+        $('sharedModal').style.display='flex';
+        $('sharedDayLabel').textContent='Santo Entierro de Cristo';
+        $('step1').style.display='none';
+        sharedPickedType=21;
+        showGroupGrid(21);
+        // Hide back button in SE mode
+        var backBtns=$('step3').querySelectorAll('button');
+        if(backBtns.length>0) backBtns[backBtns.length-1].style.display='none';
+        // Add SE title above grid
+        var seTitle=document.createElement('div');
+        seTitle.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#d4af37;font-weight:700;margin-bottom:12px">SANTO ENTIERRO DE CRISTO</div>';
+        $('step3').insertBefore(seTitle,$('step3').firstChild);
       }
-      sharedPickedType=21;
-      showGroupGrid(21);
-      // Hide back button in SE mode
-      var backBtns=$('step3').querySelectorAll('button');
-      if(backBtns.length>0) backBtns[backBtns.length-1].style.display='none';
-      // Add SE title above grid
-      var seTitle=document.createElement('div');
-      seTitle.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#d4af37;font-weight:700;margin-bottom:12px">SANTO ENTIERRO DE CRISTO</div>';
-      $('step3').insertBefore(seTitle,$('step3').firstChild);
     }
     return;
   }
@@ -766,7 +778,6 @@ function readParams(){
       const d=parseInt(p.get('dia'));
       if(d>=0&&d<=3) currentDay=d;
     }
-    // Always show modal — pre-fill saved values if available
     const saved=localStorage.getItem('sharedUser');
     if(saved){
       const s=JSON.parse(saved);
@@ -777,9 +788,12 @@ function readParams(){
       $('cG').value=s.g;
       if(s.color!==undefined) $('cColor').value=s.color;
       $('colorDiv').style.display=(+s.t===27)?'block':'none';
+      // Already configured — skip modal
+    } else {
+      // First time — show modal
+      $('sharedModal').style.display='flex';
+      $('sharedDayLabel').textContent=dayNames[currentDay];
     }
-    $('sharedModal').style.display='flex';
-    $('sharedDayLabel').textContent=dayNames[currentDay];
   }
 }
 
@@ -828,6 +842,20 @@ function pickGroup(g){
   localStorage.setItem(isSEMode?'sharedUserSE':'sharedUser',JSON.stringify({t:sharedPickedType,g:g,color:sharedPickedColor}));
   $('sharedModal').style.display='none';
   calc();
+}
+
+function reopenGroupSelector(){
+  // Reset modal to step 1
+  $('step1').style.display='block';
+  $('step2').style.display='none';
+  $('step3').style.display='none';
+  if(isSEMode){
+    $('step1').style.display='none';
+    sharedPickedType=+$('cType').value||21;
+    showGroupGrid(sharedPickedType);
+  }
+  $('sharedDayLabel').textContent=isSEMode?'Santo Entierro de Cristo':dayNames[currentDay];
+  $('sharedModal').style.display='flex';
 }
 
 function shareWhatsApp(){
@@ -915,10 +943,9 @@ function initMap() {
     const eb=document.getElementById('mapEditBar');
     if(eb) eb.style.display='none';
     document.querySelectorAll('.adminOnly').forEach(el=>el.style.display='none');
-    // Hide share and reset buttons
-    document.querySelectorAll('.tools .btn').forEach(b=>{
-      if(b.textContent.includes('🗑')) b.style.display='none';
-    });
+    // Change ⚙️ to open group selector instead of config
+    var cfgBtn=document.getElementById('btnConfig');
+    if(cfgBtn) cfgBtn.onclick=function(){reopenGroupSelector();};
   }
   // Restore day tabs
   document.querySelectorAll('.day').forEach((b,i)=>b.classList.toggle('a',i===currentDay));
@@ -976,12 +1003,16 @@ function switchDay(d) {
   $('cH').value = dayHours[d];
 
 
-  loadDay(d);
-  // Reset grupo actual for new day and restart listeners
+  // Reset grupo actual for new day BEFORE loading
   currentGrupoActual=0;
   liveGrupoData=null;
+
+  loadDay(d);
+  // Restart listeners for new day
   if(typeof stopDayListeners==='function') stopDayListeners();
   if(typeof startDayListeners==='function') startDayListeners();
+  // Re-render after data loads
+  setTimeout(function(){if(typeof renderLive==='function') renderLive();},500);
 }
 
 function loadDay(d) {
@@ -1711,7 +1742,10 @@ function renderLive(){
   }
   h+='<div style="text-align:center;margin-bottom:6px;font-size:10px;color:#e08080">⚠️ Las horas son aproximadas y se ajustan en tiempo real</div>';
 
-  // Live grupo tracking banner (everyone sees)
+  var procComplete=(done>=total&&total>0)||isPastDay;
+
+  // Live grupo tracking banner (only when NOT complete)
+  if(!procComplete){
   var bannerDisplay='block';var bannerGrp='';var bannerProg='';
   var sacaBnr=daySaca[currentDay]||16;
   if(liveGrupoData&&liveGrupoData.cambio>0){
@@ -1728,7 +1762,10 @@ function renderLive(){
   }
   var bannerLabel1=isSEMode?'Santo Entierro de Cristo':'Venerada Imagen de Jesús Nazareno';
   var bannerLabel2=(liveGrupoData&&liveGrupoData.cambio>0)?'En este momento carga':'Saca';
-  h+='<div id="grupoActualBanner" style="display:'+bannerDisplay+';text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:11px;color:#aaa">'+bannerLabel1+'</div><div style="font-size:11px;color:#ccc">'+bannerLabel2+'</div><div id="grupoActualText" style="font-size:22px;font-weight:700;color:#c084fc">'+bannerGrp+'</div><div id="grupoActualProgress" style="font-size:11px;color:#aaa">'+bannerProg+'</div></div>';
+  // Build Jesus/SE banner HTML
+  var jSize=isMuj?'14px':'22px';var jPad=isMuj?'6px':'10px';
+  var jBannerHtml='<div id="grupoActualBanner" style="display:'+bannerDisplay+';text-align:center;padding:'+jPad+';margin-bottom:6px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa">'+bannerLabel1+'</div><div style="font-size:'+(isMuj?'9px':'11px')+';color:#ccc">'+bannerLabel2+'</div><div id="grupoActualText" style="font-size:'+jSize+';font-weight:700;color:#c084fc">'+bannerGrp+'</div><div id="grupoActualProgress" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa">'+bannerProg+'</div></div>';
+  }
   if(isPastDay){
     // Past day: show solemn message with grupo that entered
     var sacaPast=daySaca[currentDay]||17;
@@ -1751,7 +1788,7 @@ function renderLive(){
     // Show selector frozen at last group
     h+='<div style="text-align:center;margin-bottom:8px"><span style="font-size:12px;color:#aaa">Jesús: </span><span style="font-size:20px;font-weight:700;color:#4CAF50">✅ #'+lastGrpPast+'</span></div>';
   } else {
-  // Virgen banner - pre-render with data
+  // Virgen banner data
   var vSacaDef=daySacaMuj[currentDay]||22;
   var vBannerDisplay='block',vBannerGrp='Grupo #'+vSacaDef,vBannerProg='Esperando inicio';
   if(liveGrupoData&&liveGrupoData.cambio>0){
@@ -1772,8 +1809,17 @@ function renderLive(){
       vBannerProg='⚠️ Estimado';
     }
   }
-  if(!isSEMode){
-  h+='<div id="grupoVirgenBanner" style="display:'+vBannerDisplay+';text-align:center;padding:10px;margin-bottom:8px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div style="font-size:11px;color:#93c5fd">María Santísima</div><div style="font-size:11px;color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:22px;font-weight:700;color:#93c5fd">'+vBannerGrp+'</div><div id="grupoVirgenProgress" style="font-size:10px;color:#ff9800">'+vBannerProg+'</div></div>';
+  // Build Virgen banner HTML
+  var vSize=isMuj?'22px':'14px';var vPad=isMuj?'10px':'6px';
+  var vLabel=isSEMode?'Virgen Dolorosa':'María Santísima';
+  var vBannerHtml='<div id="grupoVirgenBanner" style="display:'+(procComplete?'none':vBannerDisplay)+';text-align:center;padding:'+vPad+';margin-bottom:6px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div style="font-size:'+(isMuj?'11px':'9px')+';color:#93c5fd">'+vLabel+'</div><div style="font-size:'+(isMuj?'11px':'9px')+';color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:'+vSize+';font-weight:700;color:#93c5fd">'+vBannerGrp+'</div><div id="grupoVirgenProgress" style="font-size:'+(isMuj?'10px':'8px')+';color:#ff9800">'+vBannerProg+'</div></div>';
+  // Render banners: primary (your type) first, secondary second
+  if(!procComplete){
+    if(isMuj){
+      h+=vBannerHtml+jBannerHtml;
+    } else {
+      h+=jBannerHtml+vBannerHtml;
+    }
   }
 
   // Admin: control to advance grupo actual
@@ -1814,8 +1860,8 @@ function renderLive(){
   // Progress
   h+='<div class="live-progress"><div class="live-progress-bar" style="width:'+pct+'%">'+done+'/'+total+'</div></div>';
 
-  // Cortesías banner for Viernes
-  if(currentDay===3){
+  // Cortesías banner for Viernes (only when NOT complete)
+  if(currentDay===3&&!procComplete){
     // Check if we're near cortesías
     const cortChange=changes.find(ch=>ch.cortesia);
     if(cortChange){
@@ -1841,6 +1887,17 @@ function renderLive(){
     h+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#4CAF50">#'+lastGrpDone+'</b></div>';
     h+='<div style="font-size:11px;color:#888;margin-top:6px;font-style:italic">Gloria y honor a Jesús Nazareno de Sonsonate</div>';
     h+='</div>';
+    // Virgen completion info (not for SE)
+    if(!isSEMode){
+      var sacaDoneM=daySacaMuj[currentDay]||22;
+      var movDone=liveGrupoData?liveGrupoData.movidos||0:0;
+      var lastGrpDoneM=(((sacaDoneM-1+totDone-1-movDone)%27)+27)%27+1;
+      h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(59,130,246,.15));border:1px solid rgba(59,130,246,.3)">';
+      h+='<div style="font-size:11px;color:#93c5fd;letter-spacing:1px">MARÍA SANTÍSIMA</div>';
+      h+='<div style="font-size:16px;font-weight:700;color:#93c5fd;margin:6px 0">✝️ Asentada en el Templo</div>';
+      h+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#93c5fd">#'+lastGrpDoneM+'</b></div>';
+      h+='</div>';
+    }
     const times=[];
     myCarries.forEach(mc=>{const e=getEntry(mc.ci);if(e)times.push({ci:mc.ci,num:mc.num,t:e.t,colorIcon:mc.colorIcon||''});});
     times.sort((a,b)=>a.num-b.num);
@@ -2309,8 +2366,8 @@ function listenAnda(tipo,imgUrl,color,zIdx){
     }
   });
 }
-listenAnda('jesus','jesus-marker.jpg','#dc2626',10000);
-listenAnda('virgen','maria-marker.jpg','#3b82f6',9998);
+listenAnda('jesus',isSEMode?'se-entierro-marker.jpg':'jesus-marker.jpg',isSEMode?'#d4af37':'#dc2626',10000);
+listenAnda('virgen',isSEMode?'se-virgen-marker.jpg':'maria-marker.jpg',isSEMode?'#d4af37':'#3b82f6',9998);
 
 // ========== ONLINE COUNTER (admin only) ==========
 // Register presence
