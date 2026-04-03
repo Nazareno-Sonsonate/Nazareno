@@ -2337,31 +2337,32 @@ function startDayListeners(){
       if(el) el.addEventListener('change',function(){setTimeout(syncConfig,100);});
     });
   }
-  if(isShared){
-    var cfgRef=db.ref('config/day'+currentDay);
-    activeDayRefs.push(cfgRef);
-    cfgRef.on('value',function(snap){
-      var d=snap.val();
-      if(!d) return;
-      var changed=false;
-      if(d.s&&+document.getElementById('cS').value!==d.s){document.getElementById('cS').value=d.s;changed=true;}
-      if(d.h&&+document.getElementById('cH').value!==d.h){document.getElementById('cH').value=d.h;changed=true;}
-      if(d.mn&&+document.getElementById('cMn').value!==d.mn){document.getElementById('cMn').value=d.mn;changed=true;}
-      if(changed) calc();
-    });
-  }
-  // Positions sync
-  if(isShared){
-    var posRef=db.ref('positions/day'+currentDay);
-    activeDayRefs.push(posRef);
-    posRef.on('value',function(snap){
-      var d=snap.val();
-      if(!d||!d.length) return;
-      positions=d.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
+  // Config sync - ALL users listen (not just shared)
+  var cfgRef=db.ref('config/day'+currentDay);
+  activeDayRefs.push(cfgRef);
+  cfgRef.on('value',function(snap){
+    var d=snap.val();
+    if(!d) return;
+    var changed=false;
+    if(d.s&&+document.getElementById('cS').value!==d.s){document.getElementById('cS').value=d.s;daySaca[currentDay]=d.s;changed=true;}
+    if(d.h&&+document.getElementById('cH').value!==d.h){document.getElementById('cH').value=d.h;changed=true;}
+    if(d.mn&&+document.getElementById('cMn').value!==d.mn){document.getElementById('cMn').value=d.mn;changed=true;}
+    if(changed) calc();
+  });
+  // Positions sync - ALL users listen
+  var posRef=db.ref('positions/day'+currentDay);
+  activeDayRefs.push(posRef);
+  posRef.on('value',function(snap){
+    var d=snap.val();
+    if(!d||!d.length) return;
+    var newPos=d.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
+    // Only update if different
+    if(JSON.stringify(newPos)!==JSON.stringify(positions)){
+      positions=newPos;
       drawRouteLine();
       calc();
-    });
-  }
+    }
+  });
 }
 
 </script>
