@@ -885,10 +885,12 @@ function initMap() {
   });
   const hasSaved = loadSaved();
   readParams();
-  // Auto-detect today's day (always override for everyone)
-  const todayIdx = detectToday();
-  if(todayIdx>=0){
-    currentDay = todayIdx;
+  // Auto-detect today's day (skip if SE mode already set day)
+  if(!isSEMode){
+    const todayIdx = detectToday();
+    if(todayIdx>=0){
+      currentDay = todayIdx;
+    }
   }
   // Hide edit tools and admin config for shared users
   if(isShared){
