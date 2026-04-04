@@ -2400,9 +2400,9 @@ function getRouteDistances(){
 function projectOnRail(lat,lng){
   if(positions.length<2) return {dist:0,cambio:0};
   var cosLat=Math.cos(lat*Math.PI/180);
-  // Only search segments near current position (not entire route)
-  var startSeg=Math.max(0,currentGrupoActual-1);
-  var endSeg=Math.min(positions.length-1,currentGrupoActual+12);
+  // Only search next 3 points ahead (prevents jumping to route crossings)
+  var startSeg=Math.max(0,currentGrupoActual);
+  var endSeg=Math.min(positions.length,currentGrupoActual+3);
   var bestDist=Infinity,bestCambio=startSeg;
   for(var i=startSeg;i<endSeg;i++){
     var distM=Math.sqrt(Math.pow((lat-positions[i].lat)*111320,2)+Math.pow((lng-positions[i].lng)*111320*cosLat,2));
