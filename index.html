@@ -2583,15 +2583,14 @@ if(_isSE){
               urnaMarkers.jesus.setPosition(ll);
               if(urnaMarkers.jesus._ring) urnaMarkers.jesus._ring.setCenter(ll);
             }
-            // GPS Auto-advance (independent tracking like Virgen)
-            if(autoAdvanceGPS&&!isShared&&positions.length>2){
+            // GPS tracking for banner (runs for editor AND shared)
+            if(positions.length>2){
               jesusGpsReadings.push({lat:ll.lat,lng:ll.lng});
               if(jesusGpsReadings.length>20) jesusGpsReadings.shift();
               var jRecent=jesusGpsReadings.slice(-3);
               var jAvgLat=0,jAvgLng=0;
               for(var jr=0;jr<jRecent.length;jr++){jAvgLat+=jRecent[jr].lat;jAvgLng+=jRecent[jr].lng;}
               jAvgLat/=jRecent.length;jAvgLng/=jRecent.length;
-              // First time: initialize from nearest point
               if(jesusCambioGPS===0){
                 var cosLatJI=Math.cos(jAvgLat*Math.PI/180);
                 var bestJI=Infinity,bestJCI=0;
@@ -2601,13 +2600,15 @@ if(_isSE){
                 }
                 if(bestJI<80){
                   jesusCambioGPS=bestJCI;
-                  currentGrupoActual=bestJCI;
-                  var sacaH=5;var tot=positions.length;
-                  var grp=((sacaH-1+bestJCI-1)%getHomCount())+1;
-                  var nombre=bestJCI<=changes.length?changes[bestJCI-1].n||'':'';
-                  liveGrupoData={cambio:bestJCI,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:6,t:Date.now()};
-                  currentDay=4;
-                  db.ref('grupoActual/day4').set(liveGrupoData);
+                  if(!isShared){
+                    currentGrupoActual=bestJCI;
+                    var sacaH=5;var tot=positions.length;
+                    var grp=((sacaH-1+bestJCI-1)%getHomCount())+1;
+                    var nombre=bestJCI<=changes.length?changes[bestJCI-1].n||'':'';
+                    liveGrupoData={cambio:bestJCI,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:6,t:Date.now()};
+                    currentDay=4;
+                    db.ref('grupoActual/day4').set(liveGrupoData);
+                  }
                   if(typeof renderLive==='function') renderLive();
                 }
               } else {
@@ -2625,14 +2626,16 @@ if(_isSE){
                       jesusCambioGPS=bestJP+1;
                       jesusAheadCount=0;
                       jesusGpsReadings=[];
-                      currentGrupoActual=bestJP+1;
-                      var sacaH2=5;var tot2=positions.length;
-                      var grp2=((sacaH2-1+jesusCambioGPS-1)%getHomCount())+1;
-                      var nombre2=jesusCambioGPS<=changes.length?changes[jesusCambioGPS-1].n||'':'';
-                      liveGrupoData={cambio:jesusCambioGPS,grp:grp2,nombre:nombre2,tot:tot2,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:6,t:Date.now()};
-                      currentDay=4;
-                      db.ref('grupoActual/day4').set(liveGrupoData);
-                      updateGrupoUI();
+                      if(!isShared){
+                        currentGrupoActual=bestJP+1;
+                        var sacaH2=5;var tot2=positions.length;
+                        var grp2=((sacaH2-1+jesusCambioGPS-1)%getHomCount())+1;
+                        var nombre2=jesusCambioGPS<=changes.length?changes[jesusCambioGPS-1].n||'':'';
+                        liveGrupoData={cambio:jesusCambioGPS,grp:grp2,nombre:nombre2,tot:tot2,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:6,t:Date.now()};
+                        currentDay=4;
+                        db.ref('grupoActual/day4').set(liveGrupoData);
+                        updateGrupoUI();
+                      }
                       if(typeof renderLive==='function') renderLive();
                     }
                   } else { jesusAheadCount=0; }
@@ -3169,8 +3172,10 @@ function globalSync(){
             if(d.movidos!==undefined) window.virgenMovidos=d.movidos;
             if(d.sacaMuj&&window.daySacaMuj) window.daySacaMuj[day]=d.sacaMuj;
             if(typeof window.updateGrupoUI==='function') window.updateGrupoUI();
-            // Re-render only when cambio changes
-            if(d.cambio!==window._lastSyncCambio){
+            // Re-render: always for shared, only on change for editor
+            if(window.isShared){
+              if(typeof window.renderLive==='function') window.renderLive();
+            } else if(d.cambio!==window._lastSyncCambio){
               window._lastSyncCambio=d.cambio;
               if(typeof window.renderLive==='function') window.renderLive();
               checkVibrate(d.cambio);
