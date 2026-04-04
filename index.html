@@ -2779,8 +2779,8 @@ if(_isSE){
   setInterval(fetchAHSECGPS,10000);
 }
 
-// ========== ONLINE COUNTER (admin only) ==========
-// Register presence
+// ========== ONLINE COUNTER ==========
+// Register presence with heartbeat
 const myPresRef=db.ref('online/'+Math.random().toString(36).substr(2,9));
 db.ref('.info/connected').on('value',function(snap){
   if(snap.val()===true){
@@ -2788,15 +2788,34 @@ db.ref('.info/connected').on('value',function(snap){
     myPresRef.onDisconnect().remove();
   }
 });
-// Listen for count (admin only)
+// Heartbeat: update timestamp every 30 seconds
+setInterval(function(){myPresRef.set(Date.now());},30000);
+// Clean stale entries (older than 2 minutes)
+function cleanStaleOnline(){
+  db.ref('online').once('value',function(snap){
+    var d=snap.val();
+    if(!d) return;
+    var now=Date.now();
+    Object.keys(d).forEach(function(k){
+      if(now-d[k]>60000){
+        try{db.ref('online/'+k).remove();}catch(e){}
+      }
+    });
+  });
+}
+cleanStaleOnline();
+setInterval(cleanStaleOnline,30000);
+// Listen for count
 function showAdminTools(){
   if(!isShared){
     document.getElementById('broadcastInput').style.display='block';
     document.getElementById('onlineCounter').style.display='block';
     db.ref('online').on('value',function(snap){
-      const d=snap.val();
-      const count=d?Object.keys(d).length:0;
-      document.getElementById('onlineCounter').textContent='👥 '+count+' conectados ahora';
+      var d=snap.val();
+      if(!d){document.getElementById('onlineCounter').textContent='👥 0 conectados';return;}
+      var now=Date.now();
+      var count=Object.keys(d).filter(function(k){return now-d[k]<60000;}).length;
+      document.getElementById('onlineCounter').textContent='👥 '+count+' conectado'+(count!==1?'s':'')+' ahora';
     });
   }
 }
