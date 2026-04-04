@@ -1380,13 +1380,23 @@ function renderMarkers() {
   const zoom=gmap?gmap.getZoom():15;
   const showOthers=showAll&&(zoom>=15||editMode);
   
-  // Only render markers in current viewport (huge performance boost)
+  // Only render markers in current viewport
   const bounds=gmap?gmap.getBounds():null;
+  
+  // At low zoom with many points, show every Nth marker
+  var step=1;
+  if(!editMode&&changes.length>80){
+    if(zoom<=15) step=5;
+    else if(zoom<=16) step=3;
+    else if(zoom<=17) step=2;
+  }
 
   changes.forEach((ch,ci)=>{
     if(!ch.mine&&!showOthers) return;
     // Skip markers outside viewport
     if(bounds&&!bounds.contains({lat:ch.lat,lng:ch.lng})) return;
+    // Skip non-mine markers based on step (always show mine)
+    if(!ch.mine&&step>1&&ci%step!==0) return;
     const m=ch.mine;
     const sc=m?(dragMode?20:15):(dragMode?14:9);
     let fc=m?'#c084fc':'#5599ff';
@@ -3050,6 +3060,8 @@ function globalSync(){
           var d=JSON.parse(x.responseText);
           if(el) el.textContent='🟢 FB:cambio='+(d?d.cambio:'?')+' Local:'+(window.currentGrupoActual||0);
           if(d&&window.liveGrupoData!==undefined){
+            // Ensure currentDay matches
+            window.currentDay=day;
             window.currentGrupoActual=d.cambio||0;
             window.liveGrupoData=d;
             if(d.desfase!==undefined) window.virgenDesfase=d.desfase;
@@ -3081,8 +3093,11 @@ function globalSync(){
               }
               if(bannerDiv) bannerDiv.style.display='block';
             }
-            // Re-render live panel for shared users
-            if(typeof window.renderLive==='function'&&window.isShared) window.renderLive();
+            // Re-render only when cambio changes
+            if(d.cambio!==window._lastSyncCambio){
+              window._lastSyncCambio=d.cambio;
+              if(typeof window.renderLive==='function') window.renderLive();
+            }
           }
         }catch(e){if(el) el.textContent='❌ Parse: '+e.message;}
       } else {if(el) el.textContent='❌ HTTP '+x.status;}
