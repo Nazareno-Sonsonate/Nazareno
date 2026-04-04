@@ -1827,6 +1827,8 @@ function renderLive(){
   // Banners - always show (even after carries done)
   var bannerDisplay='block';var bannerGrp='';var bannerProg='';
   var sacaBnr=daySaca[currentDay]||16;
+  var bannerLabel1=isSEMode?'Santo Entierro de Cristo':'Venerada Imagen de Jesús Nazareno';
+  var bannerLabel2=(liveGrupoData&&liveGrupoData.cambio>0)?'En este momento carga':'Saca';
   var jesusC=(liveGrupoData&&liveGrupoData.cambio>0)?liveGrupoData.cambio:0;
   if(jesusC>0){
     var bTot=positions.length||changes.length;
@@ -1843,8 +1845,6 @@ function renderLive(){
     bannerGrp='Grupo #'+sacaBnr;
     bannerProg='Esperando inicio de la procesión';
   }
-  var bannerLabel1=isSEMode?'Santo Entierro de Cristo':'Venerada Imagen de Jesús Nazareno';
-  var bannerLabel2=(liveGrupoData&&liveGrupoData.cambio>0)?'En este momento carga':'Saca';
   var jSize=isMuj?'14px':'22px';var jPad=isMuj?'6px':'10px';
   var jBannerHtml='<div id="grupoActualBanner" style="display:'+bannerDisplay+';text-align:center;padding:'+jPad+';margin-bottom:6px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa">'+bannerLabel1+'</div><div style="font-size:'+(isMuj?'9px':'11px')+';color:#ccc">'+bannerLabel2+'</div><div id="grupoActualText" style="font-size:'+jSize+';font-weight:700;color:#c084fc">'+bannerGrp+'</div><div id="grupoActualProgress" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa">'+bannerProg+'</div></div>';
   if(isPastDay){
