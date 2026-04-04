@@ -1831,7 +1831,10 @@ function renderLive(){
   if(jesusC>0){
     var bTot=positions.length||changes.length;
     if(jesusC>bTot){
-      bannerGrp='✅ Asentó Grupo #'+(((sacaBnr-1+bTot-1)%getHomCount())+1);
+      var lastGrpH=(((sacaBnr-1+bTot-1)%getHomCount())+1);
+      bannerGrp='✅ Asentó Grupo #'+lastGrpH;
+      bannerProg=isSEMode?'Hasta el próximo año, Santo Entierro de Cristo':'Hasta el próximo año, Jesús Nazareno';
+      bannerLabel2='Hasta el próximo año';
     } else {
       bannerGrp='Grupo #'+(((sacaBnr-1+jesusC-1)%getHomCount())+1);
       bannerProg=jesusC<=changes.length?(changes[jesusC-1].n||'').replace(/^Grupo\s*\d+\s*/i,''):'';
@@ -1869,14 +1872,14 @@ function renderLive(){
   // Virgen banner data
   var vSacaDef=daySacaMuj[currentDay]||22;
   var vBannerDisplay='block',vBannerGrp='Grupo #'+vSacaDef,vBannerProg='Esperando inicio';
-  // Use Virgen GPS if available (SE mode), otherwise desfase estimate
-  if(isSEMode&&window.virgenCambioGPS>0){
+  // Use Virgen GPS if available AND GPS Auto is ON, otherwise desfase estimate
+  if(isSEMode&&window.virgenCambioGPS>0&&window.autoAdvanceGPS){
     var vSacaGPS=daySacaMuj[currentDay]||5;
     var vTotGPS=positions.length||changes.length;
     if(virgenCambioGPS>=vTotGPS){
       var lastGrpVGPS=(((vSacaGPS-1+vTotGPS-1)%getMujCount())+getMujCount())%getMujCount()+1;
       vBannerGrp='✅ Asentó Grupo #'+lastGrpVGPS;
-      vBannerProg='';
+      vBannerProg=isSEMode?'Hasta el próximo año, Virgen Dolorosa':'Hasta el próximo año';
     } else {
       var vGrpGPS2=((vSacaGPS-1+virgenCambioGPS-1)%getMujCount()+getMujCount())%getMujCount()+1;
       vBannerGrp='Grupo #'+vGrpGPS2;
@@ -1892,7 +1895,7 @@ function renderLive(){
     if(vCambioB>=vTotB){
       var lastGrpMB=(((vSacaM-1+vTotB-1-vMovB)%getMujCount())+getMujCount())%getMujCount()+1;
       vBannerGrp='✅ Asentó Grupo #'+lastGrpMB;
-      vBannerProg='';
+      vBannerProg='Hasta el próximo año';
     } else {
       var vGrpB=(((vSacaM-1+vCambioGrpB-1)%getMujCount())+getMujCount())%getMujCount()+1;
       var vNomB=changes.length>0&&vCambioB>0&&vCambioB<=changes.length?changes[vCambioB-1].n||'':'';
@@ -1972,8 +1975,10 @@ function renderLive(){
     // Your carries are done - show summary
     var allCambiosDone=(liveGrupoData&&liveGrupoData.cambio>0&&liveGrupoData.cambio>=(positions.length||changes.length));
     if(allCambiosDone){
-      h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:rgba(76,175,80,.15);border:1px solid rgba(76,175,80,.4)">';
-      h+='<div style="font-size:16px;font-weight:700;color:#4CAF50">✝️ Asentada en el Templo</div>';
+      h+='<div style="text-align:center;padding:16px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(76,175,80,.08),rgba(46,125,50,.15));border:1px solid rgba(76,175,80,.4)">';
+      h+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">✝️ Asentada en el Templo</div>';
+      h+='<div style="font-size:12px;color:#aaa;font-style:italic">'+(isSEMode?'Hasta el próximo año, Santo Entierro de Cristo · Sonsonate 2026':'Hasta el próximo año, Jesús Nazareno de Sonsonate')+'</div>';
+      h+='<div style="font-size:11px;color:#888;margin-top:8px">Hasta el próximo año 🙏</div>';
       h+='</div>';
     } else {
       h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3)">';
