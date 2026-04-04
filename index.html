@@ -1824,8 +1824,7 @@ function renderLive(){
   if(!procComplete){
   var bannerDisplay='block';var bannerGrp='';var bannerProg='';
   var sacaBnr=daySaca[currentDay]||16;
-  // SE mode: prefer GPS tracking data
-  var jesusC=(isSEMode&&window.jesusCambioGPS>0)?jesusCambioGPS:(liveGrupoData?liveGrupoData.cambio:0);
+  var jesusC=(liveGrupoData&&liveGrupoData.cambio>0)?liveGrupoData.cambio:0;
   if(jesusC>0){
     var bTot=positions.length||changes.length;
     if(jesusC>bTot){
@@ -1869,14 +1868,7 @@ function renderLive(){
   // Virgen banner data
   var vSacaDef=daySacaMuj[currentDay]||22;
   var vBannerDisplay='block',vBannerGrp='Grupo #'+vSacaDef,vBannerProg='Esperando inicio';
-  if(isSEMode&&window.virgenCambioGPS>0){
-    // SE mode: use direct GPS tracking for Virgen
-    var vSacaGPS=6;
-    var vGrpGPS2=((vSacaGPS-1+virgenCambioGPS-1)%getMujCount()+getMujCount())%getMujCount()+1;
-    var vNomGPS2=virgenCambioGPS<=changes.length?(changes[virgenCambioGPS-1].n||'').replace(/^Grupo\s*\d+\s*/i,''):'';
-    vBannerGrp='Grupo #'+vGrpGPS2;
-    vBannerProg=vNomGPS2||'';
-  } else if(liveGrupoData&&liveGrupoData.cambio>0){
+  if(liveGrupoData&&liveGrupoData.cambio>0){
     var vDesf=liveGrupoData.desfase||0;
     var vSacaM=liveGrupoData.sacaMuj||vSacaDef;
     var vTotB=positions.length||changes.length;
@@ -2943,7 +2935,6 @@ function updateGrupoUI(){
     if(liveGrupoData&&liveGrupoData.cambio>0){
       var adminTot=positions.length||changes.length;
       if(liveGrupoData.cambio>adminTot){
-        // Jesus finished - show last group (always 21 groups)
         var sacaH3=daySaca[currentDay]||17;
         var lastG=((sacaH3-1+adminTot-1)%getHomCount())+1;
         adminEl.textContent='✅#'+lastG;
@@ -2956,76 +2947,7 @@ function updateGrupoUI(){
       adminEl.textContent='#'+(daySaca[currentDay]||16);
     }
   }
-  // Update chronometer
   updateCrono();
-  var banner=document.getElementById('grupoActualBanner');
-  var txtEl=document.getElementById('grupoActualText');
-  var progEl=document.getElementById('grupoActualProgress');
-  if(banner&&txtEl&&progEl){
-    if(liveGrupoData&&liveGrupoData.cambio>0){
-      var tot=positions.length||changes.length;
-      // Always recalculate grupo from current saca (not Firebase grp)
-      var sacaH3=daySaca[currentDay]||16;
-      var currentGrp=((sacaH3-1+Math.min(liveGrupoData.cambio,tot)-1)%getHomCount())+1;
-      if(liveGrupoData.cambio>tot){
-        // Jesus finished - show entering group (always 21 groups)
-        var sacaH4=daySaca[currentDay]||17;
-        var lastGrpH=((sacaH4-1+tot-1)%getHomCount())+1;
-        txtEl.textContent='✅ Asentó Grupo #'+lastGrpH;
-        var progHtml='';
-        if(!isShared){
-          progHtml+='<div style="margin-top:6px;height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden"><div style="height:100%;width:100%;background:linear-gradient(90deg,#4CAF50,#2E7D32);border-radius:4px"></div></div>'
-            +'<div style="margin-top:2px;font-size:10px;color:#4CAF50">100% · Esperando Virgen</div>';
-        }
-        progEl.innerHTML=progHtml;
-      } else {
-        txtEl.textContent='Grupo #'+currentGrp;
-        var progHtml=(liveGrupoData.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
-        if(!isShared){
-          var procPct=Math.round(liveGrupoData.cambio/tot*100);
-          progHtml='Cambio '+liveGrupoData.cambio+' de '+tot+(liveGrupoData.nombre?' \u00b7 '+(liveGrupoData.nombre||'').replace(/^Grupo\s*\d+\s*/i,''):'');
-          progHtml+='<div style="margin-top:6px;height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+procPct+'%;background:linear-gradient(90deg,#c084fc,#7c3aed);border-radius:4px;transition:width .5s"></div></div>'
-            +'<div style="margin-top:2px;font-size:10px;color:#c084fc">'+procPct+'% de la procesion</div>';
-        }
-        progEl.innerHTML=progHtml;
-      }
-      banner.style.display='block';
-    } else {
-      var sacaDef2=daySaca[currentDay]||16;
-      txtEl.textContent='Grupo #'+sacaDef2;
-      progEl.textContent='Esperando inicio de la procesión';
-      banner.style.display='block';
-    }
-  }
-  // Virgen estimated banner
-  var vBanner=document.getElementById('grupoVirgenBanner');
-  var vTxt=document.getElementById('grupoVirgenText');
-  var vProg=document.getElementById('grupoVirgenProgress');
-  if(vBanner&&vTxt&&!isSEMode){
-    if(liveGrupoData&&liveGrupoData.cambio>0){
-      var desf=liveGrupoData.desfase!==undefined?liveGrupoData.desfase:virgenDesfase;
-      var sacaM=liveGrupoData.sacaMuj||daySacaMuj[currentDay]||13;
-      var totV=positions.length||changes.length;
-      var mov=liveGrupoData.movidos||0;
-      var vCambio=Math.max(1,liveGrupoData.cambio-desf);
-      var vCambioGrp=Math.max(1,vCambio-mov);
-      if(vCambio>=totV){
-        var lastGrpM=(((sacaM-1+totV-1-mov)%getMujCount())+getMujCount())%getMujCount()+1;
-        vTxt.textContent='✅ Asentó Grupo #'+lastGrpM;
-        if(vProg) vProg.textContent='';
-      } else {
-        var vGrp=(((sacaM-1+vCambioGrp-1)%getMujCount())+getMujCount())%getMujCount()+1;
-        vTxt.textContent='Grupo #'+vGrp;
-        if(vProg) vProg.textContent='⚠️ Estimado';
-      }
-      vBanner.style.display='block';
-    } else {
-      var vSacaDef2=daySacaMuj[currentDay]||22;
-      vTxt.textContent='Grupo #'+vSacaDef2;
-      if(vProg) vProg.textContent='Esperando inicio';
-      vBanner.style.display='block';
-    }
-  }
 }
 
 // ========== STREET VIEW ==========
