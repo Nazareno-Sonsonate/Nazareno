@@ -2643,14 +2643,6 @@ if(_isSE){
             }
             if(bestDistV<80&&bestCambioV>virgenCambioGPS){
               virgenCambioGPS=bestCambioV;
-              // Update Virgen banner directly
-              var vSaca=6;
-              var vGrpGPS=((vSaca-1+bestCambioV-1)%getMujCount()+getMujCount())%getMujCount()+1;
-              var vNomGPS=bestCambioV<=changes.length?changes[bestCambioV-1].n||'':'';
-              var vBannerEl=document.getElementById('grupoVirgenText');
-              if(vBannerEl) vBannerEl.textContent='Grupo #'+vGrpGPS;
-              var vProgEl=document.getElementById('grupoVirgenProgress');
-              if(vProgEl) vProgEl.textContent=(vNomGPS).replace(/^Grupo\s*\d+\s*/i,'');
             }
           }
           var el=document.getElementById('ahsecStatus');
@@ -2863,7 +2855,7 @@ function updateGrupoUI(){
         var progHtml=(liveGrupoData.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
         if(!isShared){
           var procPct=Math.round(liveGrupoData.cambio/tot*100);
-          progHtml='Cambio '+liveGrupoData.cambio+' de '+tot+(liveGrupoData.nombre?' \u00b7 '+liveGrupoData.nombre:'');
+          progHtml='Cambio '+liveGrupoData.cambio+' de '+tot+(liveGrupoData.nombre?' \u00b7 '+(liveGrupoData.nombre||'').replace(/^Grupo\s*\d+\s*/i,''):'');
           progHtml+='<div style="margin-top:6px;height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+procPct+'%;background:linear-gradient(90deg,#c084fc,#7c3aed);border-radius:4px;transition:width .5s"></div></div>'
             +'<div style="margin-top:2px;font-size:10px;color:#c084fc">'+procPct+'% de la procesion</div>';
         }
@@ -2881,9 +2873,7 @@ function updateGrupoUI(){
   var vBanner=document.getElementById('grupoVirgenBanner');
   var vTxt=document.getElementById('grupoVirgenText');
   var vProg=document.getElementById('grupoVirgenProgress');
-  if(vBanner&&vTxt){
-    // In SE mode with GPS tracking, don't overwrite GPS-based Virgen data
-    if(isSEMode&&window.virgenCambioGPS>0) return;
+  if(vBanner&&vTxt&&!(isSEMode&&window.virgenCambioGPS>0)){
     if(liveGrupoData&&liveGrupoData.cambio>0){
       var desf=liveGrupoData.desfase!==undefined?liveGrupoData.desfase:virgenDesfase;
       var sacaM=liveGrupoData.sacaMuj||daySacaMuj[currentDay]||13;
