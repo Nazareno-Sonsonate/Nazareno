@@ -746,16 +746,21 @@ function readParams(){
       daySacaMuj[4]=6;
       virgenDesfase=0;
       virgenMovidos=0;
-      // Fix Firebase only if sacaMuj is wrong (not 6)
+      // Write initial data to Firebase so shared users see something
       setTimeout(function(){
-        if(liveGrupoData){
-          if(!liveGrupoData.sacaMuj||liveGrupoData.sacaMuj!==6){
+        var sacaInit=daySaca[4]||5;
+        var cambioInit=currentGrupoActual||0;
+        if(!liveGrupoData||!liveGrupoData.cambio){
+          liveGrupoData={cambio:cambioInit,grp:0,nombre:'',tot:positions.length||147,desfase:0,movidos:0,sacaMuj:6,t:Date.now()};
+          db.ref('grupoActual/day4').set(liveGrupoData);
+        } else {
+          if(liveGrupoData.sacaMuj!==6){
             liveGrupoData.sacaMuj=6;
             db.ref('grupoActual/day4').update({sacaMuj:6});
           }
-          updateGrupoUI();
-          if(typeof renderLive==='function') renderLive();
         }
+        updateGrupoUI();
+        if(typeof renderLive==='function') renderLive();
       },2000);
       // Update women's group count label for SE
       var opts=$('cType').options;
@@ -1803,13 +1808,15 @@ function renderLive(){
   if(!procComplete){
   var bannerDisplay='block';var bannerGrp='';var bannerProg='';
   var sacaBnr=daySaca[currentDay]||16;
-  if(liveGrupoData&&liveGrupoData.cambio>0){
-    var bTot=liveGrupoData.tot||changes.length;
-    if(liveGrupoData.cambio>bTot){
+  // SE mode: prefer GPS tracking data
+  var jesusC=(isSEMode&&window.jesusCambioGPS>0)?jesusCambioGPS:(liveGrupoData?liveGrupoData.cambio:0);
+  if(jesusC>0){
+    var bTot=(liveGrupoData&&liveGrupoData.tot)||changes.length;
+    if(jesusC>bTot){
       bannerGrp='✅ Asentó Grupo #'+(((sacaBnr-1+bTot-1)%getHomCount())+1);
     } else {
-      bannerGrp='Grupo #'+(((sacaBnr-1+liveGrupoData.cambio-1)%getHomCount())+1);
-      bannerProg=(liveGrupoData.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
+      bannerGrp='Grupo #'+(((sacaBnr-1+jesusC-1)%getHomCount())+1);
+      bannerProg=jesusC<=changes.length?(changes[jesusC-1].n||'').replace(/^Grupo\s*\d+\s*/i,''):'';
     }
   } else {
     bannerGrp='Grupo #'+sacaBnr;
