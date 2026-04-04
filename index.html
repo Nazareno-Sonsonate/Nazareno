@@ -936,7 +936,7 @@ function initMap() {
   let zoomTimer=null;
   gmap.addListener('idle',function(){
     clearTimeout(zoomTimer);
-    zoomTimer=setTimeout(function(){renderMarkers();},500);
+    zoomTimer=setTimeout(function(){renderMarkers();},800);
   });
   const hasSaved = loadSaved();
   readParams();
@@ -1100,7 +1100,7 @@ function insertAtPosition(lat,lng,edge) {
   if(typeof syncPositions==='function') syncPositions();
 
   const c=cfg();
-  const grp=((c.s-1+insertIdx)%c.t)+1;
+  const grp=((c.s-1+insertIdx)%((c.t===27)?getMujCount():getHomCount()))+1;
   const num=insertIdx+1;
   infoWin.setContent('<div style="text-align:center;font-family:Georgia;color:#111;font-size:13px"><b style="color:#2e7d32;font-size:15px">✅ Cambio #'+num+'</b><br>Grupo <b>#'+grp+'</b><br><span style="font-size:11px;color:#777">Secuencia actualizada</span></div>');
   infoWin.setPosition({lat,lng});
@@ -1207,7 +1207,8 @@ function calc() {
 
   changes=positions.map((p,i)=>{
     const num=i+1;
-    const grp=((c.s-1+i)%c.t)+1;
+    const grupoCnt=(c.t===27)?getMujCount():getHomCount();
+    const grp=((c.s-1+i)%grupoCnt)+1;
     const timeMin=calcTime(num, tot, c);
     const isCortesia=(currentDay===3 && num===VIER_CORTESIAS_CHANGE);
     return {num,grp,time:fmt(timeMin),lat:p.lat,lng:p.lng,n:p.n||'',mine:grp===c.g,cortesia:isCortesia};
@@ -1253,7 +1254,8 @@ function calc() {
     }
   }
   // Last group that enters
-  const lastGrp=((c.s-1+tot-1)%c.t)+1;
+  const lastGrpCnt=(c.t===27)?getMujCount():getHomCount();
+  const lastGrp=((c.s-1+tot-1)%lastGrpCnt)+1;
 
   let extra=currentDay===3?' · ✝️ Cortesías ~11:30-12:00':'';
   const dateStr=dayDates[currentDay]?dayDates[currentDay].slice(5).replace('-','/'):'';
@@ -1380,62 +1382,68 @@ function renderMarkers() {
 
   const zoom=gmap?gmap.getZoom():15;
   const showOthers=showAll&&(zoom>=15||editMode);
-  
-  // Only render markers in current viewport
   const bounds=gmap?gmap.getBounds():null;
   
-  // At low zoom with many points, show every Nth marker
+  // At low zoom with many points, show fewer markers
   var step=1;
-  if(!editMode&&changes.length>80){
-    if(zoom<=15) step=5;
+  if(!editMode&&changes.length>60){
+    if(zoom<=14) step=8;
+    else if(zoom<=15) step=5;
     else if(zoom<=16) step=3;
-    else if(zoom<=17) step=2;
   }
 
+  var markersToAdd=[];
   changes.forEach((ch,ci)=>{
     if(!ch.mine&&!showOthers) return;
-    // Skip markers outside viewport
     if(bounds&&!bounds.contains({lat:ch.lat,lng:ch.lng})) return;
-    // Skip non-mine markers based on step (always show mine)
     if(!ch.mine&&step>1&&ci%step!==0) return;
-    const m=ch.mine;
-    const sc=m?(dragMode?20:15):(dragMode?14:9);
-    let fc=m?'#c084fc':'#5599ff';
-    if(m){
-      const mc=myCarries.find(x=>x.num===ch.num);
-      if(mc&&mc.colorHex) fc=mc.colorHex;
-    }
-    const mk=new google.maps.Marker({
+    markersToAdd.push({ch:ch,ci:ci});
+  });
+
+  // Batch create markers
+  for(var mi=0;mi<markersToAdd.length;mi++){
+    var ch=markersToAdd[mi].ch,ci=markersToAdd[mi].ci;
+    var m=ch.mine;
+    var sc=m?(dragMode?20:13):(dragMode?14:7);
+    var fc=m?'#c084fc':'#5599ff';
+    if(m){var mc2=myCarries.find(function(x){return x.num===ch.num});if(mc2&&mc2.colorHex) fc=mc2.colorHex;}
+    // Simpler labels at low zoom
+    var lbl=zoom>=16?{text:String(ch.grp),color:m?'#111':'#fff',fontWeight:'bold',fontSize:m?'12px':'9px'}:
+            (m?{text:String(ch.grp),color:'#111',fontWeight:'bold',fontSize:'11px'}:null);
+    var mk=new google.maps.Marker({
       position:{lat:ch.lat,lng:ch.lng},map:gmap,
-      label:{text:String(ch.grp),color:m?'#111':'#fff',fontWeight:'bold',fontSize:m?'13px':'10px'},
-      icon:{path:google.maps.SymbolPath.CIRCLE,scale:sc,fillColor:fc,fillOpacity:m?1:.4,strokeColor:m?'#fff':fc,strokeWeight:m?3:1},
+      label:lbl,
+      icon:{path:google.maps.SymbolPath.CIRCLE,scale:sc,fillColor:fc,fillOpacity:m?1:.35,strokeColor:m?'#fff':fc,strokeWeight:m?2:0},
       zIndex:m?3000:100, draggable:dragMode&&editMode,
-      optimized:true
+      optimized:true, clickable:zoom>=15||m
     });
-    mk.addListener('click',function(){
-      if(isZoom())return;
-      const tag=m?'<br><b style="color:#7c3aed">✝️ Tu cargada #'+ch.ci+'</b>':'';
-      let colorTag='';if(m){const mc=myCarries.find(x=>x.num===ch.num);if(mc&&mc.carryLabel) colorTag='<br><span style="font-size:12px">'+mc.carryLabel+'</span>';}
-      const ref=ch.n?'<br><span style="font-size:12px;color:#555">'+ch.n+'</span>':'';
-      const cort=ch.cortesia?'<br><b style="color:#e65100">✝️ Cortesías</b>':'';
-      const drag=(dragMode&&editMode)?'<br><i style="font-size:11px;color:#777">Arrastrá para mover</i>':'';
-      const ren=editMode?'<br><button onclick="renameChange('+ci+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#7c3aed;color:#fff;font-size:12px;font-weight:600;cursor:pointer">✏️ Renombrar</button>':'';
-      const del=editMode?'<br><button onclick="deleteChange('+ci+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🗑️ Eliminar</button>':'';
-      const svBtn2='<br><button onclick="openStreetView('+positions[ci].lat+','+positions[ci].lng+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#1a73e8;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🛣️ Street View</button>';
-      infoWin.setContent('<div style="text-align:center;font-family:Georgia;min-width:150px;color:#111;font-size:13px"><b style="font-size:15px">Grupo #'+ch.grp+'</b><br>Cambio #'+ch.num+'<br><b>~'+ch.time+'</b>'+tag+colorTag+ref+cort+drag+ren+del+svBtn2+'</div>');
-      infoWin.open(gmap,mk);
-    });
+    if(zoom>=15||m){
+      (function(mk2,ch2,ci2,m2){
+        mk2.addListener('click',function(){
+          if(isZoom())return;
+          var tag=m2?'<br><b style="color:#7c3aed">✝️ Tu cargada #'+ch2.ci+'</b>':'';
+          var colorTag='';if(m2){var mc3=myCarries.find(function(x){return x.num===ch2.num});if(mc3&&mc3.carryLabel) colorTag='<br><span style="font-size:12px">'+mc3.carryLabel+'</span>';}
+          var ref=ch2.n?'<br><span style="font-size:12px;color:#555">'+ch2.n+'</span>':'';
+          var svBtn2='<br><button onclick="openStreetView('+positions[ci2].lat+','+positions[ci2].lng+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#1a73e8;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🛣️ Street View</button>';
+          var ren=editMode?'<br><button onclick="renameChange('+ci2+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#7c3aed;color:#fff;font-size:12px;font-weight:600;cursor:pointer">✏️ Renombrar</button>':'';
+          var del=editMode?'<br><button onclick="deleteChange('+ci2+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🗑️ Eliminar</button>':'';
+          infoWin.setContent('<div style="text-align:center;font-family:Georgia;min-width:150px;color:#111;font-size:13px"><b style="font-size:15px">Grupo #'+ch2.grp+'</b><br>Cambio #'+ch2.num+'<br><b>~'+ch2.time+'</b>'+tag+colorTag+ref+ren+del+svBtn2+'</div>');
+          infoWin.open(gmap,mk2);
+        });
+      })(mk,ch,ci,m);
+    }
     if(dragMode&&editMode){
-      mk.addListener('dragend',function(){
-        const p=mk.getPosition();
-        positions[ci]={lat:p.lat(),lng:p.lng(),n:positions[ci].n};
-        drawRouteLine();
-        calc();
-        if(typeof syncPositions==='function') syncPositions();
-      });
+      (function(mk3,ci3){
+        mk3.addListener('dragend',function(){
+          var p=mk3.getPosition();
+          positions[ci3]={lat:p.lat(),lng:p.lng(),n:positions[ci3].n};
+          drawRouteLine();calc();
+          if(typeof syncPositions==='function') syncPositions();
+        });
+      })(mk,ci);
     }
     allMarkers.push(mk);
-  });
+  }
 }
 
 // ========== DELETE CHANGE ==========
