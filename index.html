@@ -1869,7 +1869,20 @@ function renderLive(){
   // Virgen banner data
   var vSacaDef=daySacaMuj[currentDay]||22;
   var vBannerDisplay='block',vBannerGrp='Grupo #'+vSacaDef,vBannerProg='Esperando inicio';
-  if(liveGrupoData&&liveGrupoData.cambio>0){
+  // Use Virgen GPS if available (SE mode), otherwise desfase estimate
+  if(isSEMode&&window.virgenCambioGPS>0){
+    var vSacaGPS=daySacaMuj[currentDay]||5;
+    var vTotGPS=positions.length||changes.length;
+    if(virgenCambioGPS>=vTotGPS){
+      var lastGrpVGPS=(((vSacaGPS-1+vTotGPS-1)%getMujCount())+getMujCount())%getMujCount()+1;
+      vBannerGrp='✅ Asentó Grupo #'+lastGrpVGPS;
+      vBannerProg='';
+    } else {
+      var vGrpGPS2=((vSacaGPS-1+virgenCambioGPS-1)%getMujCount()+getMujCount())%getMujCount()+1;
+      vBannerGrp='Grupo #'+vGrpGPS2;
+      vBannerProg='';
+    }
+  } else if(liveGrupoData&&liveGrupoData.cambio>0){
     var vDesf=liveGrupoData.desfase||0;
     var vSacaM=liveGrupoData.sacaMuj||vSacaDef;
     var vTotB=positions.length||changes.length;
@@ -3050,7 +3063,7 @@ function startDayListeners(){
                 var bEl2=document.getElementById('grupoActualText');
                 if(bEl2&&d.cambio>0) bEl2.textContent=d.cambio>totS2?'✅ Asentó Grupo #'+(((sacaS2-1+totS2-1)%getHomCount())+1):'Grupo #'+sGrp2;
                 var vEl2=document.getElementById('grupoVirgenText');
-                if(vEl2&&d.cambio>0){
+                if(vEl2&&d.cambio>0&&!isSEMode){
                   var ds2=d.desfase||0,sm2=d.sacaMuj||daySacaMuj[currentDay]||6,mv2=d.movidos||0;
                   var vc2=Math.max(1,d.cambio-ds2),vcg2=Math.max(1,vc2-mv2);
                   vEl2.textContent='Grupo #'+((((sm2-1+vcg2-1)%getMujCount())+getMujCount())%getMujCount()+1);
@@ -3163,9 +3176,9 @@ function globalSync(){
               }
               var progEl=document.getElementById('grupoActualProgress');
               if(progEl&&d.cambio>0) progEl.textContent=(d.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
-              // Virgen banner
+              // Virgen banner (skip in SE mode - GPS handles it)
               var vTxtSync=document.getElementById('grupoVirgenText');
-              if(vTxtSync&&d.cambio>0){
+              if(vTxtSync&&d.cambio>0&&!window.isSEMode){
                 var desfSync=d.desfase||0;
                 var sacaMSync=d.sacaMuj||window.daySacaMuj[day]||6;
                 var movSync=d.movidos||0;
