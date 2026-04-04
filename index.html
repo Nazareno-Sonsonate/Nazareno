@@ -2873,7 +2873,7 @@ function updateGrupoUI(){
   var vBanner=document.getElementById('grupoVirgenBanner');
   var vTxt=document.getElementById('grupoVirgenText');
   var vProg=document.getElementById('grupoVirgenProgress');
-  if(vBanner&&vTxt&&!(isSEMode&&window.virgenCambioGPS>0)){
+  if(vBanner&&vTxt&&!isSEMode){
     if(liveGrupoData&&liveGrupoData.cambio>0){
       var desf=liveGrupoData.desfase!==undefined?liveGrupoData.desfase:virgenDesfase;
       var sacaM=liveGrupoData.sacaMuj||daySacaMuj[currentDay]||13;
