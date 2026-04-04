@@ -2158,6 +2158,7 @@ function startCountdown(){
 function updateCountdown(){
   const el=document.getElementById('countdownText');
   if(!el||!myCarries.length) return;
+  var effCambio=getEffCambio();
   const pending=myCarries.filter(mc=>!isDone(mc.ci)&&!(effCambio>0&&mc.num<=effCambio));
   if(pending.length===0){el.textContent='';hideAlert();return;}
   const next=pending[0];
