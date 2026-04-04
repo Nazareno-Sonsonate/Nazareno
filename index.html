@@ -3058,7 +3058,21 @@ function startDayListeners(){
               if(d.movidos!==undefined) virgenMovidos=d.movidos;
               if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
               try{updateGrupoUI();}catch(e7){}
-              try{if(typeof renderLive==='function') renderLive();}catch(e8){}
+              // Update banners directly
+              try{
+                var sacaS2=daySaca[currentDay]||16;
+                var totS2=positions.length||147;
+                var sGrp2=(((sacaS2-1+Math.min(d.cambio,totS2)-1)%getHomCount())+1);
+                var bEl2=document.getElementById('grupoActualText');
+                if(bEl2&&d.cambio>0) bEl2.textContent=d.cambio>totS2?'✅ Asentó Grupo #'+(((sacaS2-1+totS2-1)%getHomCount())+1):'Grupo #'+sGrp2;
+                var vEl2=document.getElementById('grupoVirgenText');
+                if(vEl2&&d.cambio>0){
+                  var ds2=d.desfase||0,sm2=d.sacaMuj||daySacaMuj[currentDay]||6,mv2=d.movidos||0;
+                  var vc2=Math.max(1,d.cambio-ds2),vcg2=Math.max(1,vc2-mv2);
+                  vEl2.textContent='Grupo #'+((((sm2-1+vcg2-1)%getMujCount())+getMujCount())%getMujCount()+1);
+                }
+              }catch(e8){}
+              try{if(typeof renderLive==='function') renderLive();}catch(e9){}
             }
           }catch(e){
             var ss2=document.getElementById('syncStatus');
@@ -3150,7 +3164,34 @@ function globalSync(){
             if(d.movidos!==undefined) window.virgenMovidos=d.movidos;
             if(d.sacaMuj&&window.daySacaMuj) window.daySacaMuj[day]=d.sacaMuj;
             try{if(typeof window.updateGrupoUI==='function') window.updateGrupoUI();}catch(e2){}
-            // Always re-render (ensures carries are marked as passed)
+            // Update banners directly without rebuilding entire panel
+            try{
+              var sacaSync=window.daySaca?window.daySaca[day]:16;
+              var totSync=window.positions?window.positions.length:147;
+              var syncGrp=(((sacaSync-1+Math.min(d.cambio,totSync)-1)%getHomCount())+1);
+              var bannerEl=document.getElementById('grupoActualText');
+              if(bannerEl&&d.cambio>0){
+                if(d.cambio>totSync){
+                  bannerEl.textContent='✅ Asentó Grupo #'+(((sacaSync-1+totSync-1)%getHomCount())+1);
+                } else {
+                  bannerEl.textContent='Grupo #'+syncGrp;
+                }
+              }
+              var progEl=document.getElementById('grupoActualProgress');
+              if(progEl&&d.cambio>0) progEl.textContent=(d.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
+              // Virgen banner
+              var vTxtSync=document.getElementById('grupoVirgenText');
+              if(vTxtSync&&d.cambio>0){
+                var desfSync=d.desfase||0;
+                var sacaMSync=d.sacaMuj||window.daySacaMuj[day]||6;
+                var movSync=d.movidos||0;
+                var vCambioSync=Math.max(1,d.cambio-desfSync);
+                var vCambioGrpSync=Math.max(1,vCambioSync-movSync);
+                var vGrpSync=(((sacaMSync-1+vCambioGrpSync-1)%getMujCount())+getMujCount())%getMujCount()+1;
+                vTxtSync.textContent='Grupo #'+vGrpSync;
+              }
+            }catch(e6){}
+            // Rebuild panel to update carries
             try{if(typeof window.renderLive==='function') window.renderLive();}catch(e3){}
             if(d.cambio!==window._lastSyncCambio){
               window._lastSyncCambio=d.cambio;
