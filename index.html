@@ -1130,11 +1130,17 @@ function distToSegment(p,a,b){
 // Snap a GPS point to the nearest position on the route
 // Get effective cambio for current user (Virgen is ~5 behind Jesus)
 function getEffCambio(){
-  if(!window.liveGrupoData||!window.liveGrupoData.cambio) return 0;
-  var c=window.liveGrupoData.cambio;
+  // Use liveGrupoData.cambio, fall back to currentGrupoActual
+  var c=0;
+  if(window.liveGrupoData&&window.liveGrupoData.cambio){
+    c=window.liveGrupoData.cambio;
+  } else if(window.currentGrupoActual>0){
+    c=window.currentGrupoActual;
+  }
+  if(c===0) return 0;
   var cc=cfg();
   if(cc.t===27){
-    var desf=window.liveGrupoData.desfase!==undefined?window.liveGrupoData.desfase:virgenDesfase;
+    var desf=(window.liveGrupoData&&window.liveGrupoData.desfase!==undefined)?window.liveGrupoData.desfase:virgenDesfase;
     c=Math.max(0,c-desf);
   }
   return c;
@@ -2419,7 +2425,7 @@ function buscarAnda(tipo){
 }
 
 // ========== GPS AUTO-ADVANCE ==========
-var autoAdvanceGPS=true;
+var autoAdvanceGPS=false;
 
 // Track progress along the route as a "rail"
 var railProgress=0;
@@ -2631,8 +2637,8 @@ if(_isSE){
               urnaMarkers.jesus.setPosition(ll);
               if(urnaMarkers.jesus._ring) urnaMarkers.jesus._ring.setCenter(ll);
             }
-            // GPS tracking for banner (runs for editor AND shared)
-            if(positions.length>2){
+            // GPS tracking for banner (only when GPS Auto is ON)
+            if(autoAdvanceGPS&&positions.length>2){
               jesusGpsReadings.push({lat:ll.lat,lng:ll.lng});
               if(jesusGpsReadings.length>20) jesusGpsReadings.shift();
               var jRecent=jesusGpsReadings.slice(-3);
