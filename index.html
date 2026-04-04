@@ -743,7 +743,7 @@ function readParams(){
       $('cS').value=5;
       $('cH').value=17;
       $('cMn').value=10;
-      daySacaMuj[4]=6;
+      // daySacaMuj[4] set from Firebase config or default
       virgenDesfase=0;
       virgenMovidos=0;
       // Write initial data to Firebase so shared users see something
@@ -751,7 +751,7 @@ function readParams(){
         var sacaInit=daySaca[4]||5;
         var cambioInit=currentGrupoActual||0;
         if(!liveGrupoData||!liveGrupoData.cambio){
-          liveGrupoData={cambio:cambioInit,grp:0,nombre:'',tot:positions.length||147,desfase:0,movidos:0,sacaMuj:6,t:Date.now()};
+          liveGrupoData={cambio:cambioInit,grp:0,nombre:'',tot:positions.length||147,desfase:0,movidos:0,sacaMuj:daySacaMuj[4]||6,t:Date.now()};
           db.ref('grupoActual/day4').set(liveGrupoData);
         } else {
           if(liveGrupoData.sacaMuj!==6){
@@ -1822,12 +1822,9 @@ function renderLive(){
   h+='</select></div>';
 
   // Procession complete only when ALL cambios are done or past day
-  var totalCambios=positions.length||changes.length;
-  var currentCambio=(liveGrupoData&&liveGrupoData.cambio)||0;
-  var procComplete=(currentCambio>totalCambios&&totalCambios>0)||isPastDay;
+  var procComplete=(done>=total&&total>0)||isPastDay;
 
-  // Live grupo tracking banner (only when NOT complete)
-  if(!procComplete){
+  // Banners - always show (even after carries done)
   var bannerDisplay='block';var bannerGrp='';var bannerProg='';
   var sacaBnr=daySaca[currentDay]||16;
   var jesusC=(liveGrupoData&&liveGrupoData.cambio>0)?liveGrupoData.cambio:0;
@@ -1845,10 +1842,8 @@ function renderLive(){
   }
   var bannerLabel1=isSEMode?'Santo Entierro de Cristo':'Venerada Imagen de Jesús Nazareno';
   var bannerLabel2=(liveGrupoData&&liveGrupoData.cambio>0)?'En este momento carga':'Saca';
-  // Build Jesus/SE banner HTML
   var jSize=isMuj?'14px':'22px';var jPad=isMuj?'6px':'10px';
   var jBannerHtml='<div id="grupoActualBanner" style="display:'+bannerDisplay+';text-align:center;padding:'+jPad+';margin-bottom:6px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa">'+bannerLabel1+'</div><div style="font-size:'+(isMuj?'9px':'11px')+';color:#ccc">'+bannerLabel2+'</div><div id="grupoActualText" style="font-size:'+jSize+';font-weight:700;color:#c084fc">'+bannerGrp+'</div><div id="grupoActualProgress" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa">'+bannerProg+'</div></div>';
-  }
   if(isPastDay){
     // Past day: show solemn message with grupo that entered
     var sacaPast=daySaca[currentDay]||17;
@@ -1895,9 +1890,9 @@ function renderLive(){
   // Build Virgen banner HTML
   var vSize=isMuj?'22px':'14px';var vPad=isMuj?'10px':'6px';
   var vLabel=isSEMode?'Virgen Dolorosa':'María Santísima';
-  var vBannerHtml='<div id="grupoVirgenBanner" style="display:'+(procComplete?'none':vBannerDisplay)+';text-align:center;padding:'+vPad+';margin-bottom:6px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div style="font-size:'+(isMuj?'11px':'9px')+';color:#93c5fd">'+vLabel+'</div><div style="font-size:'+(isMuj?'11px':'9px')+';color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:'+vSize+';font-weight:700;color:#93c5fd">'+vBannerGrp+'</div><div id="grupoVirgenProgress" style="font-size:'+(isMuj?'10px':'8px')+';color:#ff9800">'+vBannerProg+'</div></div>';
-  // Render banners: primary (your type) first, secondary second
-  if(!procComplete){
+  var vBannerHtml='<div id="grupoVirgenBanner" style="display:'+vBannerDisplay+';text-align:center;padding:'+vPad+';margin-bottom:6px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div style="font-size:'+(isMuj?'11px':'9px')+';color:#93c5fd">'+vLabel+'</div><div style="font-size:'+(isMuj?'11px':'9px')+';color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:'+vSize+';font-weight:700;color:#93c5fd">'+vBannerGrp+'</div><div id="grupoVirgenProgress" style="font-size:'+(isMuj?'10px':'8px')+';color:#ff9800">'+vBannerProg+'</div></div>';
+  // Render banners always (primary type first)
+  if(!isPastDay){
     if(isMuj){
       h+=vBannerHtml+jBannerHtml;
     } else {
@@ -1960,33 +1955,16 @@ function renderLive(){
     }
   }
 
-  if(done>=total&&!isPastDay&&!procComplete){
-    // Your carries are done but procession continues
-    h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3)">';
-    h+='<div style="font-size:16px;font-weight:700;color:#4CAF50">✅ ¡Completaste todas tus cargadas!</div>';
-    h+='<div style="font-size:12px;color:#aaa;margin-top:4px">La procesión sigue en curso</div>';
-    h+='</div>';
-  }
   if(procComplete&&!isPastDay){
-    // ===== FINAL SUMMARY =====
-    var sacaDone=daySaca[currentDay]||17;
-    var totDone=changes.length;
-    var lastGrpDone=((sacaDone-1+totDone-1)%getHomCount())+1;
-    h+='<div style="text-align:center;padding:16px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(76,175,80,.08),rgba(46,125,50,.15));border:1px solid rgba(76,175,80,.4)">';
-    h+='<div style="font-size:11px;color:#aaa;letter-spacing:1px">VENERADA IMAGEN DE JESÚS NAZARENO</div>';
-    h+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">✝️ Asentada en el Templo</div>';
-    h+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#4CAF50">#'+lastGrpDone+'</b></div>';
-    h+='<div style="font-size:11px;color:#888;margin-top:6px;font-style:italic">Gloria y honor a Jesús Nazareno de Sonsonate</div>';
-    h+='</div>';
-    // Virgen completion info (not for SE)
-    if(!isSEMode){
-      var sacaDoneM=daySacaMuj[currentDay]||22;
-      var movDone=liveGrupoData?liveGrupoData.movidos||0:0;
-      var lastGrpDoneM=(((sacaDoneM-1+totDone-1-movDone)%getMujCount())+getMujCount())%getMujCount()+1;
-      h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(59,130,246,.15));border:1px solid rgba(59,130,246,.3)">';
-      h+='<div style="font-size:11px;color:#93c5fd;letter-spacing:1px">MARÍA SANTÍSIMA</div>';
-      h+='<div style="font-size:16px;font-weight:700;color:#93c5fd;margin:6px 0">✝️ Asentada en el Templo</div>';
-      h+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#93c5fd">#'+lastGrpDoneM+'</b></div>';
+    // Your carries are done - show summary
+    var allCambiosDone=(liveGrupoData&&liveGrupoData.cambio>0&&liveGrupoData.cambio>=(positions.length||changes.length));
+    if(allCambiosDone){
+      h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:rgba(76,175,80,.15);border:1px solid rgba(76,175,80,.4)">';
+      h+='<div style="font-size:16px;font-weight:700;color:#4CAF50">✝️ Asentada en el Templo</div>';
+      h+='</div>';
+    } else {
+      h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3)">';
+      h+='<div style="font-size:16px;font-weight:700;color:#4CAF50">✅ ¡Completaste todas tus cargadas!</div>';
       h+='</div>';
     }
     const times=[];
@@ -2659,7 +2637,7 @@ if(_isSE){
                     var sacaH=5;var tot=positions.length;
                     var grp=((sacaH-1+bestJCI-1)%getHomCount())+1;
                     var nombre=bestJCI<=changes.length?changes[bestJCI-1].n||'':'';
-                    liveGrupoData={cambio:bestJCI,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:6,t:Date.now()};
+                    liveGrupoData={cambio:bestJCI,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[4]||6,t:Date.now()};
                     currentDay=4;
                     db.ref('grupoActual/day4').set(liveGrupoData);
                   }
@@ -2685,7 +2663,7 @@ if(_isSE){
                         var sacaH2=5;var tot2=positions.length;
                         var grp2=((sacaH2-1+jesusCambioGPS-1)%getHomCount())+1;
                         var nombre2=jesusCambioGPS<=changes.length?changes[jesusCambioGPS-1].n||'':'';
-                        liveGrupoData={cambio:jesusCambioGPS,grp:grp2,nombre:nombre2,tot:tot2,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:6,t:Date.now()};
+                        liveGrupoData={cambio:jesusCambioGPS,grp:grp2,nombre:nombre2,tot:tot2,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[4]||6,t:Date.now()};
                         currentDay=4;
                         db.ref('grupoActual/day4').set(liveGrupoData);
                         updateGrupoUI();
