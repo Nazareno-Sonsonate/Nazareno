@@ -2427,14 +2427,22 @@ function projectOnRail(lat,lng){
 
 function findNearestCambio(lat,lng){
   if(positions.length<2) return -1;
+  // Sync rail progress with current grupo if behind
+  if(currentGrupoActual>0&&railProgress===0){
+    var dists=getRouteDistances();
+    if(currentGrupoActual<=dists.length){
+      railProgress=dists[currentGrupoActual-1]||0;
+    }
+  }
   var proj=projectOnRail(lat,lng);
   if(proj.dist<0) return -1; // Too far from route
   // Rail logic: only advance, never go back
   if(proj.dist<=railProgress) return -1; // Already passed this point
   railProgress=proj.dist;
-  // Only advance by 1 at a time
-  if(proj.cambio>currentGrupoActual+1) return currentGrupoActual+1;
-  return proj.cambio;
+  // Allow advancing up to 2 at a time for faster catch-up
+  var maxAdvance=Math.min(proj.cambio,currentGrupoActual+2);
+  if(maxAdvance<=currentGrupoActual) return -1;
+  return maxAdvance;
 }
 
 function listenAnda(tipo,imgUrl,color,zIdx){
