@@ -2404,7 +2404,10 @@ var railProgress=0;
 var lastAutoAdvance=0;
 var aheadCount=0;
 var gpsReadings=[];
-var virgenCambioGPS=0; // Independent Virgen tracking from GPS // collect readings during cooldown for averaging
+var virgenCambioGPS=0;
+var virgenAheadCount=0;
+var virgenLastAdvance=0;
+var virgenGpsReadings=[]; // Independent Virgen tracking from GPS // collect readings during cooldown for averaging
 
 function getRouteDistances(){
   var dists=[0];
@@ -2631,18 +2634,50 @@ if(_isSE){
               if(urnaMarkers.virgen._ring) urnaMarkers.virgen._ring.setCenter(llV);
             }
           }
-          // Find Virgen cambio from GPS (independent tracking)
+          // Track Virgen GPS with same rules as Jesus
           if(positions.length>2){
-            var cosLatV=Math.cos(llV.lat*Math.PI/180);
-            var startV=Math.max(0,virgenCambioGPS);
-            var endV=Math.min(positions.length,virgenCambioGPS+5);
-            var bestDistV=Infinity,bestCambioV=startV;
-            for(var vi=startV;vi<endV;vi++){
-              var dv=Math.sqrt(Math.pow((llV.lat-positions[vi].lat)*111320,2)+Math.pow((llV.lng-positions[vi].lng)*111320*cosLatV,2));
-              if(dv<bestDistV){bestDistV=dv;bestCambioV=vi+1;}
-            }
-            if(bestDistV<80&&bestCambioV>virgenCambioGPS){
-              virgenCambioGPS=bestCambioV;
+            virgenGpsReadings.push({lat:llV.lat,lng:llV.lng});
+            if(virgenGpsReadings.length>20) virgenGpsReadings.shift();
+            var vRecent=virgenGpsReadings.slice(-3);
+            var vAvgLat=0,vAvgLng=0;
+            for(var vr=0;vr<vRecent.length;vr++){vAvgLat+=vRecent[vr].lat;vAvgLng+=vRecent[vr].lng;}
+            vAvgLat/=vRecent.length;vAvgLng/=vRecent.length;
+            // First time: initialize from nearest point
+            if(virgenCambioGPS===0){
+              var cosLatVI=Math.cos(vAvgLat*Math.PI/180);
+              var bestVI=Infinity,bestVCI=0;
+              for(var vii=0;vii<positions.length;vii++){
+                var dvi=Math.sqrt(Math.pow((vAvgLat-positions[vii].lat)*111320,2)+Math.pow((vAvgLng-positions[vii].lng)*111320*cosLatVI,2));
+                if(dvi<bestVI){bestVI=dvi;bestVCI=vii+1;}
+              }
+              if(bestVI<80){
+                virgenCambioGPS=bestVCI;
+                virgenLastAdvance=Date.now();
+                if(typeof renderLive==='function') renderLive();
+              }
+            } else {
+              var nextVIdx=virgenCambioGPS;
+              if(nextVIdx<positions.length){
+                var cosLatV2=Math.cos(vAvgLat*Math.PI/180);
+                var distToNextV=Math.sqrt(Math.pow((vAvgLat-positions[nextVIdx].lat)*111320,2)+Math.pow((vAvgLng-positions[nextVIdx].lng)*111320*cosLatV2,2));
+                if(distToNextV<=40){
+                  var canAdvV=true;
+                  if(nextVIdx>0){
+                    var distToCurrV=Math.sqrt(Math.pow((vAvgLat-positions[nextVIdx-1].lat)*111320,2)+Math.pow((vAvgLng-positions[nextVIdx-1].lng)*111320*cosLatV2,2));
+                    if(distToNextV>=distToCurrV) canAdvV=false;
+                  }
+                  if(canAdvV){
+                    virgenAheadCount++;
+                    if(virgenAheadCount>=2&&Date.now()-virgenLastAdvance>=120000){
+                      virgenCambioGPS=nextVIdx+1;
+                      virgenAheadCount=0;
+                      virgenLastAdvance=Date.now();
+                      virgenGpsReadings=[];
+                      if(typeof renderLive==='function') renderLive();
+                    }
+                  } else { virgenAheadCount=0; }
+                }
+              }
             }
           }
           var el=document.getElementById('ahsecStatus');
@@ -3098,7 +3133,8 @@ function globalSync(){
             if(d.desfase!==undefined) window.virgenDesfase=d.desfase;
             if(d.movidos!==undefined) window.virgenMovidos=d.movidos;
             if(d.sacaMuj&&window.daySacaMuj) window.daySacaMuj[day]=d.sacaMuj;
-            // Single source of truth: only renderLive writes banners
+            if(typeof window.updateGrupoUI==='function') window.updateGrupoUI();
+            // Re-render only when cambio changes
             if(d.cambio!==window._lastSyncCambio){
               window._lastSyncCambio=d.cambio;
               if(typeof window.renderLive==='function') window.renderLive();
