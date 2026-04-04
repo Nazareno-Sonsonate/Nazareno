@@ -2527,14 +2527,15 @@ if(_isSE){
               var near=findNearestCambio(ll.lat,ll.lng);
               if(near>0&&near>currentGrupoActual){
                 currentGrupoActual=near;
-                var sacaH=daySaca[currentDay]||5;
+                var sacaH=5; // SE always saca 5
                 var tot=positions.length;
                 var grp=((sacaH-1+near-1)%21)+1;
                 var nombre=near<=changes.length?changes[near-1].n||'':'';
-                liveGrupoData={cambio:near,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
-                try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+                liveGrupoData={cambio:near,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:6,t:Date.now()};
+                currentDay=4; // Force SE day
+                try{localStorage.setItem('grupoActual_day4',JSON.stringify(liveGrupoData));}catch(e){}
                 saveAll();updateGrupoUI();
-                db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+                db.ref('grupoActual/day4').set(liveGrupoData);
                 if(typeof renderLive==='function') renderLive();
               }
             }
