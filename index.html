@@ -1722,6 +1722,11 @@ function fmtClock(ts){
 }
 
 function renderLive(){
+  // Ensure changes are calculated
+  if(!changes||changes.length===0){
+    if(positions.length>0) calc();
+    if(!changes||changes.length===0){$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">Cargando datos...</p></div>';return;}
+  }
   // Check if this day is in the past
   var dayDate=new Date(dayDates[currentDay]+'T23:59:00');
   var now=new Date();
@@ -1762,7 +1767,7 @@ function renderLive(){
     var totPD=changes.length;
     var lastGrpPD=((sacaPD-1+totPD-1)%getHomCount())+1;
     currentGrupoActual=totPD;
-    liveGrupoData={cambio:totPD,grp:lastGrpPD,nombre:changes[totPD-1].n||'',tot:totPD,desfase:0,movidos:0,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
+    liveGrupoData={cambio:totPD,grp:lastGrpPD,nombre:(totPD<=changes.length&&changes[totPD-1])?changes[totPD-1].n||'':'',tot:totPD,desfase:0,movidos:0,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
   }
 
   const total=myCarries.length;
@@ -2878,7 +2883,7 @@ function advanceGrupo(delta){
   var grp=0,nombre='';
   if(currentGrupoActual>0&&currentGrupoActual<=changes.length){
     grp=((sacaH-1+currentGrupoActual-1)%getHomCount())+1;
-    nombre=changes[currentGrupoActual-1].n||'';
+    nombre=(currentGrupoActual<=changes.length&&changes[currentGrupoActual-1])?changes[currentGrupoActual-1].n||'':'';
   } else if(currentGrupoActual>0){
     grp=((sacaH-1+Math.min(currentGrupoActual,tot)-1)%getHomCount())+1;
   }
@@ -2935,6 +2940,7 @@ function changeMovidos(delta){
 }
 
 function updateGrupoUI(){
+  if(!changes||changes.length===0) return;
   var tot=changes.length;
   var adminEl=document.getElementById('grupoActualAdmin');
   if(adminEl){
