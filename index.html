@@ -2441,26 +2441,24 @@ function findNearestCambio(lat,lng){
   var avgLat=0,avgLng=0;
   for(var r=0;r<recent.length;r++){avgLat+=recent[r].lat;avgLng+=recent[r].lng;}
   avgLat/=recent.length;avgLng/=recent.length;
-  // Next point to reach (0-indexed)
+  // Find nearest of next 3 points within 50m
   var nextIdx=currentGrupoActual;
   if(nextIdx>=positions.length) return -1;
   var cosLat2=Math.cos(avgLat*Math.PI/180);
-  var distToNext=Math.sqrt(Math.pow((avgLat-positions[nextIdx].lat)*111320,2)+Math.pow((avgLng-positions[nextIdx].lng)*111320*cosLat2,2));
-  // Must be within 40m of the next point
-  if(distToNext>40) return -1;
-  // Must be closer to next point than to current point (means we PASSED it)
-  if(nextIdx>0){
-    var distToCurr=Math.sqrt(Math.pow((avgLat-positions[nextIdx-1].lat)*111320,2)+Math.pow((avgLng-positions[nextIdx-1].lng)*111320*cosLat2,2));
-    if(distToNext>=distToCurr) return -1;
+  var bestD=Infinity,bestP=nextIdx;
+  for(var k=nextIdx;k<Math.min(positions.length,nextIdx+3);k++){
+    var dk=Math.sqrt(Math.pow((avgLat-positions[k].lat)*111320,2)+Math.pow((avgLng-positions[k].lng)*111320*cosLat2,2));
+    if(dk<bestD){bestD=dk;bestP=k;}
   }
+  if(bestD>50||bestP<nextIdx){aheadCount=0;return -1;}
   aheadCount++;
   if(aheadCount<2) return -1;
   var now=Date.now();
-  if(now-lastAutoAdvance<120000) return -1;
+  if(now-lastAutoAdvance<90000) return -1;
   aheadCount=0;
   lastAutoAdvance=now;
   gpsReadings=[];
-  return currentGrupoActual+1;
+  return bestP+1;
 }
 
 function listenAnda(tipo,imgUrl,color,zIdx){
@@ -2658,25 +2656,23 @@ if(_isSE){
             } else {
               var nextVIdx=virgenCambioGPS;
               if(nextVIdx<positions.length){
+                // Simple: find nearest of next 3 points
                 var cosLatV2=Math.cos(vAvgLat*Math.PI/180);
-                var distToNextV=Math.sqrt(Math.pow((vAvgLat-positions[nextVIdx].lat)*111320,2)+Math.pow((vAvgLng-positions[nextVIdx].lng)*111320*cosLatV2,2));
-                if(distToNextV<=40){
-                  var canAdvV=true;
-                  if(nextVIdx>0){
-                    var distToCurrV=Math.sqrt(Math.pow((vAvgLat-positions[nextVIdx-1].lat)*111320,2)+Math.pow((vAvgLng-positions[nextVIdx-1].lng)*111320*cosLatV2,2));
-                    if(distToNextV>=distToCurrV) canAdvV=false;
-                  }
-                  if(canAdvV){
-                    virgenAheadCount++;
-                    if(virgenAheadCount>=2&&Date.now()-virgenLastAdvance>=120000){
-                      virgenCambioGPS=nextVIdx+1;
-                      virgenAheadCount=0;
-                      virgenLastAdvance=Date.now();
-                      virgenGpsReadings=[];
-                      if(typeof renderLive==='function') renderLive();
-                    }
-                  } else { virgenAheadCount=0; }
+                var bestVD=Infinity,bestVP=nextVIdx;
+                for(var vk=nextVIdx;vk<Math.min(positions.length,nextVIdx+3);vk++){
+                  var dvk=Math.sqrt(Math.pow((vAvgLat-positions[vk].lat)*111320,2)+Math.pow((vAvgLng-positions[vk].lng)*111320*cosLatV2,2));
+                  if(dvk<bestVD){bestVD=dvk;bestVP=vk;}
                 }
+                if(bestVD<=50&&bestVP>=nextVIdx){
+                  virgenAheadCount++;
+                  if(virgenAheadCount>=2&&Date.now()-virgenLastAdvance>=90000){
+                    virgenCambioGPS=bestVP+1;
+                    virgenAheadCount=0;
+                    virgenLastAdvance=Date.now();
+                    virgenGpsReadings=[];
+                    if(typeof renderLive==='function') renderLive();
+                  }
+                } else { virgenAheadCount=0; }
               }
             }
           }
