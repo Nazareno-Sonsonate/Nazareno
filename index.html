@@ -626,7 +626,7 @@ let MART_WP_REF = [
 ];
 
 // ========== LOCAL STORAGE ==========
-const SAVE_KEY = 'semanaSanta_v46';
+const SAVE_KEY = 'semanaSanta_v47';
 function getWPs(){return currentDay===0?LUN_WP_REF:currentDay===1?MART_WP_REF:currentDay===2?MIER_WP_REF:currentDay===3?VIER_WP_REF:currentDay===4?SE_WP_REF:[];}
 function saveAll() {
   try {
@@ -3114,8 +3114,8 @@ function startDayListeners(){
     if(d.movidos!==undefined) virgenMovidos=d.movidos;
     if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
     try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(d));}catch(e){}
-    updateGrupoUI();
-    if(typeof renderLive==='function') renderLive();
+    try{updateGrupoUI();}catch(e8){}
+    try{if(typeof renderLive==='function') renderLive();}catch(e9){}
   });
   // Simple sync via XMLHttpRequest (bypasses Service Worker completely)
   function syncGrupo(){
@@ -3139,7 +3139,7 @@ function startDayListeners(){
               if(d.desfase!==undefined) virgenDesfase=d.desfase;
               if(d.movidos!==undefined) virgenMovidos=d.movidos;
               if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
-              updateGrupoUI();
+              try{updateGrupoUI();}catch(e7){}
             }
           }catch(e){
             var ss2=document.getElementById('syncStatus');
@@ -3192,7 +3192,7 @@ function startDayListeners(){
   posRef.on('value',function(snap){
     var d=snap.val();
     if(!d||!d.length) return;
-    var newPos=d.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
+    var newPos=d.filter(function(p){return p&&p.lat&&p.lng;}).map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
     // Only update if different
     if(JSON.stringify(newPos)!==JSON.stringify(positions)){
       positions=newPos;
@@ -3230,14 +3230,14 @@ function globalSync(){
             if(d.desfase!==undefined) window.virgenDesfase=d.desfase;
             if(d.movidos!==undefined) window.virgenMovidos=d.movidos;
             if(d.sacaMuj&&window.daySacaMuj) window.daySacaMuj[day]=d.sacaMuj;
-            if(typeof window.updateGrupoUI==='function') window.updateGrupoUI();
+            try{if(typeof window.updateGrupoUI==='function') window.updateGrupoUI();}catch(e2){}
             // Re-render: always for shared, only on change for editor
             if(window.isShared){
-              if(typeof window.renderLive==='function') window.renderLive();
+              try{if(typeof window.renderLive==='function') window.renderLive();}catch(e3){}
             } else if(d.cambio!==window._lastSyncCambio){
               window._lastSyncCambio=d.cambio;
-              if(typeof window.renderLive==='function') window.renderLive();
-              checkVibrate(d.cambio);
+              try{if(typeof window.renderLive==='function') window.renderLive();}catch(e4){}
+              try{checkVibrate(d.cambio);}catch(e5){}
             }
           }
         }catch(e){if(el) el.textContent='❌ Parse: '+e.message;}
