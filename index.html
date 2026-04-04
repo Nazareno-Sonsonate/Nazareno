@@ -1722,11 +1722,8 @@ function fmtClock(ts){
 }
 
 function renderLive(){
-  // Ensure changes are calculated
-  if(!changes||changes.length===0){
-    if(positions.length>0) calc();
-    if(!changes||changes.length===0){$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">Cargando datos...</p></div>';return;}
-  }
+  // Wait for changes to be calculated
+  if(!changes||changes.length===0){$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">Cargando datos...</p></div>';return;}
   // Check if this day is in the past
   var dayDate=new Date(dayDates[currentDay]+'T23:59:00');
   var now=new Date();
@@ -2441,6 +2438,7 @@ var virgenCambioGPS=0;
 var virgenAheadCount=0;
 var virgenLastAdvance=0;
 var virgenGpsReadings=[];
+var virgenGPSLastUpdate=0;
 var jesusCambioGPS=0;
 var jesusAheadCount=0;
 var jesusGpsReadings=[]; // Independent Virgen tracking from GPS // collect readings during cooldown for averaging
@@ -2732,43 +2730,41 @@ if(_isSE){
               if(urnaMarkers.virgen._ring) urnaMarkers.virgen._ring.setCenter(llV);
             }
           }
-          // Track Virgen GPS with same rules as Jesus
+          // Track Virgen GPS (same logic as Jesus)
           if(positions.length>2){
             virgenGpsReadings.push({lat:llV.lat,lng:llV.lng});
             if(virgenGpsReadings.length>20) virgenGpsReadings.shift();
-            var vRecent=virgenGpsReadings.slice(-3);
-            var vAvgLat=0,vAvgLng=0;
-            for(var vr=0;vr<vRecent.length;vr++){vAvgLat+=vRecent[vr].lat;vAvgLng+=vRecent[vr].lng;}
-            vAvgLat/=vRecent.length;vAvgLng/=vRecent.length;
-            // First time: initialize from nearest point
+            var vRecent2=virgenGpsReadings.slice(-3);
+            var vAvgLat2=0,vAvgLng2=0;
+            for(var vr2=0;vr2<vRecent2.length;vr2++){vAvgLat2+=vRecent2[vr2].lat;vAvgLng2+=vRecent2[vr2].lng;}
+            vAvgLat2/=vRecent2.length;vAvgLng2/=vRecent2.length;
             if(virgenCambioGPS===0){
-              var cosLatVI=Math.cos(vAvgLat*Math.PI/180);
-              var bestVI=Infinity,bestVCI=0;
-              for(var vii=0;vii<positions.length;vii++){
-                var dvi=Math.sqrt(Math.pow((vAvgLat-positions[vii].lat)*111320,2)+Math.pow((vAvgLng-positions[vii].lng)*111320*cosLatVI,2));
-                if(dvi<bestVI){bestVI=dvi;bestVCI=vii+1;}
+              // Init: find nearest point in entire route
+              var cosLatVI2=Math.cos(vAvgLat2*Math.PI/180);
+              var bestVI2=Infinity,bestVCI2=0;
+              for(var vii2=0;vii2<positions.length;vii2++){
+                var dvi2=Math.sqrt(Math.pow((vAvgLat2-positions[vii2].lat)*111320,2)+Math.pow((vAvgLng2-positions[vii2].lng)*111320*cosLatVI2,2));
+                if(dvi2<bestVI2){bestVI2=dvi2;bestVCI2=vii2+1;}
               }
-              if(bestVI<80){
-                virgenCambioGPS=bestVCI;
-                virgenLastAdvance=Date.now();
+              if(bestVI2<80){
+                virgenCambioGPS=bestVCI2;
                 if(typeof renderLive==='function') renderLive();
               }
             } else {
-              var nextVIdx=virgenCambioGPS;
-              if(nextVIdx<positions.length){
-                // Simple: find nearest of next 3 points
-                var cosLatV2=Math.cos(vAvgLat*Math.PI/180);
-                var bestVD=Infinity,bestVP=nextVIdx;
-                for(var vk=nextVIdx;vk<Math.min(positions.length,nextVIdx+3);vk++){
-                  var dvk=Math.sqrt(Math.pow((vAvgLat-positions[vk].lat)*111320,2)+Math.pow((vAvgLng-positions[vk].lng)*111320*cosLatV2,2));
-                  if(dvk<bestVD){bestVD=dvk;bestVP=vk;}
+              // Advance: search next 3 points
+              var nextVI2=virgenCambioGPS;
+              if(nextVI2<positions.length){
+                var cosLatV3=Math.cos(vAvgLat2*Math.PI/180);
+                var bestVD3=Infinity,bestVP3=nextVI2;
+                for(var vk3=nextVI2;vk3<Math.min(positions.length,nextVI2+3);vk3++){
+                  var dvk3=Math.sqrt(Math.pow((vAvgLat2-positions[vk3].lat)*111320,2)+Math.pow((vAvgLng2-positions[vk3].lng)*111320*cosLatV3,2));
+                  if(dvk3<bestVD3){bestVD3=dvk3;bestVP3=vk3;}
                 }
-                if(bestVD<=50&&bestVP>=nextVIdx){
+                if(bestVD3<=50&&bestVP3>=nextVI2){
                   virgenAheadCount++;
-                  if(virgenAheadCount>=2&&Date.now()-virgenLastAdvance>=90000){
-                    virgenCambioGPS=bestVP+1;
+                  if(virgenAheadCount>=2){
+                    virgenCambioGPS=bestVP3+1;
                     virgenAheadCount=0;
-                    virgenLastAdvance=Date.now();
                     virgenGpsReadings=[];
                     if(typeof renderLive==='function') renderLive();
                   }
@@ -3140,6 +3136,7 @@ function startDayListeners(){
               if(d.movidos!==undefined) virgenMovidos=d.movidos;
               if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
               try{updateGrupoUI();}catch(e7){}
+              try{if(typeof renderLive==='function') renderLive();}catch(e8){}
             }
           }catch(e){
             var ss2=document.getElementById('syncStatus');
@@ -3231,12 +3228,10 @@ function globalSync(){
             if(d.movidos!==undefined) window.virgenMovidos=d.movidos;
             if(d.sacaMuj&&window.daySacaMuj) window.daySacaMuj[day]=d.sacaMuj;
             try{if(typeof window.updateGrupoUI==='function') window.updateGrupoUI();}catch(e2){}
-            // Re-render: always for shared, only on change for editor
-            if(window.isShared){
-              try{if(typeof window.renderLive==='function') window.renderLive();}catch(e3){}
-            } else if(d.cambio!==window._lastSyncCambio){
+            // Always re-render (ensures carries are marked as passed)
+            try{if(typeof window.renderLive==='function') window.renderLive();}catch(e3){}
+            if(d.cambio!==window._lastSyncCambio){
               window._lastSyncCambio=d.cambio;
-              try{if(typeof window.renderLive==='function') window.renderLive();}catch(e4){}
               try{checkVibrate(d.cambio);}catch(e5){}
             }
           }
