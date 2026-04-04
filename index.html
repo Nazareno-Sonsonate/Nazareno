@@ -1789,7 +1789,7 @@ function renderLive(){
       bannerGrp='✅ Asentó Grupo #'+(((sacaBnr-1+bTot-1)%21)+1);
     } else {
       bannerGrp='Grupo #'+(((sacaBnr-1+liveGrupoData.cambio-1)%21)+1);
-      bannerProg=liveGrupoData.nombre||'';
+      bannerProg=(liveGrupoData.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
     }
   } else {
     bannerGrp='Grupo #'+sacaBnr;
@@ -2372,10 +2372,12 @@ function buscarAnda(tipo){
 var autoAdvanceGPS=true;
 
 // Track progress along the route as a "rail"
-var railProgress=0; // distance along route in meters from start
+var railProgress=0;
+var lastAutoAdvance=0;
+var aheadCount=0;
+var gpsReadings=[]; // collect readings during cooldown for averaging
 
 function getRouteDistances(){
-  // Pre-calculate cumulative distances along route
   var dists=[0];
   for(var i=1;i<positions.length;i++){
     var dlat=(positions[i].lat-positions[i-1].lat)*111320;
@@ -2386,7 +2388,6 @@ function getRouteDistances(){
 }
 
 function projectOnRail(lat,lng){
-  // Find where GPS projects onto the route line and return distance from start
   if(positions.length<2) return {dist:0,cambio:0};
   var bestDist=Infinity,bestRailDist=0;
   var cosLat=Math.cos(lat*Math.PI/180);
@@ -2395,28 +2396,23 @@ function projectOnRail(lat,lng){
   for(var i=0;i<positions.length-1;i++){
     var ax=positions[i].lng,ay=positions[i].lat;
     var bx=positions[i+1].lng,by=positions[i+1].lat;
-    // Project point onto segment
     var dx=bx-ax,dy=by-ay;
     var segLen=Math.sqrt(dx*dx+dy*dy);
     if(segLen===0) continue;
     var t=Math.max(0,Math.min(1,((lng-ax)*dx+(lat-ay)*dy)/(dx*dx+dy*dy)));
     var px=ax+t*dx,py=ay+t*dy;
-    // Distance from GPS to projected point (in meters approx)
     var distM=Math.sqrt(Math.pow((lat-py)*111320,2)+Math.pow((lng-px)*111320*cosLat,2));
     
     if(distM<bestDist){
       bestDist=distM;
-      // Distance along route to this projected point
       var segDistM=Math.sqrt(Math.pow((by-ay)*111320,2)+Math.pow((bx-ax)*111320*cosLat,2));
       bestRailDist=cumDist+t*segDistM;
     }
     var segDistFull=Math.sqrt(Math.pow((by-ay)*111320,2)+Math.pow((bx-ax)*111320*cosLat,2));
     cumDist+=segDistFull;
   }
-  // Only valid if within 60 meters of route
   if(bestDist>60) return {dist:-1,cambio:-1};
   
-  // Find which cambio this distance corresponds to
   var dists=getRouteDistances();
   var cambio=0;
   for(var j=0;j<dists.length;j++){
@@ -2434,15 +2430,39 @@ function findNearestCambio(lat,lng){
       railProgress=dists[currentGrupoActual-1]||0;
     }
   }
-  var proj=projectOnRail(lat,lng);
-  if(proj.dist<0) return -1; // Too far from route
-  // Rail logic: only advance, never go back
-  if(proj.dist<=railProgress) return -1; // Already passed this point
+  // Collect readings for averaging
+  gpsReadings.push({lat:lat,lng:lng,t:Date.now()});
+  if(gpsReadings.length>30) gpsReadings.shift();
+  
+  // Use averaged position from last 6 readings (~1 min)
+  var recent=gpsReadings.slice(-6);
+  var avgLat=0,avgLng=0;
+  for(var r=0;r<recent.length;r++){avgLat+=recent[r].lat;avgLng+=recent[r].lng;}
+  avgLat/=recent.length;avgLng/=recent.length;
+  
+  var proj=projectOnRail(avgLat,avgLng);
+  if(proj.dist<0) return -1;
+  if(proj.dist<=railProgress){aheadCount=0;return -1;}
+  if(proj.cambio<=currentGrupoActual){aheadCount=0;return -1;}
+  aheadCount++;
+  if(aheadCount<3) return -1;
+  // Cooldown: minimum 3 minutes
+  var now=Date.now();
+  if(now-lastAutoAdvance<180000) return -1;
+  // Final check: average ALL readings from cooldown period
+  var cooldownR=gpsReadings.filter(function(r){return r.t>lastAutoAdvance;});
+  if(cooldownR.length>=4){
+    var cLat=0,cLng=0;
+    for(var c=0;c<cooldownR.length;c++){cLat+=cooldownR[c].lat;cLng+=cooldownR[c].lng;}
+    cLat/=cooldownR.length;cLng/=cooldownR.length;
+    var finalProj=projectOnRail(cLat,cLng);
+    if(finalProj.cambio<=currentGrupoActual) return -1;
+  }
+  aheadCount=0;
+  lastAutoAdvance=now;
   railProgress=proj.dist;
-  // Allow advancing up to 2 at a time for faster catch-up
-  var maxAdvance=Math.min(proj.cambio,currentGrupoActual+2);
-  if(maxAdvance<=currentGrupoActual) return -1;
-  return maxAdvance;
+  gpsReadings=[];
+  return currentGrupoActual+1;
 }
 
 function listenAnda(tipo,imgUrl,color,zIdx){
@@ -2787,7 +2807,7 @@ function updateGrupoUI(){
         progEl.innerHTML=progHtml;
       } else {
         txtEl.textContent='Grupo #'+currentGrp;
-        var progHtml=liveGrupoData.nombre||'';
+        var progHtml=(liveGrupoData.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
         if(!isShared){
           var procPct=Math.round(liveGrupoData.cambio/tot*100);
           progHtml='Cambio '+liveGrupoData.cambio+' de '+tot+(liveGrupoData.nombre?' \u00b7 '+liveGrupoData.nombre:'');
@@ -3057,7 +3077,7 @@ function globalSync(){
                 bannerEl.textContent='✅ Asentó Grupo #'+(((sacaSync-1+tot-1)%21)+1);
               } else {
                 bannerEl.textContent='Grupo #'+syncGrp;
-                if(progEl) progEl.textContent=d.nombre||'';
+                if(progEl) progEl.textContent=(d.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
               }
               if(bannerDiv) bannerDiv.style.display='block';
             }
