@@ -2407,7 +2407,10 @@ var gpsReadings=[];
 var virgenCambioGPS=0;
 var virgenAheadCount=0;
 var virgenLastAdvance=0;
-var virgenGpsReadings=[]; // Independent Virgen tracking from GPS // collect readings during cooldown for averaging
+var virgenGpsReadings=[];
+var jesusCambioGPS=0;
+var jesusAheadCount=0;
+var jesusGpsReadings=[]; // Independent Virgen tracking from GPS // collect readings during cooldown for averaging
 
 function getRouteDistances(){
   var dists=[0];
@@ -2441,22 +2444,19 @@ function findNearestCambio(lat,lng){
   var avgLat=0,avgLng=0;
   for(var r=0;r<recent.length;r++){avgLat+=recent[r].lat;avgLng+=recent[r].lng;}
   avgLat/=recent.length;avgLng/=recent.length;
-  // Find nearest of next 3 points within 50m
-  var nextIdx=currentGrupoActual;
-  if(nextIdx>=positions.length) return -1;
   var cosLat2=Math.cos(avgLat*Math.PI/180);
-  var bestD=Infinity,bestP=nextIdx;
-  for(var k=nextIdx;k<Math.min(positions.length,nextIdx+3);k++){
+  var startK=Math.max(0,currentGrupoActual-2);
+  var endK=Math.min(positions.length,currentGrupoActual+5);
+  var bestD=Infinity,bestP=-1;
+  for(var k=startK;k<endK;k++){
     var dk=Math.sqrt(Math.pow((avgLat-positions[k].lat)*111320,2)+Math.pow((avgLng-positions[k].lng)*111320*cosLat2,2));
     if(dk<bestD){bestD=dk;bestP=k;}
   }
-  if(bestD>50||bestP<nextIdx){aheadCount=0;return -1;}
+  if(bestD>50) return -1;
+  if(bestP+1<=currentGrupoActual){aheadCount=0;return -1;}
   aheadCount++;
-  if(aheadCount<2) return -1;
-  var now=Date.now();
-  if(now-lastAutoAdvance<90000) return -1;
+  if(aheadCount<3) return -1; // 3 confirmations (~30 sec)
   aheadCount=0;
-  lastAutoAdvance=now;
   gpsReadings=[];
   return bestP+1;
 }
@@ -2583,21 +2583,60 @@ if(_isSE){
               urnaMarkers.jesus.setPosition(ll);
               if(urnaMarkers.jesus._ring) urnaMarkers.jesus._ring.setCenter(ll);
             }
-            // GPS Auto-advance
-            if(autoAdvanceGPS&&!isShared){
-              var near=findNearestCambio(ll.lat,ll.lng);
-              if(near>0&&near>currentGrupoActual){
-                currentGrupoActual=near;
-                var sacaH=5; // SE always saca 5
-                var tot=positions.length;
-                var grp=((sacaH-1+near-1)%getHomCount())+1;
-                var nombre=near<=changes.length?changes[near-1].n||'':'';
-                liveGrupoData={cambio:near,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:6,t:Date.now()};
-                currentDay=4; // Force SE day
-                try{localStorage.setItem('grupoActual_day4',JSON.stringify(liveGrupoData));}catch(e){}
-                saveAll();updateGrupoUI();
-                db.ref('grupoActual/day4').set(liveGrupoData);
-                if(typeof renderLive==='function') renderLive();
+            // GPS Auto-advance (independent tracking like Virgen)
+            if(autoAdvanceGPS&&!isShared&&positions.length>2){
+              jesusGpsReadings.push({lat:ll.lat,lng:ll.lng});
+              if(jesusGpsReadings.length>20) jesusGpsReadings.shift();
+              var jRecent=jesusGpsReadings.slice(-3);
+              var jAvgLat=0,jAvgLng=0;
+              for(var jr=0;jr<jRecent.length;jr++){jAvgLat+=jRecent[jr].lat;jAvgLng+=jRecent[jr].lng;}
+              jAvgLat/=jRecent.length;jAvgLng/=jRecent.length;
+              // First time: initialize from nearest point
+              if(jesusCambioGPS===0){
+                var cosLatJI=Math.cos(jAvgLat*Math.PI/180);
+                var bestJI=Infinity,bestJCI=0;
+                for(var jii=0;jii<positions.length;jii++){
+                  var dji=Math.sqrt(Math.pow((jAvgLat-positions[jii].lat)*111320,2)+Math.pow((jAvgLng-positions[jii].lng)*111320*cosLatJI,2));
+                  if(dji<bestJI){bestJI=dji;bestJCI=jii+1;}
+                }
+                if(bestJI<80){
+                  jesusCambioGPS=bestJCI;
+                  currentGrupoActual=bestJCI;
+                  var sacaH=5;var tot=positions.length;
+                  var grp=((sacaH-1+bestJCI-1)%getHomCount())+1;
+                  var nombre=bestJCI<=changes.length?changes[bestJCI-1].n||'':'';
+                  liveGrupoData={cambio:bestJCI,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:6,t:Date.now()};
+                  currentDay=4;
+                  db.ref('grupoActual/day4').set(liveGrupoData);
+                  if(typeof renderLive==='function') renderLive();
+                }
+              } else {
+                var nextJIdx=jesusCambioGPS;
+                if(nextJIdx<positions.length){
+                  var cosLatJ2=Math.cos(jAvgLat*Math.PI/180);
+                  var bestJD=Infinity,bestJP=nextJIdx;
+                  for(var jk=nextJIdx;jk<Math.min(positions.length,nextJIdx+3);jk++){
+                    var djk=Math.sqrt(Math.pow((jAvgLat-positions[jk].lat)*111320,2)+Math.pow((jAvgLng-positions[jk].lng)*111320*cosLatJ2,2));
+                    if(djk<bestJD){bestJD=djk;bestJP=jk;}
+                  }
+                  if(bestJD<=50&&bestJP>=nextJIdx){
+                    jesusAheadCount++;
+                    if(jesusAheadCount>=2){
+                      jesusCambioGPS=bestJP+1;
+                      jesusAheadCount=0;
+                      jesusGpsReadings=[];
+                      currentGrupoActual=bestJP+1;
+                      var sacaH2=5;var tot2=positions.length;
+                      var grp2=((sacaH2-1+jesusCambioGPS-1)%getHomCount())+1;
+                      var nombre2=jesusCambioGPS<=changes.length?changes[jesusCambioGPS-1].n||'':'';
+                      liveGrupoData={cambio:jesusCambioGPS,grp:grp2,nombre:nombre2,tot:tot2,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:6,t:Date.now()};
+                      currentDay=4;
+                      db.ref('grupoActual/day4').set(liveGrupoData);
+                      updateGrupoUI();
+                      if(typeof renderLive==='function') renderLive();
+                    }
+                  } else { jesusAheadCount=0; }
+                }
               }
             }
           }
