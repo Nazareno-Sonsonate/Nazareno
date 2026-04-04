@@ -777,6 +777,9 @@ function readParams(){
         $('cG').value=s.g;
         if(s.color!==undefined) $('cColor').value=s.color;
         $('colorDiv').style.display=(+s.t===27)?'block':'none';
+        // Set correct saca for SE
+        var isM2=(+s.t===27);
+        $('cS').value=isM2?defaultSacaM[4]:defaultSacaH[4];
         // Already configured — skip modal
       } else {
         // First time — show type selector (step1 with SE images)
