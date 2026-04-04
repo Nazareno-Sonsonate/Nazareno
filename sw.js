@@ -1,4 +1,4 @@
-const CACHE_NAME = 'semana-santa-v46';
+const CACHE_NAME = 'semana-santa-v47';
 const URLS_TO_CACHE = [
   './',
   './index.html',
