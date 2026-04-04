@@ -2419,7 +2419,6 @@ function getRouteDistances(){
 function projectOnRail(lat,lng){
   if(positions.length<2) return {dist:0,cambio:0};
   var cosLat=Math.cos(lat*Math.PI/180);
-  // Only search next 3 points ahead (prevents jumping to route crossings)
   var startSeg=Math.max(0,currentGrupoActual);
   var endSeg=Math.min(positions.length,currentGrupoActual+3);
   var bestDist=Infinity,bestCambio=startSeg;
@@ -2435,17 +2434,24 @@ function findNearestCambio(lat,lng){
   if(positions.length<2) return -1;
   gpsReadings.push({lat:lat,lng:lng,t:Date.now()});
   if(gpsReadings.length>20) gpsReadings.shift();
-  // Average last 3 readings
   var recent=gpsReadings.slice(-3);
   var avgLat=0,avgLng=0;
   for(var r=0;r<recent.length;r++){avgLat+=recent[r].lat;avgLng+=recent[r].lng;}
   avgLat/=recent.length;avgLng/=recent.length;
-  var proj=projectOnRail(avgLat,avgLng);
-  if(proj.dist<0) return -1;
-  if(proj.cambio<=currentGrupoActual){aheadCount=0;return -1;}
+  // Next point to reach (0-indexed)
+  var nextIdx=currentGrupoActual;
+  if(nextIdx>=positions.length) return -1;
+  var cosLat2=Math.cos(avgLat*Math.PI/180);
+  var distToNext=Math.sqrt(Math.pow((avgLat-positions[nextIdx].lat)*111320,2)+Math.pow((avgLng-positions[nextIdx].lng)*111320*cosLat2,2));
+  // Must be within 40m of the next point
+  if(distToNext>40) return -1;
+  // Must be closer to next point than to current point (means we PASSED it)
+  if(nextIdx>0){
+    var distToCurr=Math.sqrt(Math.pow((avgLat-positions[nextIdx-1].lat)*111320,2)+Math.pow((avgLng-positions[nextIdx-1].lng)*111320*cosLat2,2));
+    if(distToNext>=distToCurr) return -1;
+  }
   aheadCount++;
   if(aheadCount<2) return -1;
-  // Cooldown: 2 minutes
   var now=Date.now();
   if(now-lastAutoAdvance<120000) return -1;
   aheadCount=0;
