@@ -143,7 +143,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
   <div><label>¿Cargadores de?</label><select id="cType" onchange="onTypeChange()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="21">Hombres (21 grupos)</option><option value="27">Mujeres (27 grupos)</option></select></div>
   <div><label>¿En qué grupo vas?</label><input type="number" id="cG" value="5" min="1" max="50" onchange="calc()"></div>
   <div id="colorDiv" style="display:none"><label>¿Tu color?</label><select id="cColor" onchange="calc()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="0">🟡 Amarillo</option><option value="1">🔴 Rojo</option><option value="2">🔵 Azul</option></select></div>
-  <div class="adminOnly"><label>¿Qué grupo saca?</label><input type="number" id="cS" value="19" min="1" max="50" onchange="daySacaManual[currentDay]=true;if(+$('cType').value===27){daySacaMuj[currentDay]=+this.value;if(liveGrupoData){liveGrupoData.sacaMuj=+this.value;db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}else{daySaca[currentDay]=+this.value;if(liveGrupoData&&liveGrupoData.cambio>0){liveGrupoData.grp=((+this.value-1+liveGrupoData.cambio-1)%21)+1;saveAll();db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}calc()"></div>
+  <div class="adminOnly"><label>¿Qué grupo saca?</label><input type="number" id="cS" value="19" min="1" max="50" onchange="daySacaManual[currentDay]=true;if(+$('cType').value===27){daySacaMuj[currentDay]=+this.value;if(liveGrupoData){liveGrupoData.sacaMuj=+this.value;db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}else{daySaca[currentDay]=+this.value;if(liveGrupoData&&liveGrupoData.cambio>0){liveGrupoData.grp=((+this.value-1+liveGrupoData.cambio-1)%getHomCount())+1;saveAll();db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}calc()"></div>
   <div class="adminOnly"><label>Hora de salida</label><input type="number" id="cH" value="15" min="0" max="23" onchange="calc()"></div>
   <div class="adminOnly"><label>Min por cambio</label><input type="number" id="cMn" value="6" min="1" max="20" onchange="calc()"></div>
 </div>
@@ -726,7 +726,7 @@ function readParams(){
     // Update SE group selector images
     var step1El=document.getElementById('step1');
     if(step1El){
-      step1El.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#d4af37;font-weight:700;margin-bottom:4px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#ccc;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div style="display:flex;gap:12px;justify-content:center"><div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-entierro.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">21 grupos</div></div><div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-virgen.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">23 grupos</div></div></div>';
+      step1El.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#d4af37;font-weight:700;margin-bottom:4px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#ccc;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div style="display:flex;gap:12px;justify-content:center"><div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-entierro.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">22 grupos</div></div><div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-virgen.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">23 grupos</div></div></div>';
     }
     // Hide day selector dropdown only, keep buttons visible
     var dayRow=document.getElementById('daySelector');
@@ -746,20 +746,20 @@ function readParams(){
       daySacaMuj[4]=6;
       virgenDesfase=0;
       virgenMovidos=0;
-      // Fix Firebase if it has wrong values
+      // Fix Firebase only if sacaMuj is wrong (not 6)
       setTimeout(function(){
         if(liveGrupoData){
-          liveGrupoData.sacaMuj=6;
-          liveGrupoData.movidos=0;
-          liveGrupoData.desfase=0;
-          db.ref('grupoActual/day4').update({sacaMuj:6,movidos:0,desfase:0});
+          if(!liveGrupoData.sacaMuj||liveGrupoData.sacaMuj!==6){
+            liveGrupoData.sacaMuj=6;
+            db.ref('grupoActual/day4').update({sacaMuj:6});
+          }
           updateGrupoUI();
           if(typeof renderLive==='function') renderLive();
         }
       },2000);
       // Update women's group count label for SE
       var opts=$('cType').options;
-      for(var oi=0;oi<opts.length;oi++){if(opts[oi].value==='27') opts[oi].textContent='Mujeres (23 grupos)';}
+      for(var oi=0;oi<opts.length;oi++){if(opts[oi].value==='27') opts[oi].textContent='Mujeres (23 grupos)';if(opts[oi].value==='21') opts[oi].textContent='Hombres (22 grupos)';}
     } else {
       // Shared mode
       const saved=localStorage.getItem('sharedUserSE');
@@ -830,8 +830,8 @@ function pickColor(c){
 function showGroupGrid(t){
   $('step3').style.display='block';
   const colores=['🟡','🔴','🔵'];
-  var gridCount=(t===27&&isSEMode)?23:t;
-  $('step3label').textContent=isSEMode?(t===27?'23 grupos · Virgen Dolorosa':'21 grupos · Santo Entierro'):t===27?'Cargadora '+colores[sharedPickedColor]+' · '+t+' grupos':t+' grupos';
+  var gridCount=isSEMode?(t===27?23:22):t;
+  $('step3label').textContent=isSEMode?(t===27?'23 grupos · Virgen Dolorosa':'22 grupos · Santo Entierro'):t===27?'Cargadora '+colores[sharedPickedColor]+' · '+t+' grupos':t+' grupos';
   let h='';
   for(let i=1;i<=gridCount;i++){
     const isLast=(i===sharedLastGroup);
@@ -899,6 +899,7 @@ function cfg() {
   return {g:+$('cG').value||5, t:+$('cType').value||21, s:+$('cS').value||19, h:+$('cH').value||15, mn:+$('cMn').value||6, color:+($('cColor')?$('cColor').value:0), mujG:mujGrupos};
 }
 function getMujCount(){return isSEMode?23:27;}
+function getHomCount(){return isSEMode?22:21;}
 // Default sacas: [lun, mar, mie, vie] per type
 const defaultSacaH = [19, 17, 13, 16, 5]; // hombres 21 grupos
 const defaultSacaM = [19, 27, 13, 22, 6]; // mujeres 27 grupos
@@ -1714,7 +1715,7 @@ function renderLive(){
   if(isPastDay&&changes.length>0&&!myCarries.length){
     var sacaPD2=daySaca[currentDay]||17;
     var totPD2=changes.length;
-    var lastGrpPD2=((sacaPD2-1+totPD2-1)%21)+1;
+    var lastGrpPD2=((sacaPD2-1+totPD2-1)%getHomCount())+1;
     var sacaPDM2=daySacaMuj[currentDay]||22;
     var lastGrpPDM2=(((sacaPDM2-1+totPD2-1)%getMujCount())+getMujCount())%getMujCount()+1;
     var ph='<div style="text-align:center;padding:8px;margin-bottom:8px"><span style="font-size:20px">✝️</span><br><span style="font-size:13px;color:#c084fc;font-weight:700">'+dayNames[currentDay].toUpperCase()+'</span></div>';
@@ -1743,7 +1744,7 @@ function renderLive(){
   if(isPastDay&&changes.length>0){
     var sacaPD=daySaca[currentDay]||17;
     var totPD=changes.length;
-    var lastGrpPD=((sacaPD-1+totPD-1)%21)+1;
+    var lastGrpPD=((sacaPD-1+totPD-1)%getHomCount())+1;
     currentGrupoActual=totPD;
     liveGrupoData={cambio:totPD,grp:lastGrpPD,nombre:changes[totPD-1].n||'',tot:totPD,desfase:0,movidos:0,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
   }
@@ -1786,6 +1787,7 @@ function renderLive(){
     h+='<div style="display:flex;gap:8px;margin-bottom:8px"><button '+jBtn+'>🔴 Buscar Jesús</button><button '+vBtn+'>🔵 Buscar Virgen</button></div>';
   }
   h+='<div style="text-align:center;margin-bottom:6px;font-size:10px;color:#e08080">⚠️ Las horas son aproximadas y se ajustan en tiempo real</div>';
+  h+='<div style="text-align:center;margin-bottom:8px"><span style="font-size:11px;color:#aaa">🔔 Vibrar </span><select id="vibrateSel" onchange="setVibrateN(+this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:3px 6px;border-radius:4px;font-size:11px;font-family:inherit"><option value="0"'+(vibrateBeforeN===0?' selected':'')+'>Off</option><option value="1"'+(vibrateBeforeN===1?' selected':'')+'>1 cambio antes</option><option value="2"'+(vibrateBeforeN===2?' selected':'')+'>2 cambios antes</option><option value="3"'+(vibrateBeforeN===3?' selected':'')+'>3 cambios antes</option></select></div>';
 
   var procComplete=(done>=total&&total>0)||isPastDay;
 
@@ -1796,9 +1798,9 @@ function renderLive(){
   if(liveGrupoData&&liveGrupoData.cambio>0){
     var bTot=liveGrupoData.tot||changes.length;
     if(liveGrupoData.cambio>bTot){
-      bannerGrp='✅ Asentó Grupo #'+(((sacaBnr-1+bTot-1)%21)+1);
+      bannerGrp='✅ Asentó Grupo #'+(((sacaBnr-1+bTot-1)%getHomCount())+1);
     } else {
-      bannerGrp='Grupo #'+(((sacaBnr-1+liveGrupoData.cambio-1)%21)+1);
+      bannerGrp='Grupo #'+(((sacaBnr-1+liveGrupoData.cambio-1)%getHomCount())+1);
       bannerProg=(liveGrupoData.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
     }
   } else {
@@ -1815,7 +1817,7 @@ function renderLive(){
     // Past day: show solemn message with grupo that entered
     var sacaPast=daySaca[currentDay]||17;
     var totPast=changes.length;
-    var lastGrpPast=((sacaPast-1+totPast-1)%21)+1;
+    var lastGrpPast=((sacaPast-1+totPast-1)%getHomCount())+1;
     h+='<div style="text-align:center;padding:16px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(76,175,80,.08),rgba(46,125,50,.15));border:1px solid rgba(76,175,80,.4)">';
     h+='<div style="font-size:11px;color:#aaa;letter-spacing:1px">VENERADA IMAGEN DE JESÚS NAZARENO</div>';
     h+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">✝️ Asentada en el Templo</div>';
@@ -1836,7 +1838,14 @@ function renderLive(){
   // Virgen banner data
   var vSacaDef=daySacaMuj[currentDay]||22;
   var vBannerDisplay='block',vBannerGrp='Grupo #'+vSacaDef,vBannerProg='Esperando inicio';
-  if(liveGrupoData&&liveGrupoData.cambio>0){
+  if(isSEMode&&window.virgenCambioGPS>0){
+    // SE mode: use direct GPS tracking for Virgen
+    var vSacaGPS=6;
+    var vGrpGPS2=((vSacaGPS-1+virgenCambioGPS-1)%getMujCount()+getMujCount())%getMujCount()+1;
+    var vNomGPS2=virgenCambioGPS<=changes.length?(changes[virgenCambioGPS-1].n||'').replace(/^Grupo\s*\d+\s*/i,''):'';
+    vBannerGrp='Grupo #'+vGrpGPS2;
+    vBannerProg=vNomGPS2||'';
+  } else if(liveGrupoData&&liveGrupoData.cambio>0){
     var vDesf=liveGrupoData.desfase||0;
     var vSacaM=liveGrupoData.sacaMuj||vSacaDef;
     var vTotB=liveGrupoData.tot||changes.length;
@@ -1850,7 +1859,7 @@ function renderLive(){
     } else {
       var vGrpB=(((vSacaM-1+vCambioGrpB-1)%getMujCount())+getMujCount())%getMujCount()+1;
       var vNomB=changes.length>0&&vCambioB>0&&vCambioB<=changes.length?changes[vCambioB-1].n||'':'';
-      vBannerGrp='Grupo #'+vGrpB+(vNomB?' · '+vNomB:'');
+      vBannerGrp='Grupo #'+vGrpB;
       vBannerProg='⚠️ Estimado';
     }
   }
@@ -1876,8 +1885,8 @@ function renderLive(){
     var adminGText='#'+sacaDef;
     if(liveGrupoData&&liveGrupoData.cambio>0){
       var adminTot=liveGrupoData.tot||changes.length;
-      if(liveGrupoData.cambio>adminTot){adminGText='✅#'+(((sacaDef-1+adminTot-1)%21)+1);}
-      else{adminGText='#'+(((sacaDef-1+liveGrupoData.cambio-1)%21)+1);}
+      if(liveGrupoData.cambio>adminTot){adminGText='✅#'+(((sacaDef-1+adminTot-1)%getHomCount())+1);}
+      else{adminGText='#'+(((sacaDef-1+liveGrupoData.cambio-1)%getHomCount())+1);}
     }
     h+='<span id="grupoActualAdmin" onclick="setGrupoManual()" style="font-size:20px;font-weight:700;color:#c084fc;min-width:40px;text-align:center;cursor:pointer;text-decoration:underline">'+adminGText+'</span>';
     h+='<button onclick="advanceGrupo(1)" style="padding:6px 14px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.3);color:#c084fc;font-size:16px;font-weight:700;cursor:pointer">+</button>';
@@ -1913,7 +1922,7 @@ function renderLive(){
     if(cortChange){
       // Cortesías always shows hombres grupo (Nazareno)
       var sacaCort=daySaca[currentDay]||17;
-      var cortGrp=((sacaCort-1+cortChange.num-1)%21)+1;
+      var cortGrp=((sacaCort-1+cortChange.num-1)%getHomCount())+1;
       const cortDone=cortChange.num<=Math.max(...myCarries.filter(mc=>isDone(mc.ci)).map(mc=>mc.num),0);
       const cortStatus=cortDone?'✅ Cortesías completadas':'✝️ Cortesías · Grupo #'+cortGrp+' (~11:30 AM)';
       h+='<div style="text-align:center;padding:8px;margin-bottom:8px;border-radius:8px;background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.3)"><span style="font-size:13px;color:#ff9800;font-weight:700">'+cortStatus+'</span><br><span style="font-size:11px;color:#ccc">Encuentro de las imágenes y drama de crucifixión · ~45 min</span>';
@@ -1926,7 +1935,7 @@ function renderLive(){
     // ===== FINAL SUMMARY =====
     var sacaDone=daySaca[currentDay]||17;
     var totDone=changes.length;
-    var lastGrpDone=((sacaDone-1+totDone-1)%21)+1;
+    var lastGrpDone=((sacaDone-1+totDone-1)%getHomCount())+1;
     h+='<div style="text-align:center;padding:16px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(76,175,80,.08),rgba(46,125,50,.15));border:1px solid rgba(76,175,80,.4)">';
     h+='<div style="font-size:11px;color:#aaa;letter-spacing:1px">VENERADA IMAGEN DE JESÚS NAZARENO</div>';
     h+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">✝️ Asentada en el Templo</div>';
@@ -2386,7 +2395,8 @@ var autoAdvanceGPS=true;
 var railProgress=0;
 var lastAutoAdvance=0;
 var aheadCount=0;
-var gpsReadings=[]; // collect readings during cooldown for averaging
+var gpsReadings=[];
+var virgenCambioGPS=0; // Independent Virgen tracking from GPS // collect readings during cooldown for averaging
 
 function getRouteDistances(){
   var dists=[0];
@@ -2475,7 +2485,7 @@ function listenAnda(tipo,imgUrl,color,zIdx){
         currentGrupoActual=nearCambio;
         var sacaH=daySaca[currentDay]||16;
         var tot=positions.length;
-        var grp=((sacaH-1+nearCambio-1)%21)+1;
+        var grp=((sacaH-1+nearCambio-1)%getHomCount())+1;
         var nombre=nearCambio<=changes.length?changes[nearCambio-1].n||'':'';
         liveGrupoData={cambio:nearCambio,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
         try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
@@ -2491,6 +2501,34 @@ listenAnda('jesus',isSEMode?'se-entierro-marker.png':'jesus-marker.png',isSEMode
 listenAnda('virgen',isSEMode?'se-virgen-marker.png':'maria-marker.png',isSEMode?'#d4af37':'#3b82f6',9998);
 
 // AHSEC GPS tracking for SE mode
+// ========== VIBRATION ALERTS ==========
+var vibrateBeforeN=+(localStorage.getItem('vibrateBeforeN')||0);
+function setVibrateN(n){
+  vibrateBeforeN=n;
+  localStorage.setItem('vibrateBeforeN',n);
+  var sel=document.getElementById('vibrateSel');
+  if(sel) sel.value=n;
+}
+function checkVibrate(cambio){
+  if(!vibrateBeforeN||!window.myCarries||!myCarries.length) return;
+  var saca=isSEMode?5:(window.daySaca?window.daySaca[window.currentDay]:16);
+  var currentGrp=((saca-1+cambio-1)%getHomCount())+1;
+  // Find next pending carry
+  var effC=cambio;
+  for(var i=0;i<myCarries.length;i++){
+    if(myCarries[i].num>effC){
+      var diff=myCarries[i].num-effC;
+      if(diff<=vibrateBeforeN){
+        // Vibrate!
+        if(navigator.vibrate){
+          navigator.vibrate([300,100,300,100,500]);
+        }
+      }
+      break;
+    }
+  }
+}
+
 var _isSE=new URLSearchParams(window.location.search).has('se');
 if(_isSE){
   // Fetch GPS positions only (not full database)
@@ -2530,7 +2568,7 @@ if(_isSE){
                 currentGrupoActual=near;
                 var sacaH=5; // SE always saca 5
                 var tot=positions.length;
-                var grp=((sacaH-1+near-1)%21)+1;
+                var grp=((sacaH-1+near-1)%getHomCount())+1;
                 var nombre=near<=changes.length?changes[near-1].n||'':'';
                 liveGrupoData={cambio:near,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:6,t:Date.now()};
                 currentDay=4; // Force SE day
@@ -2570,6 +2608,28 @@ if(_isSE){
             } else {
               urnaMarkers.virgen.setPosition(llV);
               if(urnaMarkers.virgen._ring) urnaMarkers.virgen._ring.setCenter(llV);
+            }
+          }
+          // Find Virgen cambio from GPS (independent tracking)
+          if(positions.length>2){
+            var cosLatV=Math.cos(llV.lat*Math.PI/180);
+            var startV=Math.max(0,virgenCambioGPS);
+            var endV=Math.min(positions.length,virgenCambioGPS+5);
+            var bestDistV=Infinity,bestCambioV=startV;
+            for(var vi=startV;vi<endV;vi++){
+              var dv=Math.sqrt(Math.pow((llV.lat-positions[vi].lat)*111320,2)+Math.pow((llV.lng-positions[vi].lng)*111320*cosLatV,2));
+              if(dv<bestDistV){bestDistV=dv;bestCambioV=vi+1;}
+            }
+            if(bestDistV<80&&bestCambioV>virgenCambioGPS){
+              virgenCambioGPS=bestCambioV;
+              // Update Virgen banner directly
+              var vSaca=6;
+              var vGrpGPS=((vSaca-1+bestCambioV-1)%getMujCount()+getMujCount())%getMujCount()+1;
+              var vNomGPS=bestCambioV<=changes.length?changes[bestCambioV-1].n||'':'';
+              var vBannerEl=document.getElementById('grupoVirgenText');
+              if(vBannerEl) vBannerEl.textContent='Grupo #'+vGrpGPS;
+              var vProgEl=document.getElementById('grupoVirgenProgress');
+              if(vProgEl) vProgEl.textContent=(vNomGPS).replace(/^Grupo\s*\d+\s*/i,'');
             }
           }
           var el=document.getElementById('ahsecStatus');
@@ -2678,10 +2738,10 @@ function advanceGrupo(delta){
   var sacaH=daySaca[currentDay]||17;
   var grp=0,nombre='';
   if(currentGrupoActual>0&&currentGrupoActual<=changes.length){
-    grp=((sacaH-1+currentGrupoActual-1)%21)+1;
+    grp=((sacaH-1+currentGrupoActual-1)%getHomCount())+1;
     nombre=changes[currentGrupoActual-1].n||'';
   } else if(currentGrupoActual>0){
-    grp=((sacaH-1+Math.min(currentGrupoActual,tot)-1)%21)+1;
+    grp=((sacaH-1+Math.min(currentGrupoActual,tot)-1)%getHomCount())+1;
   }
   liveGrupoData={cambio:currentGrupoActual,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
   try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
@@ -2700,7 +2760,7 @@ function setGrupoManual(){
   currentGrupoActual=num;
   var sacaH=daySaca[currentDay]||17;
   var grp=0,nombre='';
-  if(num>0&&num<=changes.length){grp=((sacaH-1+num-1)%21)+1;nombre=changes[num-1].n||'';}
+  if(num>0&&num<=changes.length){grp=((sacaH-1+num-1)%getHomCount())+1;nombre=changes[num-1].n||'';}
   liveGrupoData={cambio:num,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
   try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
   saveAll();
@@ -2744,11 +2804,11 @@ function updateGrupoUI(){
       if(liveGrupoData.cambio>adminTot){
         // Jesus finished - show last group (always 21 groups)
         var sacaH3=daySaca[currentDay]||17;
-        var lastG=((sacaH3-1+adminTot-1)%21)+1;
+        var lastG=((sacaH3-1+adminTot-1)%getHomCount())+1;
         adminEl.textContent='✅#'+lastG;
       } else {
         var sacaAdm=daySaca[currentDay]||16;
-        var admGrp=((sacaAdm-1+liveGrupoData.cambio-1)%21)+1;
+        var admGrp=((sacaAdm-1+liveGrupoData.cambio-1)%getHomCount())+1;
         adminEl.textContent='#'+admGrp;
       }
     } else {
@@ -2765,11 +2825,11 @@ function updateGrupoUI(){
       var tot=liveGrupoData.tot||changes.length;
       // Always recalculate grupo from current saca (not Firebase grp)
       var sacaH3=daySaca[currentDay]||16;
-      var currentGrp=((sacaH3-1+Math.min(liveGrupoData.cambio,tot)-1)%21)+1;
+      var currentGrp=((sacaH3-1+Math.min(liveGrupoData.cambio,tot)-1)%getHomCount())+1;
       if(liveGrupoData.cambio>tot){
         // Jesus finished - show entering group (always 21 groups)
         var sacaH4=daySaca[currentDay]||17;
-        var lastGrpH=((sacaH4-1+tot-1)%21)+1;
+        var lastGrpH=((sacaH4-1+tot-1)%getHomCount())+1;
         txtEl.textContent='✅ Asentó Grupo #'+lastGrpH;
         var progHtml='';
         if(!isShared){
@@ -3034,10 +3094,10 @@ function globalSync(){
             var adminEl=document.getElementById('grupoActualAdmin');
             var sacaSync=window.daySaca?window.daySaca[day]:16;
             var tot=d.tot||44;
-            var syncGrp=(((sacaSync-1+Math.min(d.cambio,tot)-1)%21)+1);
+            var syncGrp=(((sacaSync-1+Math.min(d.cambio,tot)-1)%getHomCount())+1);
             if(adminEl&&d.cambio>0){
               if(d.cambio>tot){
-                adminEl.textContent='✅#'+(((sacaSync-1+tot-1)%21)+1);
+                adminEl.textContent='✅#'+(((sacaSync-1+tot-1)%getHomCount())+1);
               } else {
                 adminEl.textContent='#'+syncGrp;
               }
@@ -3048,7 +3108,7 @@ function globalSync(){
             var bannerDiv=document.getElementById('grupoActualBanner');
             if(bannerEl&&d.cambio>0){
               if(d.cambio>tot){
-                bannerEl.textContent='✅ Asentó Grupo #'+(((sacaSync-1+tot-1)%21)+1);
+                bannerEl.textContent='✅ Asentó Grupo #'+(((sacaSync-1+tot-1)%getHomCount())+1);
               } else {
                 bannerEl.textContent='Grupo #'+syncGrp;
                 if(progEl) progEl.textContent=(d.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
@@ -3059,6 +3119,7 @@ function globalSync(){
             if(d.cambio!==window._lastSyncCambio){
               window._lastSyncCambio=d.cambio;
               if(typeof window.renderLive==='function') window.renderLive();
+              checkVibrate(d.cambio);
             }
           }
         }catch(e){if(el) el.textContent='❌ Parse: '+e.message;}
