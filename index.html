@@ -3108,33 +3108,7 @@ function globalSync(){
             if(d.desfase!==undefined) window.virgenDesfase=d.desfase;
             if(d.movidos!==undefined) window.virgenMovidos=d.movidos;
             if(d.sacaMuj&&window.daySacaMuj) window.daySacaMuj[day]=d.sacaMuj;
-            if(typeof window.updateGrupoUI==='function') window.updateGrupoUI();
-            // Also update the admin selector text directly
-            var adminEl=document.getElementById('grupoActualAdmin');
-            var sacaSync=window.daySaca?window.daySaca[day]:16;
-            var tot=d.tot||44;
-            var syncGrp=(((sacaSync-1+Math.min(d.cambio,tot)-1)%getHomCount())+1);
-            if(adminEl&&d.cambio>0){
-              if(d.cambio>tot){
-                adminEl.textContent='✅#'+(((sacaSync-1+tot-1)%getHomCount())+1);
-              } else {
-                adminEl.textContent='#'+syncGrp;
-              }
-            }
-            // Update Jesus banner directly
-            var bannerEl=document.getElementById('grupoActualText');
-            var progEl=document.getElementById('grupoActualProgress');
-            var bannerDiv=document.getElementById('grupoActualBanner');
-            if(bannerEl&&d.cambio>0){
-              if(d.cambio>tot){
-                bannerEl.textContent='✅ Asentó Grupo #'+(((sacaSync-1+tot-1)%getHomCount())+1);
-              } else {
-                bannerEl.textContent='Grupo #'+syncGrp;
-                if(progEl) progEl.textContent=(d.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
-              }
-              if(bannerDiv) bannerDiv.style.display='block';
-            }
-            // Re-render only when cambio changes
+            // Single source of truth: only renderLive writes banners
             if(d.cambio!==window._lastSyncCambio){
               window._lastSyncCambio=d.cambio;
               if(typeof window.renderLive==='function') window.renderLive();
