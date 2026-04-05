@@ -146,7 +146,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
   <div><label>🔔 Alerta mi cargada</label><select id="vibrateCfg" onchange="setVibrateN(+this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
   <div><label>👁️ Vigilar grupo</label><select id="watchGrpCfg" onchange="localStorage.setItem('watchGroup',this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
   <div class="adminOnly"><label>¿Qué grupo saca?</label><input type="number" id="cS" value="19" min="1" max="50" onchange="daySacaManual[currentDay]=true;if(+$('cType').value===27){daySacaMuj[currentDay]=+this.value;if(liveGrupoData){liveGrupoData.sacaMuj=+this.value;db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}else{daySaca[currentDay]=+this.value;if(liveGrupoData&&liveGrupoData.cambio>0){liveGrupoData.grp=((+this.value-1+liveGrupoData.cambio-1)%getHomCount())+1;saveAll();db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}calc()"></div>
-  <div class="adminOnly"><label>Fecha procesión</label><input type="date" id="cDate" onchange="dayDates[currentDay]=this.value;detectToday();saveAll()"></div>
+  <div class="adminOnly"><label>Fecha procesión</label><input type="date" id="cDate" onchange="changeDayDate(this.value)"></div>
   <div class="adminOnly"><label>Hora de salida</label><input type="number" id="cH" value="15" min="0" max="23" onchange="calc()"></div>
   <div class="adminOnly"><label>Min por cambio</label><input type="number" id="cMn" value="6" min="1" max="20" onchange="calc()"></div>
 </div>
@@ -171,13 +171,13 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
       <button id="bDrag" onclick="toggleDrag()" class="mapbtn">🔀 Mover</button>
       <button onclick="addRef()" class="mapbtn">📌 Ref</button>
       <button onclick="exportPoints()" class="mapbtn">📤 Exportar</button>
+      <button id="mapLockBtn" onclick="toggleMapLock()" class="mapbtn">🔓 Mapa libre</button>
     </div>
     <!-- Left side: view controls -->
     <div style="position:absolute;top:8px;left:8px;z-index:1000;display:flex;flex-direction:column;gap:5px">
       <button id="bGps" onclick="toggleGps()" class="mapbtn">📍 Mi Ubicación</button>
       <button id="bAll" onclick="toggleAll()" class="mapbtn">👥 Ver otros grupos</button>
       <button onclick="openStreetView(gmap.getCenter().lat(),gmap.getCenter().lng())" class="mapbtn" style="background:rgba(26,115,232,.8);border-color:#1a73e8">🛣️ Street View</button>
-      <button id="mapLockBtn" onclick="toggleMapLock()" class="mapbtn">🔓 Mapa libre</button>
       <button id="bUrna" onclick="toggleUrna('jesus')" class="mapbtn" style="display:none;background:rgba(220,38,38,.8);border-color:#dc2626">✝️ Anda Jesús</button>
       <button id="bUrnaV" onclick="toggleUrna('virgen')" class="mapbtn" style="display:none;background:rgba(59,130,246,.8);border-color:#3b82f6">👑 Anda Virgen</button>
     </div>
@@ -853,6 +853,19 @@ function getHomCount(){return isSEMode?22:21;}
 // Default sacas: [lun, mar, mie, vie] per type
 const defaultSacaH = [19, 17, 13, 16, 5]; // hombres 21 grupos
 const defaultSacaM = [19, 27, 13, 22, 6]; // mujeres 27 grupos
+function changeDayDate(val){
+  dayDates[currentDay]=val;
+  detectToday();
+  // Reset avance for this day
+  currentGrupoActual=0;
+  liveGrupoData={cambio:0,grp:0,nombre:'',tot:positions.length||44,desfase:0,movidos:0,sacaMuj:daySacaMuj[currentDay]||6,t:Date.now()};
+  db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+  var bc2=document.getElementById('bannersContainer');if(bc2) bc2.innerHTML='';
+  calc();
+  renderLive();
+  updateBanners();
+  saveAll();
+}
 function onTypeChange(){
   $('colorDiv').style.display=(+$('cType').value===27)?'block':'none';
   const isM=(+$('cType').value===27);
@@ -938,6 +951,7 @@ function initMap() {
 
   window.currentDay=currentDay;
   loadDay(currentDay);
+  setTimeout(function(){restoreMapView();},1000);
   window._mapReady=true;
   // Show urna button only for admin (after isShared is set)
   if(typeof showUrnaButton==='function') showUrnaButton();
@@ -1092,26 +1106,56 @@ function fitBounds() {
 }
 function toggleMapLock(){
   if(mapLocked[currentDay]){
-    // Unlock
+    // Unlock: remove restrictions
     mapLocked[currentDay]=false;
     mapSavedView[currentDay]=null;
+    gmap.setOptions({restriction:null,maxZoom:21});
   } else {
-    // Lock: save current view
+    // Lock: save current view and restrict
+    var center=gmap.getCenter();
+    var zoom=gmap.getZoom();
+    var bounds=gmap.getBounds();
     mapLocked[currentDay]=true;
-    mapSavedView[currentDay]={lat:gmap.getCenter().lat(),lng:gmap.getCenter().lng(),zoom:gmap.getZoom()};
+    mapSavedView[currentDay]={lat:center.lat(),lng:center.lng(),zoom:zoom,bounds:{north:bounds.getNorthEast().lat(),south:bounds.getSouthWest().lat(),east:bounds.getNorthEast().lng(),west:bounds.getSouthWest().lng()}};
+    // Expand bounds slightly so user can pan a little
+    var latPad=(bounds.getNorthEast().lat()-bounds.getSouthWest().lat())*0.3;
+    var lngPad=(bounds.getNorthEast().lng()-bounds.getSouthWest().lng())*0.3;
+    gmap.setOptions({
+      restriction:{latLngBounds:{north:bounds.getNorthEast().lat()+latPad,south:bounds.getSouthWest().lat()-latPad,east:bounds.getNorthEast().lng()+lngPad,west:bounds.getSouthWest().lng()-lngPad},strictBounds:true},
+      maxZoom:21,
+      minZoom:zoom
+    });
   }
   var btn=document.getElementById('mapLockBtn');
-  if(btn) btn.textContent=mapLocked[currentDay]?'🔒 Mapa fijo':'🔓 Mapa libre';
+  if(btn){
+    btn.textContent=mapLocked[currentDay]?'🔒 Mapa fijo':'🔓 Mapa libre';
+    btn.style.background=mapLocked[currentDay]?'rgba(76,175,80,.85)':'rgba(0,0,0,.6)';
+  }
+  try{localStorage.setItem('mapLocks',JSON.stringify({l:mapLocked,v:mapSavedView}));}catch(e){}
 }
 function restoreMapView(){
   var sv=mapSavedView[currentDay];
   if(sv&&mapLocked[currentDay]){
     gmap.setCenter({lat:sv.lat,lng:sv.lng});
     gmap.setZoom(sv.zoom);
+    var latPad=(sv.bounds.north-sv.bounds.south)*0.3;
+    var lngPad=(sv.bounds.east-sv.bounds.west)*0.3;
+    gmap.setOptions({
+      restriction:{latLngBounds:{north:sv.bounds.north+latPad,south:sv.bounds.south-latPad,east:sv.bounds.east+lngPad,west:sv.bounds.west-lngPad},strictBounds:true},
+      maxZoom:21,
+      minZoom:sv.zoom
+    });
+  } else {
+    gmap.setOptions({restriction:null,maxZoom:21,minZoom:null});
   }
   var btn=document.getElementById('mapLockBtn');
-  if(btn) btn.textContent=mapLocked[currentDay]?'🔒 Mapa fijo':'🔓 Mapa libre';
+  if(btn){
+    btn.textContent=mapLocked[currentDay]?'🔒 Mapa fijo':'🔓 Mapa libre';
+    btn.style.background=mapLocked[currentDay]?'rgba(76,175,80,.85)':'rgba(0,0,0,.6)';
+  }
 }
+// Load saved locks
+try{var ml=JSON.parse(localStorage.getItem('mapLocks')||'{}');if(ml.l)mapLocked=ml.l;if(ml.v)mapSavedView=ml.v;}catch(e){}
 
 // ========== INSERT CHANGE (tap on route line) ==========
 function insertAtPosition(lat,lng,edge) {
