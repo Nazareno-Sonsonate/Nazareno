@@ -123,7 +123,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
     <option value="0">Ⓛ Lunes</option>
     <option value="1">Ⓜ Martes</option>
     <option value="2">Ⓜ Miércoles</option>
-    <option value="3" selected>Ⓥ Viernes</option>
+    <option value="3">Ⓥ Viernes</option>
     <option value="4" id="seOpt">⚰️ V. Santo SE</option>
   </select>
   <div style="display:flex;gap:4px">
@@ -528,6 +528,7 @@ const SE_WP_REF=[
 // ========== STATE ==========
 let gmap, infoWin, routeLine, routeClickLine;
 let currentDay = 0; // 0=lunes,1=martes,2=miercoles,3=viernes,4=santo_entierro
+window.currentDay = 0;
 let positions = [];
 let changes = [], myCarries = [];
 let allMarkers = [], wpMarkers = [], showAll = true, dragMode = false;
@@ -909,8 +910,10 @@ function initMap() {
     var cfgBtn=document.getElementById('btnConfig');
     if(cfgBtn) cfgBtn.onclick=function(){reopenGroupSelector();};
   }
-  // Restore day tabs
+  // Restore day tabs and dropdown
   document.querySelectorAll('.day').forEach((b,i)=>b.classList.toggle('a',i===currentDay));
+  var dsInit=document.getElementById('daySelector');
+  if(dsInit) dsInit.value=currentDay;
   // Apply SE theme if needed
   if(currentDay===4){
     isSEMode=true;
@@ -932,6 +935,7 @@ function initMap() {
   $('cH').value = dayHours[currentDay];
   if($('cDate')) $('cDate').value=dayDates[currentDay]||'';
 
+  window.currentDay=currentDay;
   loadDay(currentDay);
   window._mapReady=true;
   // Show urna button only for admin (after isShared is set)
@@ -972,6 +976,7 @@ function switchDay(d) {
   }
 
   currentDay = d;
+  window.currentDay=d;
   try{localStorage.setItem('lastViewedDay',d);}catch(e){}
   isSEMode=(d===4);
   document.querySelectorAll('.day').forEach((b,i) => b.classList.toggle('a',i===d));
@@ -3173,7 +3178,7 @@ function globalSync(){
   try{
     // Detect day: check URL for SE mode, otherwise use currentDay
     var params=new URLSearchParams(window.location.search);
-    var day=params.has('se')?4:(window.currentDay!==undefined?window.currentDay:3);
+    var day=params.has('se')?4:(window.currentDay!==undefined?window.currentDay:0);
     if(day===0&&!window._mapReady) return; // Skip sync before map loads
     var x=new XMLHttpRequest();
     x.open('GET','https://procesion-sonsonate-default-rtdb.firebaseio.com/grupoActual/day'+day+'.json?_='+Date.now(),true);
