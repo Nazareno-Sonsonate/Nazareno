@@ -177,6 +177,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
       <button id="bGps" onclick="toggleGps()" class="mapbtn">📍 Mi Ubicación</button>
       <button id="bAll" onclick="toggleAll()" class="mapbtn">👥 Ver otros grupos</button>
       <button onclick="openStreetView(gmap.getCenter().lat(),gmap.getCenter().lng())" class="mapbtn" style="background:rgba(26,115,232,.8);border-color:#1a73e8">🛣️ Street View</button>
+      <button id="mapLockBtn" onclick="toggleMapLock()" class="mapbtn">🔓 Mapa libre</button>
       <button id="bUrna" onclick="toggleUrna('jesus')" class="mapbtn" style="display:none;background:rgba(220,38,38,.8);border-color:#dc2626">✝️ Anda Jesús</button>
       <button id="bUrnaV" onclick="toggleUrna('virgen')" class="mapbtn" style="display:none;background:rgba(59,130,246,.8);border-color:#3b82f6">👑 Anda Virgen</button>
     </div>
@@ -1016,16 +1017,19 @@ function switchDay(d) {
   $('cH').value = dayHours[d];
   if($('cDate')) $('cDate').value=dayDates[d]||'';
 
+  // Save map view if locked before switching
+  if(mapLocked[currentDay]){
+    mapSavedView[currentDay]={lat:gmap.getCenter().lat(),lng:gmap.getCenter().lng(),zoom:gmap.getZoom()};
+  }
+
   // Reset grupo actual for new day BEFORE loading
   currentGrupoActual=0;
   liveGrupoData=null;
-  // Clear banners so they recreate with correct labels/sizes
   var bc=document.getElementById('bannersContainer');if(bc) bc.innerHTML='';
-  // Clear banners so they get recreated for new day
-  var bc=document.getElementById('bannersContainer');
-  if(bc) bc.innerHTML='';
 
   loadDay(d);
+  // Restore saved map view if locked
+  restoreMapView();
   if(typeof stopDayListeners==='function') stopDayListeners();
   if(typeof startDayListeners==='function') startDayListeners();
   if(typeof populateAlertSelects==='function') populateAlertSelects();
@@ -1077,11 +1081,36 @@ function drawRouteLine() {
   });
 }
 
+var mapLocked=[false,false,false,false,false];
+var mapSavedView=[null,null,null,null,null];
 function fitBounds() {
+  if(mapLocked[currentDay]) return;
   if(positions.length<2) return;
   const b = new google.maps.LatLngBounds();
   positions.forEach(p=>b.extend(p));
   gmap.fitBounds(b,{top:80,bottom:80,left:20,right:20});
+}
+function toggleMapLock(){
+  if(mapLocked[currentDay]){
+    // Unlock
+    mapLocked[currentDay]=false;
+    mapSavedView[currentDay]=null;
+  } else {
+    // Lock: save current view
+    mapLocked[currentDay]=true;
+    mapSavedView[currentDay]={lat:gmap.getCenter().lat(),lng:gmap.getCenter().lng(),zoom:gmap.getZoom()};
+  }
+  var btn=document.getElementById('mapLockBtn');
+  if(btn) btn.textContent=mapLocked[currentDay]?'🔒 Mapa fijo':'🔓 Mapa libre';
+}
+function restoreMapView(){
+  var sv=mapSavedView[currentDay];
+  if(sv&&mapLocked[currentDay]){
+    gmap.setCenter({lat:sv.lat,lng:sv.lng});
+    gmap.setZoom(sv.zoom);
+  }
+  var btn=document.getElementById('mapLockBtn');
+  if(btn) btn.textContent=mapLocked[currentDay]?'🔒 Mapa fijo':'🔓 Mapa libre';
 }
 
 // ========== INSERT CHANGE (tap on route line) ==========
