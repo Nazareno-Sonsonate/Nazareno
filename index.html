@@ -855,12 +855,43 @@ const defaultSacaH = [19, 17, 13, 16, 5]; // hombres 21 grupos
 const defaultSacaM = [19, 27, 13, 22, 6]; // mujeres 27 grupos
 function changeDayDate(val){
   dayDates[currentDay]=val;
+  // Auto-fill previous days (one day before each)
+  var d=new Date(val+'T12:00:00');
+  for(var i=currentDay-1;i>=0;i--){
+    d.setDate(d.getDate()-1);
+    dayDates[i]=d.toISOString().slice(0,10);
+  }
+  // Auto-fill next days (one day after each, skip if already has date)
+  d=new Date(val+'T12:00:00');
+  for(var j=currentDay+1;j<dayDates.length;j++){
+    d.setDate(d.getDate()+1);
+    // Skip day 3→4 (Viernes Mañana and SE are same day)
+    if(j===4) d.setDate(d.getDate()-1);
+    dayDates[j]=d.toISOString().slice(0,10);
+    if(j!==4) d=new Date(dayDates[j]+'T12:00:00');
+  }
+  // Auto-calculate sacas: each day's saca = previous day's last group + 1
+  for(var k=1;k<5;k++){
+    if(k===4) continue; // SE has its own saca
+    var prevLast=getLastGroup(k-1);
+    if(prevLast>0){
+      var isM=(+$('cType').value===27);
+      var grpCount=isM?getMujCount():getHomCount();
+      var nextSaca=(prevLast%grpCount)+1;
+      if(isM){daySacaMuj[k]=nextSaca;}
+      else{daySaca[k]=nextSaca;}
+    }
+  }
   detectToday();
   // Reset avance for this day
   currentGrupoActual=0;
   liveGrupoData={cambio:0,grp:0,nombre:'',tot:positions.length||44,desfase:0,movidos:0,sacaMuj:daySacaMuj[currentDay]||6,t:Date.now()};
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
   var bc2=document.getElementById('bannersContainer');if(bc2) bc2.innerHTML='';
+  // Update UI
+  var isM2=(+$('cType').value===27);
+  $('cS').value=isM2?daySacaMuj[currentDay]:daySaca[currentDay];
+  if($('cDate')) $('cDate').value=dayDates[currentDay];
   calc();
   renderLive();
   updateBanners();
