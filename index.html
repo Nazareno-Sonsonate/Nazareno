@@ -29,8 +29,8 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
 .day .di{font-size:18px;display:block}
 .day.a{color:#c084fc;background:rgba(178,102,255,.1);border-bottom:2px solid #c084fc;margin-bottom:-2px}
 .day.past{opacity:.4;text-decoration:line-through}
-.day.today{position:relative}
-.day.today::after{content:'HOY';position:absolute;top:2px;right:2px;font-size:7px;background:#c084fc;color:#fff;padding:1px 3px;border-radius:3px}
+.day.today{position:relative;border:2px solid #4CAF50!important}
+.day.today::after{content:'HOY';position:absolute;top:-8px;right:-4px;font-size:8px;background:#4CAF50;color:#fff;padding:1px 4px;border-radius:8px;font-weight:700}
 .bar{display:flex;justify-content:space-around;padding:5px;background:rgba(0,0,0,.3)}
 .bar .v{font-size:15px;font-weight:700;color:#c084fc}
 .bar .l{font-size:10px;color:#ccc}
@@ -124,7 +124,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
     <option value="1">Ⓜ Martes</option>
     <option value="2">Ⓜ Miércoles</option>
     <option value="3" selected>Ⓥ Viernes</option>
-    <option value="4" id="seOpt" style="display:none">⚰️ Santo Entierro</option>
+    <option value="4" id="seOpt">⚰️ V. Santo SE</option>
   </select>
   <div style="display:flex;gap:4px">
     <button class="btn" onclick="document.getElementById('cfgP').classList.toggle('open')" style="padding:5px 8px;font-size:11px" id="btnConfig">⚙️</button>
@@ -137,13 +137,16 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
   <button class="day" onclick="switchDay(1)"><span class="di">Ⓜ</span>MAR</button>
   <button class="day" onclick="switchDay(2)"><span class="di">Ⓜ</span>MIÉ</button>
   <button class="day" onclick="switchDay(3)"><span class="di">Ⓥ</span>VIE</button>
-  <button class="day" onclick="switchDay(4)" id="seTab" style="display:none"><span class="di">Ⓢ</span>SE</button>
+  <button class="day" onclick="switchDay(4)" id="seTab"><span class="di">⚰️</span>SE</button>
 </div>
 <div class="cfg" id="cfgP">
   <div><label>¿Cargadores de?</label><select id="cType" onchange="onTypeChange()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="21">Hombres (21 grupos)</option><option value="27">Mujeres (27 grupos)</option></select></div>
   <div><label>¿En qué grupo vas?</label><input type="number" id="cG" value="5" min="1" max="50" onchange="calc()"></div>
   <div id="colorDiv" style="display:none"><label>¿Tu color?</label><select id="cColor" onchange="calc()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="0">🟡 Amarillo</option><option value="1">🔴 Rojo</option><option value="2">🔵 Azul</option></select></div>
+  <div><label>🔔 Alerta mi cargada</label><select id="vibrateCfg" onchange="setVibrateN(+this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
+  <div><label>👁️ Vigilar grupo</label><select id="watchGrpCfg" onchange="localStorage.setItem('watchGroup',this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
   <div class="adminOnly"><label>¿Qué grupo saca?</label><input type="number" id="cS" value="19" min="1" max="50" onchange="daySacaManual[currentDay]=true;if(+$('cType').value===27){daySacaMuj[currentDay]=+this.value;if(liveGrupoData){liveGrupoData.sacaMuj=+this.value;db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}else{daySaca[currentDay]=+this.value;if(liveGrupoData&&liveGrupoData.cambio>0){liveGrupoData.grp=((+this.value-1+liveGrupoData.cambio-1)%getHomCount())+1;saveAll();db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}calc()"></div>
+  <div class="adminOnly"><label>Fecha procesión</label><input type="date" id="cDate" onchange="dayDates[currentDay]=this.value;detectToday();saveAll()"></div>
   <div class="adminOnly"><label>Hora de salida</label><input type="number" id="cH" value="15" min="0" max="23" onchange="calc()"></div>
   <div class="adminOnly"><label>Min por cambio</label><input type="number" id="cMn" value="6" min="1" max="20" onchange="calc()"></div>
 </div>
@@ -180,6 +183,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
   </div>
 </div>
 <div class="pnl a" id="v1">
+  <div id="bannersContainer" style="padding:0 10px"></div>
   <div id="livePanel" style="padding:10px"></div>
 </div>
 <div id="tbl" style="display:none"></div>
@@ -536,45 +540,25 @@ let daySacaManual = [true, true, false, false, true];
 function detectToday(){
   const now=new Date();
   let checkDate=new Date(now);
-  if(now.getHours()<5){
-    checkDate.setDate(checkDate.getDate()-1);
-  }
+  if(now.getHours()<5) checkDate.setDate(checkDate.getDate()-1);
   const today=checkDate.toISOString().slice(0,10);
   let todayIdx=-1;
-  for(var ii=0;ii<dayDates.length;ii++){if(dayDates[ii]===today&&todayIdx===-1)todayIdx=ii;}
-  // If no exact match, find next upcoming or most recent day
-  if(todayIdx===-1){
-    var todayStr=checkDate.toISOString().slice(0,10);
-    for(var i=0;i<dayDates.length;i++){
-      if(dayDates[i]>=todayStr){todayIdx=i;break;}
-    }
-    if(todayIdx===-1) todayIdx=dayDates.length-1;
+  for(var ii=0;ii<dayDates.length;ii++){
+    if(dayDates[ii]===today&&todayIdx===-1) todayIdx=ii;
   }
-  // Mark HOY in dropdown selector
+  // Mark labels in dropdown
   var ds=document.getElementById('daySelector');
+  var labels=['Ⓛ Lunes','Ⓜ Martes','Ⓜ Miércoles','Ⓥ Viernes','⚰️ V. Santo SE'];
   if(ds){
-    var labels=['Ⓛ Lunes','Ⓜ Martes','Ⓜ Miércoles','Ⓥ Viernes','⚰️ Santo Entierro'];
     for(var j=0;j<ds.options.length;j++){
-      var opt=ds.options[j];
-      var idx=+opt.value;
-      if(idx===todayIdx){
-        opt.textContent=labels[idx]+' ← HOY';
-      } else {
-        var dateObj=new Date(dayDates[idx]+'T12:00:00');
-        var ref2=new Date();ref2.setHours(12,0,0,0);
-        if(dateObj<ref2&&dayDates[idx]!==today){
-          opt.textContent=labels[idx]+' ✓';
-        }
-      }
+      var idx=+ds.options[j].value;
+      ds.options[j].textContent=labels[idx]+(idx===todayIdx?' ← HOY':'');
     }
-    ds.value=todayIdx;
+    if(todayIdx>=0) ds.value=todayIdx;
   }
-  // Mark past/today on old tabs (hidden)
-  document.querySelectorAll('.day').forEach((btn,i)=>{
-    const date=new Date(dayDates[i]+'T12:00:00');
-    const ref=new Date();
-    ref.setHours(12,0,0,0);
-    if(date<ref&&dayDates[i]!==today) btn.classList.add('past');
+  // Mark tabs
+  document.querySelectorAll('.day').forEach(function(btn,i){
+    btn.classList.remove('today','past');
     if(dayDates[i]===today) btn.classList.add('today');
   });
   return todayIdx;
@@ -634,7 +618,7 @@ function saveAll() {
     savedRefs[currentDay] = getWPs().map(w=>({lat:w.lat,lng:w.lng,n:w.n}));
     const data = {
       sp: savedPositions, sr: savedRefs,
-      sc: daySaca, sh: dayHours, sm: daySacaManual,
+      sc: daySaca, sh: dayHours, sm: daySacaManual, sd: dayDates, smj: daySacaMuj,
       cfg: {g:+$('cG').value,t:+$('cType').value,mn:+$('cMn').value,color:+($('cColor')?$('cColor').value:0)},
       cd: currentDay,
       ga: liveGrupoData ? {d:currentDay, data:liveGrupoData} : null
@@ -669,6 +653,8 @@ function loadSaved() {
     if(d.sc) daySaca = d.sc;
     if(d.sh) dayHours = d.sh;
     if(d.sm) daySacaManual = d.sm;
+    if(d.sd) dayDates = d.sd;
+    if(d.smj) daySacaMuj = d.smj;
     if(d.cfg){$('cG').value=d.cfg.g||5;$('cType').value=d.cfg.t||21;$('cMn').value=d.cfg.mn||6;if(d.cfg.color!==undefined)$('cColor').value=d.cfg.color;$('colorDiv').style.display=(+$('cType').value===27)?'block':'none';}
     if(typeof d.cd==='number') currentDay = d.cd;
     // Restore grupo actual
@@ -708,95 +694,22 @@ let isShared = false;
 let isSEMode = false;
 function readParams(){
   const p = new URLSearchParams(window.location.search);
-  // Santo Entierro mode
+  // Backwards compat: ?se=1 → same as dia=4
   if(p.has('se')){
-    isSEMode=true;
-    currentDay=4;
-    var seEdit=p.has('edit');
-    isShared=!seEdit;
-    // Change theme to gold
-    document.body.style.background='#0a0a0a';
-    document.querySelector('.hdr h1').textContent='⚰️ SANTO ENTIERRO DE CRISTO';
-    document.querySelector('.hdr h1').style.color='#d4af37';
-    document.querySelector('.hdr').style.borderBottomColor='rgba(212,175,55,.3)';
-    // Switch manifest for SE PWA install
-    var mLink=document.querySelector('link[rel="manifest"]');
-    if(mLink) mLink.href='manifest-se.json';
-    document.querySelector('meta[name="theme-color"]').content='#0a0a0a';
-    // Update SE group selector images
-    var step1El=document.getElementById('step1');
-    if(step1El){
-      step1El.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#d4af37;font-weight:700;margin-bottom:4px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#ccc;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div style="display:flex;gap:12px;justify-content:center"><div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-entierro.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">22 grupos</div></div><div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-virgen.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">23 grupos</div></div></div>';
-    }
-    // Hide day selector dropdown only, keep buttons visible
-    var dayRow=document.getElementById('daySelector');
-    if(dayRow) dayRow.style.display='none';
-    // Hide old day tabs
-    document.querySelector('.days').style.display='none';
-    // Apply gold theme via CSS override
-    var seStyle=document.createElement('style');
-    seStyle.textContent='.vtab.a{color:#d4af37!important;border-bottom-color:#d4af37!important}.btn{border-color:#8B7355!important;color:#d4af37!important;background:rgba(212,175,55,.12)!important}#grupoActualBanner{background:rgba(212,175,55,.12)!important;border-color:rgba(212,175,55,.3)!important}#grupoActualText{color:#d4af37!important}.live-next .ln-num{color:#d4af37!important}.live-next{border-color:#d4af37!important;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.05))!important}.live-progress-bar{background:linear-gradient(90deg,#d4af37,#8B7355)!important}.bar{background:rgba(212,175,55,.08)!important}.bar .v{color:#d4af37!important}.cfg.open{border-color:rgba(212,175,55,.3)!important}.live-btn-done{background:#8B7355!important}.live-btn-undo{border-color:#8B7355!important;color:#d4af37!important}.hdr{border-bottom-color:rgba(212,175,55,.3)!important}.vtabs{border-bottom-color:rgba(212,175,55,.15)!important}';
-    document.head.appendChild(seStyle);
-    if(seEdit){
-      // Editor mode: no modal, show controls
-      $('cType').value=21;
-      $('cS').value=5;
-      $('cH').value=17;
-      $('cMn').value=10;
-      // daySacaMuj[4] set from Firebase config or default
-      virgenDesfase=0;
-      virgenMovidos=0;
-      // Write initial data to Firebase so shared users see something
-      setTimeout(function(){
-        var sacaInit=daySaca[4]||5;
-        var cambioInit=currentGrupoActual||0;
-        if(!liveGrupoData||!liveGrupoData.cambio){
-          liveGrupoData={cambio:cambioInit,grp:0,nombre:'',tot:positions.length||147,desfase:0,movidos:0,sacaMuj:daySacaMuj[4]||6,t:Date.now()};
-          db.ref('grupoActual/day4').set(liveGrupoData);
-        } else {
-          if(liveGrupoData.sacaMuj!==6){
-            liveGrupoData.sacaMuj=6;
-            db.ref('grupoActual/day4').update({sacaMuj:6});
-          }
-        }
-        updateGrupoUI();
-        if(typeof renderLive==='function') renderLive();
-      },2000);
-      // Update women's group count label for SE
-      var opts=$('cType').options;
-      for(var oi=0;oi<opts.length;oi++){if(opts[oi].value==='27') opts[oi].textContent='Mujeres (23 grupos)';if(opts[oi].value==='21') opts[oi].textContent='Hombres (22 grupos)';}
-    } else {
-      // Shared mode
-      const saved=localStorage.getItem('sharedUserSE');
-      if(saved){
-        const s=JSON.parse(saved);
-        sharedPickedType=+s.t||21;
-        sharedPickedColor=+s.color||0;
-        sharedLastGroup=+s.g||0;
-        $('cType').value=s.t||21;
-        $('cG').value=s.g;
-        if(s.color!==undefined) $('cColor').value=s.color;
-        $('colorDiv').style.display=(+s.t===27)?'block':'none';
-        // Set correct saca for SE
-        var isM2=(+s.t===27);
-        $('cS').value=isM2?defaultSacaM[4]:defaultSacaH[4];
-        // Already configured — skip modal
-      } else {
-        // First time — show type selector (step1 with SE images)
-        $('sharedModal').style.display='flex';
-        $('sharedDayLabel').textContent='Santo Entierro de Cristo';
-      }
-    }
-    return;
+    currentDay=4;isSEMode=true;
+    isShared=!p.has('edit');
   }
-  if(p.has('saca')||p.has('dia')){
+  // Shared mode: ?saca=X&dia=Y or ?se=1
+  if(p.has('saca')||p.has('dia')||isShared){
     isShared=true;
     if(p.has('saca')) $('cS').value=p.get('saca');
     if(p.has('dia')){
       const d=parseInt(p.get('dia'));
-      if(d>=0&&d<=3) currentDay=d;
+      if(d>=0&&d<=4) currentDay=d;
+      if(d===4) isSEMode=true;
     }
-    const saved=localStorage.getItem('sharedUser');
+    var storageKey=isSEMode?'sharedUserSE':'sharedUser';
+    const saved=localStorage.getItem(storageKey);
     if(saved){
       const s=JSON.parse(saved);
       sharedPickedType=+s.t||21;
@@ -806,12 +719,38 @@ function readParams(){
       $('cG').value=s.g;
       if(s.color!==undefined) $('cColor').value=s.color;
       $('colorDiv').style.display=(+s.t===27)?'block':'none';
-      // Already configured — skip modal
+      if(isSEMode){
+        var isM3=(+s.t===27);
+        $('cS').value=isM3?defaultSacaM[4]:defaultSacaH[4];
+      }
     } else {
-      // First time — show modal
+      if(isSEMode){
+        var step1El=document.getElementById('step1');
+        if(step1El){
+          step1El.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#d4af37;font-weight:700;margin-bottom:4px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#ccc;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div style="display:flex;gap:12px;justify-content:center"><div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-entierro.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">22 grupos</div></div><div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-virgen.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">23 grupos</div></div></div>';
+        }
+      }
       $('sharedModal').style.display='flex';
-      $('sharedDayLabel').textContent=dayNames[currentDay];
+      $('sharedDayLabel').textContent=isSEMode?'Santo Entierro de Cristo':dayNames[currentDay];
     }
+  }
+  // Apply SE theme if day 4
+  if(isSEMode){
+    document.querySelector('.hdr h1').textContent='⚰️ SANTO ENTIERRO DE CRISTO';
+    document.querySelector('.hdr h1').style.color='#d4af37';
+    var seStyleEl=document.getElementById('seThemeStyle');
+    if(!seStyleEl){
+      seStyleEl=document.createElement('style');seStyleEl.id='seThemeStyle';
+      seStyleEl.textContent='.vtab.a{color:#d4af37!important;border-bottom-color:#d4af37!important}.btn{border-color:#8B7355!important;color:#d4af37!important;background:rgba(212,175,55,.12)!important}#grupoActualBanner{background:rgba(212,175,55,.12)!important;border-color:rgba(212,175,55,.3)!important}#grupoActualText{color:#d4af37!important}.live-next .ln-num{color:#d4af37!important}.live-next{border-color:#d4af37!important;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.05))!important}.live-progress-bar{background:linear-gradient(90deg,#d4af37,#8B7355)!important}.bar{background:rgba(212,175,55,.08)!important}.bar .v{color:#d4af37!important}.cfg.open{border-color:rgba(212,175,55,.3)!important}.live-btn-done{background:#8B7355!important}.live-btn-undo{border-color:#8B7355!important;color:#d4af37!important}.hdr{border-bottom-color:rgba(212,175,55,.3)!important}.vtabs{border-bottom-color:rgba(212,175,55,.15)!important}';
+      document.head.appendChild(seStyleEl);
+    }
+    var opts=$('cType').options;
+    for(var oi=0;oi<opts.length;oi++){
+      if(opts[oi].value==='21') opts[oi].textContent='Hombres (22 grupos)';
+      if(opts[oi].value==='27') opts[oi].textContent='Mujeres (23 grupos)';
+    }
+    var ds2=document.getElementById('daySelector');
+    if(ds2) ds2.value=4;
   }
 }
 
@@ -877,7 +816,8 @@ function shareWhatsApp(){
   const base=window.location.origin+window.location.pathname;
   // Santo Entierro share
   if(currentDay===4){
-    const link=base+'?se=1';
+    var sacaSE=daySaca[4]||5;
+    const link=base+'?saca='+sacaSE+'&dia=4';
     const msg='⚰️ *Santo Entierro de Cristo · Sonsonate*\n\n'
       +'Rastreo en vivo del Santo Entierro\n'
       +'Abrí el link y elegí tu grupo:\n'+link;
@@ -968,6 +908,7 @@ function initMap() {
   document.querySelectorAll('.day').forEach((b,i)=>b.classList.toggle('a',i===currentDay));
   $('cS').value = (+$('cType').value===27)?daySacaMuj[currentDay]:daySaca[currentDay];
   $('cH').value = dayHours[currentDay];
+  if($('cDate')) $('cDate').value=dayDates[currentDay]||'';
 
   loadDay(currentDay);
   window._mapReady=true;
@@ -1001,35 +942,69 @@ function switchDay(d) {
   saveAll();
 
   // Auto-calculate saca for the new day if not manually set
-  // Next day's saca = previous day's last group + 1
   if(d>0 && !daySacaManual[d]){
     const prevDay=d-1;
     const lastGrp=getLastGroup(prevDay);
     const t=+$('cType').value||21;
-    daySaca[d]=((lastGrp)%t)+1; // lastGroup+1, wrap around
+    daySaca[d]=((lastGrp)%t)+1;
   }
 
   currentDay = d;
+  isSEMode=(d===4);
   document.querySelectorAll('.day').forEach((b,i) => b.classList.toggle('a',i===d));
   var ds=document.getElementById('daySelector');
   if(ds) ds.value=d;
+
+  // Apply/remove SE theme
+  var seStyleEl=document.getElementById('seThemeStyle');
+  if(isSEMode){
+    document.querySelector('.hdr h1').textContent='⚰️ SANTO ENTIERRO DE CRISTO';
+    document.querySelector('.hdr h1').style.color='#d4af37';
+    if(!seStyleEl){
+      seStyleEl=document.createElement('style');seStyleEl.id='seThemeStyle';
+      seStyleEl.textContent='.vtab.a{color:#d4af37!important;border-bottom-color:#d4af37!important}.btn{border-color:#8B7355!important;color:#d4af37!important;background:rgba(212,175,55,.12)!important}#grupoActualBanner{background:rgba(212,175,55,.12)!important;border-color:rgba(212,175,55,.3)!important}#grupoActualText{color:#d4af37!important}.live-next .ln-num{color:#d4af37!important}.live-next{border-color:#d4af37!important;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.05))!important}.live-progress-bar{background:linear-gradient(90deg,#d4af37,#8B7355)!important}.bar{background:rgba(212,175,55,.08)!important}.bar .v{color:#d4af37!important}.cfg.open{border-color:rgba(212,175,55,.3)!important}.live-btn-done{background:#8B7355!important}.live-btn-undo{border-color:#8B7355!important;color:#d4af37!important}.hdr{border-bottom-color:rgba(212,175,55,.3)!important}.vtabs{border-bottom-color:rgba(212,175,55,.15)!important}';
+      document.head.appendChild(seStyleEl);
+    }
+    // Update group count labels
+    var opts=$('cType').options;
+    for(var oi=0;oi<opts.length;oi++){
+      if(opts[oi].value==='21') opts[oi].textContent='Hombres (22 grupos)';
+      if(opts[oi].value==='27') opts[oi].textContent='Mujeres (23 grupos)';
+    }
+  } else {
+    document.querySelector('.hdr h1').textContent='✝️ SEMANA SANTA SONSONATE';
+    document.querySelector('.hdr h1').style.color='#c084fc';
+    if(seStyleEl) seStyleEl.remove();
+    var opts2=$('cType').options;
+    for(var oi2=0;oi2<opts2.length;oi2++){
+      if(opts2[oi2].value==='21') opts2[oi2].textContent='Hombres (21 grupos)';
+      if(opts2[oi2].value==='27') opts2[oi2].textContent='Mujeres (27 grupos)';
+    }
+  }
 
   // Restore config for this day
   var isM=(+$('cType').value===27);
   $('cS').value = isM?daySacaMuj[d]:daySaca[d];
   $('cH').value = dayHours[d];
-
+  if($('cDate')) $('cDate').value=dayDates[d]||'';
 
   // Reset grupo actual for new day BEFORE loading
   currentGrupoActual=0;
   liveGrupoData=null;
+  // Clear banners so they recreate with correct labels/sizes
+  var bc=document.getElementById('bannersContainer');if(bc) bc.innerHTML='';
+  // Clear banners so they get recreated for new day
+  var bc=document.getElementById('bannersContainer');
+  if(bc) bc.innerHTML='';
 
   loadDay(d);
-  // Restart listeners for new day
   if(typeof stopDayListeners==='function') stopDayListeners();
   if(typeof startDayListeners==='function') startDayListeners();
-  // Re-render after data loads
-  setTimeout(function(){if(typeof renderLive==='function') renderLive();},500);
+  if(typeof populateAlertSelects==='function') populateAlertSelects();
+  setTimeout(function(){
+    if(typeof renderLive==='function') renderLive();
+    updateBanners();
+  },500);
 }
 
 function loadDay(d) {
@@ -1078,7 +1053,7 @@ function fitBounds() {
   if(positions.length<2) return;
   const b = new google.maps.LatLngBounds();
   positions.forEach(p=>b.extend(p));
-  gmap.fitBounds(b,{top:20,bottom:20,left:20,right:20});
+  gmap.fitBounds(b,{top:80,bottom:80,left:20,right:20});
 }
 
 // ========== INSERT CHANGE (tap on route line) ==========
@@ -1281,6 +1256,7 @@ function calc() {
   renderMarkers();
   renderWPmarkers();
   saveAll();
+  if(typeof populateAlertSelects==='function') populateAlertSelects();
 }
 
 // ========== WAYPOINT REFERENCE MARKERS ==========
@@ -1728,6 +1704,8 @@ function fmtClock(ts){
 }
 
 function renderLive(){
+  // Always update banners first
+  updateBanners();
   // Wait for changes to be calculated
   if(!changes||changes.length===0){$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">Cargando datos...</p></div>';return;}
   // Check if this day is in the past
@@ -1811,44 +1789,12 @@ function renderLive(){
     h+='<div style="display:flex;gap:8px;margin-bottom:8px"><button '+jBtn+'>🔴 Buscar Jesús</button><button '+vBtn+'>🔵 Buscar Virgen</button></div>';
   }
   h+='<div style="text-align:center;margin-bottom:6px;font-size:10px;color:#e08080">⚠️ Las horas son aproximadas y se ajustan en tiempo real</div>';
-  h+='<div style="text-align:center;margin-bottom:8px"><span style="font-size:11px;color:#aaa">🔔 Mi cargada </span><select id="vibrateSel" onchange="setVibrateN(+this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:3px 6px;border-radius:4px;font-size:11px;font-family:inherit"><option value="0"'+(vibrateBeforeN===0?' selected':'')+'>Off</option>';
-  for(var vn=1;vn<=10;vn++){h+='<option value="'+vn+'"'+(vibrateBeforeN===vn?' selected':'')+'>'+vn+' cambio'+(vn>1?'s':'')+' antes</option>';}
-  h+='</select></div>';
-  // Group watch alert
-  var watchGrp=+(localStorage.getItem('watchGroup')||0);
-  h+='<div style="text-align:center;margin-bottom:8px"><span style="font-size:11px;color:#f59e0b">👁️ Vigilar grupo </span><select id="watchGrpSel" onchange="localStorage.setItem(\'watchGroup\',this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:3px 6px;border-radius:4px;font-size:11px;font-family:inherit"><option value="0"'+(watchGrp===0?' selected':'')+'>Off</option>';
-  var maxGrp=(+$('cType').value===27)?getMujCount():getHomCount();
-  for(var wg=1;wg<=maxGrp;wg++){h+='<option value="'+wg+'"'+(watchGrp===wg?' selected':'')+'>Grupo #'+wg+'</option>';}
-  h+='</select></div>';
 
   // Procession complete only when ALL cambios are done or past day
   var procComplete=(done>=total&&total>0)||isPastDay;
 
-  // Banners - always show (even after carries done)
-  var bannerDisplay='block';var bannerGrp='';var bannerProg='';
-  var sacaBnr=daySaca[currentDay]||16;
-  var bannerLabel1=isSEMode?'Santo Entierro de Cristo':'Venerada Imagen de Jesús Nazareno';
-  var bannerLabel2=(liveGrupoData&&liveGrupoData.cambio>0)?'En este momento carga':'Saca';
-  var jesusC=(liveGrupoData&&liveGrupoData.cambio>0)?liveGrupoData.cambio:0;
-  if(jesusC>0){
-    var bTot=positions.length||changes.length;
-    if(jesusC>bTot){
-      var lastGrpH=(((sacaBnr-1+bTot-1)%getHomCount())+1);
-      bannerGrp='✅ Asentó Grupo #'+lastGrpH;
-      bannerProg=isSEMode?'Hasta el próximo año, Santo Entierro de Cristo':'Hasta el próximo año, Jesús Nazareno';
-      bannerLabel2='Hasta el próximo año';
-    } else {
-      bannerGrp='Grupo #'+(((sacaBnr-1+jesusC-1)%getHomCount())+1);
-      bannerProg=jesusC<=changes.length?(changes[jesusC-1].n||'').replace(/^Grupo\s*\d+\s*/i,''):'';
-    }
-  } else {
-    bannerGrp='Grupo #'+sacaBnr;
-    bannerProg='Esperando inicio de la procesión';
-  }
-  var jSize=isMuj?'14px':'22px';var jPad=isMuj?'6px':'10px';
-  var jBannerHtml='<div id="grupoActualBanner" style="display:'+bannerDisplay+';text-align:center;padding:'+jPad+';margin-bottom:6px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa">'+bannerLabel1+'</div><div style="font-size:'+(isMuj?'9px':'11px')+';color:#ccc">'+bannerLabel2+'</div><div id="grupoActualText" style="font-size:'+jSize+';font-weight:700;color:#c084fc">'+bannerGrp+'</div><div id="grupoActualProgress" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa">'+bannerProg+'</div></div>';
   if(isPastDay){
-    // Past day: show solemn message with grupo that entered
+    // Past day: show solemn message
     var sacaPast=daySaca[currentDay]||17;
     var totPast=changes.length;
     var lastGrpPast=((sacaPast-1+totPast-1)%getHomCount())+1;
@@ -1856,9 +1802,7 @@ function renderLive(){
     h+='<div style="font-size:11px;color:#aaa;letter-spacing:1px">VENERADA IMAGEN DE JESÚS NAZARENO</div>';
     h+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">✝️ Asentada en el Templo</div>';
     h+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#4CAF50">#'+lastGrpPast+'</b></div>';
-    h+='<div style="font-size:11px;color:#888;margin-top:6px;font-style:italic">Gloria y honor a Jesús Nazareno de Sonsonate</div>';
     h+='</div>';
-    // Virgen past day info
     var sacaPastM=daySacaMuj[currentDay]||22;
     var lastGrpPastM=(((sacaPastM-1+totPast-1)%getMujCount())+getMujCount())%getMujCount()+1;
     h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(59,130,246,.15));border:1px solid rgba(59,130,246,.3)">';
@@ -1866,55 +1810,10 @@ function renderLive(){
     h+='<div style="font-size:16px;font-weight:700;color:#93c5fd;margin:6px 0">✝️ Asentada en el Templo</div>';
     h+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#93c5fd">#'+lastGrpPastM+'</b></div>';
     h+='</div>';
-    // Show selector frozen at last group
-    h+='<div style="text-align:center;margin-bottom:8px"><span style="font-size:12px;color:#aaa">Jesús: </span><span style="font-size:20px;font-weight:700;color:#4CAF50">✅ #'+lastGrpPast+'</span></div>';
+    var bc=document.getElementById('bannersContainer');if(bc) bc.innerHTML='';
   } else {
-  // Virgen banner data
-  var vSacaDef=daySacaMuj[currentDay]||22;
-  var vBannerDisplay='block',vBannerGrp='Grupo #'+vSacaDef,vBannerProg='Esperando inicio';
-  // Use Virgen GPS if available AND GPS Auto is ON, otherwise desfase estimate
-  if(isSEMode&&window.virgenCambioGPS>0&&window.autoAdvanceGPS){
-    var vSacaGPS=daySacaMuj[currentDay]||5;
-    var vTotGPS=positions.length||changes.length;
-    if(virgenCambioGPS>=vTotGPS){
-      var lastGrpVGPS=(((vSacaGPS-1+vTotGPS-1)%getMujCount())+getMujCount())%getMujCount()+1;
-      vBannerGrp='✅ Asentó Grupo #'+lastGrpVGPS;
-      vBannerProg=isSEMode?'Hasta el próximo año, Virgen Dolorosa':'Hasta el próximo año';
-    } else {
-      var vGrpGPS2=((vSacaGPS-1+virgenCambioGPS-1)%getMujCount()+getMujCount())%getMujCount()+1;
-      vBannerGrp='Grupo #'+vGrpGPS2;
-      vBannerProg='';
-    }
-  } else if(liveGrupoData&&liveGrupoData.cambio>0){
-    var vDesf=liveGrupoData.desfase||0;
-    var vSacaM=liveGrupoData.sacaMuj||vSacaDef;
-    var vTotB=positions.length||changes.length;
-    var vCambioB=Math.max(1,liveGrupoData.cambio-vDesf);
-    var vMovB=liveGrupoData.movidos||0;
-    var vCambioGrpB=Math.max(1,vCambioB-vMovB);
-    if(vCambioB>=vTotB){
-      var lastGrpMB=(((vSacaM-1+vTotB-1-vMovB)%getMujCount())+getMujCount())%getMujCount()+1;
-      vBannerGrp='✅ Asentó Grupo #'+lastGrpMB;
-      vBannerProg='Hasta el próximo año';
-    } else {
-      var vGrpB=(((vSacaM-1+vCambioGrpB-1)%getMujCount())+getMujCount())%getMujCount()+1;
-      var vNomB=changes.length>0&&vCambioB>0&&vCambioB<=changes.length?changes[vCambioB-1].n||'':'';
-      vBannerGrp='Grupo #'+vGrpB;
-      vBannerProg='⚠️ Estimado';
-    }
-  }
-  // Build Virgen banner HTML
-  var vSize=isMuj?'22px':'14px';var vPad=isMuj?'10px':'6px';
-  var vLabel=isSEMode?'Virgen Dolorosa':'María Santísima';
-  var vBannerHtml='<div id="grupoVirgenBanner" style="display:'+vBannerDisplay+';text-align:center;padding:'+vPad+';margin-bottom:6px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div style="font-size:'+(isMuj?'11px':'9px')+';color:#93c5fd">'+vLabel+'</div><div style="font-size:'+(isMuj?'11px':'9px')+';color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:'+vSize+';font-weight:700;color:#93c5fd">'+vBannerGrp+'</div><div id="grupoVirgenProgress" style="font-size:'+(isMuj?'10px':'8px')+';color:#ff9800">'+vBannerProg+'</div></div>';
-  // Render banners always (primary type first)
-  if(!isPastDay){
-    if(isMuj){
-      h+=vBannerHtml+jBannerHtml;
-    } else {
-      h+=jBannerHtml+vBannerHtml;
-    }
-  }
+  // Banners live in bannersContainer — just update text
+  updateBanners();
 
   // Admin: control to advance grupo actual
   if(!isShared){
@@ -2546,8 +2445,29 @@ var vibrateBeforeN=+(localStorage.getItem('vibrateBeforeN')||0);
 function setVibrateN(n){
   vibrateBeforeN=n;
   localStorage.setItem('vibrateBeforeN',n);
-  var sel=document.getElementById('vibrateSel');
-  if(sel) sel.value=n;
+}
+function populateAlertSelects(){
+  // Populate vibrate select
+  var vSel=document.getElementById('vibrateCfg');
+  if(vSel&&vSel.options.length<=1){
+    for(var vn=1;vn<=10;vn++){
+      var opt=document.createElement('option');opt.value=vn;opt.textContent=vn+' cambio'+(vn>1?'s':'')+' antes';
+      vSel.appendChild(opt);
+    }
+  }
+  if(vSel) vSel.value=vibrateBeforeN;
+  // Populate watch group select
+  var wSel=document.getElementById('watchGrpCfg');
+  var maxGrp=(+$('cType').value===27)?getMujCount():getHomCount();
+  if(wSel){
+    var curVal=+(localStorage.getItem('watchGroup')||0);
+    while(wSel.options.length>1) wSel.remove(1);
+    for(var wg=1;wg<=maxGrp;wg++){
+      var opt2=document.createElement('option');opt2.value=wg;opt2.textContent='Grupo #'+wg;
+      wSel.appendChild(opt2);
+    }
+    wSel.value=curVal;
+  }
 }
 function checkVibrate(cambio){
   if(!window.myCarries||!myCarries.length) return;
@@ -2969,8 +2889,75 @@ function updateGrupoUI(){
     }
   }
   updateCrono();
+  updateBanners();
 }
-
+// ========== SINGLE BANNER WRITER ==========
+function updateBanners(){
+  var container=document.getElementById('bannersContainer');
+  if(!container) return;
+  var cambio=(liveGrupoData&&liveGrupoData.cambio)?liveGrupoData.cambio:0;
+  var tot=positions.length||changes.length||147;
+  var isMuj=(+$('cType').value===27);
+  
+  // Create banner HTML if not exists
+  if(!document.getElementById('grupoActualBanner')){
+    var jLabel1=isSEMode?'Santo Entierro de Cristo':'Venerada Imagen de Jesús Nazareno';
+    var vLabel=isSEMode?'Virgen Dolorosa':'María Santísima';
+    var jSize=isMuj?'14px':'22px';var jPad=isMuj?'6px':'10px';
+    var vSize=isMuj?'22px':'14px';var vPad=isMuj?'10px':'6px';
+    var jHtml='<div id="grupoActualBanner" style="text-align:center;padding:'+jPad+';margin-bottom:6px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div id="grupoActualLabel1" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa">'+jLabel1+'</div><div id="grupoActualLabel2" style="font-size:'+(isMuj?'9px':'11px')+';color:#ccc">Saca</div><div id="grupoActualText" style="font-size:'+jSize+';font-weight:700;color:#c084fc"></div><div id="grupoActualProgress" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa"></div></div>';
+    var vHtml='<div id="grupoVirgenBanner" style="text-align:center;padding:'+vPad+';margin-bottom:6px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div style="font-size:'+(isMuj?'11px':'9px')+';color:#93c5fd">'+vLabel+'</div><div style="font-size:'+(isMuj?'11px':'9px')+';color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:'+vSize+';font-weight:700;color:#93c5fd"></div><div id="grupoVirgenProgress" style="font-size:'+(isMuj?'10px':'8px')+';color:#ff9800"></div></div>';
+    container.innerHTML=isMuj?(vHtml+jHtml):(jHtml+vHtml);
+  }
+  
+  // Update Jesus/SE banner
+  var jEl=document.getElementById('grupoActualText');
+  var jProg=document.getElementById('grupoActualProgress');
+  var jLabel2=document.getElementById('grupoActualLabel2');
+  if(jEl){
+    var sacaJ=daySaca[currentDay]||16;
+    if(cambio>0&&cambio>tot){
+      jEl.textContent='\u2705 Asentó Grupo #'+((sacaJ-1+tot-1)%getHomCount()+1);
+      if(jProg) jProg.textContent=isSEMode?'Hasta el próximo año, Santo Entierro de Cristo':'Hasta el próximo año, Jesús Nazareno';
+      if(jLabel2) jLabel2.textContent='Hasta el próximo año';
+    } else if(cambio>0){
+      jEl.textContent='Grupo #'+((sacaJ-1+cambio-1)%getHomCount()+1);
+      if(jProg) jProg.textContent=(liveGrupoData&&liveGrupoData.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
+      if(jLabel2) jLabel2.textContent='En este momento carga';
+    } else {
+      jEl.textContent='Grupo #'+sacaJ;
+      if(jProg) jProg.textContent='Esperando inicio';
+      if(jLabel2) jLabel2.textContent='Saca';
+    }
+  }
+  // Update Virgen banner
+  var vEl=document.getElementById('grupoVirgenText');
+  var vProg2=document.getElementById('grupoVirgenProgress');
+  if(vEl){
+    if(cambio>0&&liveGrupoData){
+      var desf=liveGrupoData.desfase||0;
+      var sacaM=liveGrupoData.sacaMuj||daySacaMuj[currentDay]||6;
+      var mov=liveGrupoData.movidos||0;
+      var vCambio=Math.max(1,cambio-desf);
+      var vCambioGrp=Math.max(1,vCambio-mov);
+      if(vCambio>=tot){
+        var lastM=(((sacaM-1+tot-1-mov)%getMujCount())+getMujCount())%getMujCount()+1;
+        vEl.textContent='\u2705 Asentó Grupo #'+lastM;
+        if(vProg2) vProg2.textContent='Hasta el próximo año';
+      } else {
+        var grpM=(((sacaM-1+vCambioGrp-1)%getMujCount())+getMujCount())%getMujCount()+1;
+        vEl.textContent='Grupo #'+grpM;
+        if(vProg2) vProg2.textContent='\u26A0\uFE0F Estimado';
+      }
+    } else {
+      vEl.textContent='Grupo #'+(daySacaMuj[currentDay]||22);
+      if(vProg2) vProg2.textContent='Esperando inicio';
+    }
+  }
+  // Update label for SE mode
+  var jLabel1El=document.getElementById('grupoActualLabel1');
+  if(jLabel1El) jLabel1El.textContent=isSEMode?'Santo Entierro de Cristo':'Venerada Imagen de Jesús Nazareno';
+}
 // ========== STREET VIEW ==========
 var streetViewPano=null;
 function openStreetView(lat,lng){
@@ -3079,20 +3066,6 @@ function startDayListeners(){
               if(d.movidos!==undefined) virgenMovidos=d.movidos;
               if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
               try{updateGrupoUI();}catch(e7){}
-              // Update banners directly
-              try{
-                var sacaS2=daySaca[currentDay]||16;
-                var totS2=positions.length||147;
-                var sGrp2=(((sacaS2-1+Math.min(d.cambio,totS2)-1)%getHomCount())+1);
-                var bEl2=document.getElementById('grupoActualText');
-                if(bEl2&&d.cambio>0) bEl2.textContent=d.cambio>totS2?'✅ Asentó Grupo #'+(((sacaS2-1+totS2-1)%getHomCount())+1):'Grupo #'+sGrp2;
-                var vEl2=document.getElementById('grupoVirgenText');
-                if(vEl2&&d.cambio>0&&!isSEMode){
-                  var ds2=d.desfase||0,sm2=d.sacaMuj||daySacaMuj[currentDay]||6,mv2=d.movidos||0;
-                  var vc2=Math.max(1,d.cambio-ds2),vcg2=Math.max(1,vc2-mv2);
-                  vEl2.textContent='Grupo #'+((((sm2-1+vcg2-1)%getMujCount())+getMujCount())%getMujCount()+1);
-                }
-              }catch(e8){}
               try{if(typeof renderLive==='function') renderLive();}catch(e9){}
             }
           }catch(e){
@@ -3149,9 +3122,11 @@ function startDayListeners(){
     var newPos=d.filter(function(p){return p&&p.lat&&p.lng;}).map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
     // Only update if different
     if(JSON.stringify(newPos)!==JSON.stringify(positions)){
+      var wasEmpty=positions.length<2;
       positions=newPos;
       drawRouteLine();
       calc();
+      if(wasEmpty&&positions.length>=2) fitBounds();
     }
   });
 }
@@ -3185,33 +3160,6 @@ function globalSync(){
             if(d.movidos!==undefined) window.virgenMovidos=d.movidos;
             if(d.sacaMuj&&window.daySacaMuj) window.daySacaMuj[day]=d.sacaMuj;
             try{if(typeof window.updateGrupoUI==='function') window.updateGrupoUI();}catch(e2){}
-            // Update banners directly without rebuilding entire panel
-            try{
-              var sacaSync=window.daySaca?window.daySaca[day]:16;
-              var totSync=window.positions?window.positions.length:147;
-              var syncGrp=(((sacaSync-1+Math.min(d.cambio,totSync)-1)%getHomCount())+1);
-              var bannerEl=document.getElementById('grupoActualText');
-              if(bannerEl&&d.cambio>0){
-                if(d.cambio>totSync){
-                  bannerEl.textContent='✅ Asentó Grupo #'+(((sacaSync-1+totSync-1)%getHomCount())+1);
-                } else {
-                  bannerEl.textContent='Grupo #'+syncGrp;
-                }
-              }
-              var progEl=document.getElementById('grupoActualProgress');
-              if(progEl&&d.cambio>0) progEl.textContent=(d.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
-              // Virgen banner (skip in SE mode - GPS handles it)
-              var vTxtSync=document.getElementById('grupoVirgenText');
-              if(vTxtSync&&d.cambio>0&&!window.isSEMode){
-                var desfSync=d.desfase||0;
-                var sacaMSync=d.sacaMuj||window.daySacaMuj[day]||6;
-                var movSync=d.movidos||0;
-                var vCambioSync=Math.max(1,d.cambio-desfSync);
-                var vCambioGrpSync=Math.max(1,vCambioSync-movSync);
-                var vGrpSync=(((sacaMSync-1+vCambioGrpSync-1)%getMujCount())+getMujCount())%getMujCount()+1;
-                vTxtSync.textContent='Grupo #'+vGrpSync;
-              }
-            }catch(e6){}
             // Rebuild panel to update carries
             try{if(typeof window.renderLive==='function') window.renderLive();}catch(e3){}
             if(d.cambio!==window._lastSyncCambio){
