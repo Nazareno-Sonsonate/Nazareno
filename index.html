@@ -889,10 +889,14 @@ function initMap() {
   const hasSaved = loadSaved();
   readParams();
   // Auto-detect today's day (skip if SE mode already set day)
-  if(!isSEMode){
+  if(!isSEMode&&!isShared){
     const todayIdx = detectToday();
     if(todayIdx>=0){
       currentDay = todayIdx;
+    } else {
+      // No day is today — restore last viewed day
+      var lastDay=+(localStorage.getItem('lastViewedDay')||0);
+      if(lastDay>=0&&lastDay<=4) currentDay=lastDay;
     }
   }
   // Hide edit tools and admin config for shared users
@@ -950,6 +954,7 @@ function switchDay(d) {
   }
 
   currentDay = d;
+  try{localStorage.setItem('lastViewedDay',d);}catch(e){}
   isSEMode=(d===4);
   document.querySelectorAll('.day').forEach((b,i) => b.classList.toggle('a',i===d));
   var ds=document.getElementById('daySelector');
@@ -1711,7 +1716,7 @@ function renderLive(){
   // Check if this day is in the past
   var dayDate=new Date(dayDates[currentDay]+'T23:59:00');
   var now=new Date();
-  var isPastDay=(dayDate<now&&currentDay!==3&&currentDay!==4);
+  var isPastDay=(dayDate<now);
   
   // For past days with no carries, still show completion info
   if(isPastDay&&changes.length>0&&!myCarries.length){
@@ -1740,7 +1745,7 @@ function renderLive(){
   // Check if this day is in the past
   var dayDate=new Date(dayDates[currentDay]+'T23:59:00');
   var now=new Date();
-  var isPastDay=(dayDate<now&&currentDay!==3&&currentDay!==4);
+  var isPastDay=(dayDate<now);
   
   // For past days, auto-set grupo actual to last cambio
   if(isPastDay&&changes.length>0){
@@ -1794,29 +1799,34 @@ function renderLive(){
   var procComplete=(done>=total&&total>0)||isPastDay;
 
   if(isPastDay){
-    // Past day: show solemn message
+    // Past day: show completion message at top
     var sacaPast=daySaca[currentDay]||17;
     var totPast=changes.length;
     var lastGrpPast=((sacaPast-1+totPast-1)%getHomCount())+1;
+    var jesusLabel=isSEMode?'SANTO ENTIERRO DE CRISTO':'VENERADA IMAGEN DE JESÚS NAZARENO';
+    var jesusMsg=isSEMode?'Hasta el próximo año':'✝️ Asentada en el Templo';
+    var jesusFooter=isSEMode?'Hasta el próximo año, Santo Entierro de Cristo':'Gloria y honor a Jesús Nazareno de Sonsonate';
+    var virgenLabel=isSEMode?'VIRGEN DOLOROSA':'MARÍA SANTÍSIMA';
     h+='<div style="text-align:center;padding:16px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(76,175,80,.08),rgba(46,125,50,.15));border:1px solid rgba(76,175,80,.4)">';
-    h+='<div style="font-size:11px;color:#aaa;letter-spacing:1px">VENERADA IMAGEN DE JESÚS NAZARENO</div>';
-    h+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">✝️ Asentada en el Templo</div>';
+    h+='<div style="font-size:11px;color:#aaa;letter-spacing:1px">'+jesusLabel+'</div>';
+    h+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">'+jesusMsg+'</div>';
     h+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#4CAF50">#'+lastGrpPast+'</b></div>';
+    h+='<div style="font-size:11px;color:#888;margin-top:6px;font-style:italic">'+jesusFooter+'</div>';
     h+='</div>';
     var sacaPastM=daySacaMuj[currentDay]||22;
     var lastGrpPastM=(((sacaPastM-1+totPast-1)%getMujCount())+getMujCount())%getMujCount()+1;
     h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(59,130,246,.15));border:1px solid rgba(59,130,246,.3)">';
-    h+='<div style="font-size:11px;color:#93c5fd;letter-spacing:1px">MARÍA SANTÍSIMA</div>';
+    h+='<div style="font-size:11px;color:#93c5fd;letter-spacing:1px">'+virgenLabel+'</div>';
     h+='<div style="font-size:16px;font-weight:700;color:#93c5fd;margin:6px 0">✝️ Asentada en el Templo</div>';
     h+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#93c5fd">#'+lastGrpPastM+'</b></div>';
     h+='</div>';
     var bc=document.getElementById('bannersContainer');if(bc) bc.innerHTML='';
-  } else {
-  // Banners live in bannersContainer — just update text
-  updateBanners();
+  }
+  // Always show banners for non-past days
+  if(!isPastDay) updateBanners();
 
-  // Admin: control to advance grupo actual
-  if(!isShared){
+  // Admin controls (only for non-past, non-shared)
+  if(!isShared&&!isPastDay){
     h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
     h+='<span style="font-size:12px;color:#aaa">'+(isSEMode?'SE:':'Jesús:')+'</span>';
     h+='<button onclick="advanceGrupo(-1)" style="padding:6px 14px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#ccc;font-size:16px;font-weight:700;cursor:pointer">−</button>';
@@ -1847,9 +1857,10 @@ function renderLive(){
     h+='<button onclick="changeMovidos(1)" style="padding:4px 10px;border:1px solid #f59e0b;border-radius:6px;background:rgba(245,158,11,.2);color:#f59e0b;font-size:14px;cursor:pointer">+</button>';
     h+='</div>';
   }
-  // Chronometer (everyone sees)
-  h+='<div style="text-align:center;margin-bottom:8px"><span id="grupoCrono" style="font-size:18px;font-weight:700;color:#ff9800;font-family:monospace">⏱ 0:00</span><br><span id="grupoLastUpdate" style="font-size:10px;color:#888"></span></div>';
-  } // end !isPastDay
+  // Chronometer (everyone sees, not past days)
+  if(!isPastDay){
+    h+='<div style="text-align:center;margin-bottom:8px"><span id="grupoCrono" style="font-size:18px;font-weight:700;color:#ff9800;font-family:monospace">⏱ 0:00</span><br><span id="grupoLastUpdate" style="font-size:10px;color:#888"></span></div>';
+  }
 
   // Progress
   h+='<div class="live-progress"><div class="live-progress-bar" style="width:'+pct+'%">'+done+'/'+total+'</div></div>';
