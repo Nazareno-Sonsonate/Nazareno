@@ -656,7 +656,7 @@ function loadSaved() {
     if(d.sd) dayDates = d.sd;
     if(d.smj) daySacaMuj = d.smj;
     if(d.cfg){$('cG').value=d.cfg.g||5;$('cType').value=d.cfg.t||21;$('cMn').value=d.cfg.mn||6;if(d.cfg.color!==undefined)$('cColor').value=d.cfg.color;$('colorDiv').style.display=(+$('cType').value===27)?'block':'none';}
-    if(typeof d.cd==='number') currentDay = d.cd;
+    // currentDay is now managed by lastViewedDay in localStorage, not saved data
     // Restore grupo actual
     if(d.ga&&d.ga.data&&d.ga.d===currentDay){
       liveGrupoData=d.ga.data;
@@ -897,6 +897,7 @@ function initMap() {
       // No day is today — restore last viewed day
       var lastDay=+(localStorage.getItem('lastViewedDay')||0);
       if(lastDay>=0&&lastDay<=4) currentDay=lastDay;
+      if(currentDay===4) isSEMode=true;
     }
   }
   // Hide edit tools and admin config for shared users
@@ -910,6 +911,23 @@ function initMap() {
   }
   // Restore day tabs
   document.querySelectorAll('.day').forEach((b,i)=>b.classList.toggle('a',i===currentDay));
+  // Apply SE theme if needed
+  if(currentDay===4){
+    isSEMode=true;
+    document.querySelector('.hdr h1').textContent='⚰️ SANTO ENTIERRO DE CRISTO';
+    document.querySelector('.hdr h1').style.color='#d4af37';
+    var seStyleInit=document.getElementById('seThemeStyle');
+    if(!seStyleInit){
+      seStyleInit=document.createElement('style');seStyleInit.id='seThemeStyle';
+      seStyleInit.textContent='.vtab.a{color:#d4af37!important;border-bottom-color:#d4af37!important}.btn{border-color:#8B7355!important;color:#d4af37!important;background:rgba(212,175,55,.12)!important}#grupoActualBanner{background:rgba(212,175,55,.12)!important;border-color:rgba(212,175,55,.3)!important}#grupoActualText{color:#d4af37!important}.live-next .ln-num{color:#d4af37!important}.live-next{border-color:#d4af37!important;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.05))!important}.live-progress-bar{background:linear-gradient(90deg,#d4af37,#8B7355)!important}.bar{background:rgba(212,175,55,.08)!important}.bar .v{color:#d4af37!important}.cfg.open{border-color:rgba(212,175,55,.3)!important}.live-btn-done{background:#8B7355!important}.live-btn-undo{border-color:#8B7355!important;color:#d4af37!important}.hdr{border-bottom-color:rgba(212,175,55,.3)!important}.vtabs{border-bottom-color:rgba(212,175,55,.15)!important}';
+      document.head.appendChild(seStyleInit);
+    }
+    var optsInit=$('cType').options;
+    for(var oii=0;oii<optsInit.length;oii++){
+      if(optsInit[oii].value==='21') optsInit[oii].textContent='Hombres (22 grupos)';
+      if(optsInit[oii].value==='27') optsInit[oii].textContent='Mujeres (23 grupos)';
+    }
+  }
   $('cS').value = (+$('cType').value===27)?daySacaMuj[currentDay]:daySaca[currentDay];
   $('cH').value = dayHours[currentDay];
   if($('cDate')) $('cDate').value=dayDates[currentDay]||'';
