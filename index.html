@@ -1712,7 +1712,10 @@ function renderLive(){
   // Always update banners first
   updateBanners();
   // Wait for changes to be calculated
-  if(!changes||changes.length===0){$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">Cargando datos...</p></div>';return;}
+  if(!changes||changes.length===0){
+    $('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">Cargando datos...</p></div>';
+    return;
+  }
   // Check if this day is in the past
   var dayDate=new Date(dayDates[currentDay]+'T23:59:00');
   var now=new Date();
@@ -1740,7 +1743,7 @@ function renderLive(){
     $('livePanel').innerHTML=ph;return;
   }
 
-  if(!myCarries.length){$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">No hay cargadas. Verificá la configuración.</p></div>';return;}
+  if(!myCarries.length&&!isPastDay){$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">No hay cargadas. Verificá la configuración.</p></div>';return;}
   
   // Check if this day is in the past
   var dayDate=new Date(dayDates[currentDay]+'T23:59:00');
@@ -1920,7 +1923,7 @@ function renderLive(){
       h+='<div style="margin-top:8px;font-size:11px;color:#aaa">Primera: '+fmtClock(firstT)+' · Última: '+fmtClock(lastT)+'</div>';
       h+='</div>';
     }
-  } else {
+  } else if(nextCarry) {
     const ref=nextCarry.n||nearWP(nextCarry);
     const estTime=getEstimate(nextCarry);
     const realAvg=getRealAvg();
