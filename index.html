@@ -1992,6 +1992,14 @@ function renderLive(){
     h+='</div>';
     // GPS Auto-advance toggle
     h+='<div style="text-align:center;margin-bottom:4px"><button onclick="autoAdvanceGPS=!autoAdvanceGPS;if(typeof renderLive===\'function\')renderLive();" style="padding:4px 12px;border:1px solid '+(autoAdvanceGPS?'#4CAF50':'#666')+';border-radius:6px;background:'+(autoAdvanceGPS?'rgba(76,175,80,.15)':'rgba(255,255,255,.05)')+';color:'+(autoAdvanceGPS?'#4CAF50':'#888')+';font-size:11px;cursor:pointer;font-family:inherit">'+(autoAdvanceGPS?'📡 GPS Auto: ON':'📡 GPS Auto: OFF')+'</button></div>';
+    // GPS Simulation controls
+    h+='<div style="text-align:center;margin-bottom:4px"><button onclick="toggleSimGPS()" id="simGPSBtn" style="padding:4px 12px;border:1px solid '+(window._simRunning?'#f44336':'#666')+';border-radius:6px;background:'+(window._simRunning?'rgba(244,67,54,.15)':'rgba(255,255,255,.05)')+';color:'+(window._simRunning?'#f44336':'#888')+';font-size:11px;cursor:pointer;font-family:inherit">'+(window._simRunning?'🔴 Simulación GPS: ON':'🧪 Simulación GPS')+'</button></div>';
+    if(window._simRunning){
+      h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
+      h+='<span style="font-size:10px;color:#f44336">Jesús: '+(window._simJesusIdx||0)+'/'+positions.length+'</span>';
+      h+='<span style="font-size:10px;color:#93c5fd">Virgen: '+(window._simVirgenIdx||0)+'/'+positions.length+'</span>';
+      h+='</div>';
+    }
     // Desfase and movidos controls
     h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
     h+='<span style="font-size:12px;color:#93c5fd">Desfase Virgen:</span>';
@@ -3298,6 +3306,66 @@ function startDayListeners(){
 <div id="fbTest" style="position:fixed;bottom:0;left:0;right:0;background:#000;color:#0f0;font-size:11px;padding:4px 8px;z-index:9999;font-family:monospace">⏳ Conectando...</div>
 <script>
 // Sync: fetch Firebase and UPDATE UI every 10 seconds
+// ========== GPS SIMULATION ==========
+window._simRunning=false;
+window._simTimer=null;
+window._simJesusIdx=0;
+window._simVirgenIdx=0;
+var SIM_VIRGEN_DELAY=3; // points behind Jesus
+var SIM_INTERVAL=3000; // ms between updates
+var SIM_JITTER=0.00003; // ~3m random noise
+
+function toggleSimGPS(){
+  if(window._simRunning){
+    // Stop
+    clearInterval(window._simTimer);
+    window._simRunning=false;
+    // Clear GPS markers by writing old timestamp
+    db.ref('jesus').set({lat:0,lng:0,t:0});
+    db.ref('virgen').set({lat:0,lng:0,t:0});
+  } else {
+    // Start
+    if(positions.length<2){alert('No hay recorrido cargado');return;}
+    window._simJesusIdx=currentGrupoActual||0;
+    window._simVirgenIdx=Math.max(0,window._simJesusIdx-SIM_VIRGEN_DELAY);
+    window._simRunning=true;
+    // Enable GPS Auto
+    autoAdvanceGPS=true;
+    simStep();
+    window._simTimer=setInterval(simStep,SIM_INTERVAL);
+  }
+  if(typeof renderLive==='function') renderLive();
+}
+
+function simStep(){
+  if(!positions.length) return;
+  // Advance Jesus
+  if(window._simJesusIdx<positions.length){
+    var jp=positions[window._simJesusIdx];
+    var jLat=jp.lat+(Math.random()-0.5)*SIM_JITTER*2;
+    var jLng=jp.lng+(Math.random()-0.5)*SIM_JITTER*2;
+    db.ref('jesus').set({lat:jLat,lng:jLng,t:Date.now()});
+    window._simJesusIdx++;
+  } else {
+    // Jesus finished route
+    var lastJ=positions[positions.length-1];
+    db.ref('jesus').set({lat:lastJ.lat,lng:lastJ.lng,t:Date.now()});
+  }
+  // Advance Virgen (delayed)
+  if(window._simVirgenIdx<positions.length){
+    var vp=positions[window._simVirgenIdx];
+    var vLat=vp.lat+(Math.random()-0.5)*SIM_JITTER*2;
+    var vLng=vp.lng+(Math.random()-0.5)*SIM_JITTER*2;
+    db.ref('virgen').set({lat:vLat,lng:vLng,t:Date.now()});
+    window._simVirgenIdx++;
+  }
+  // Update status
+  try{
+    var btn=document.getElementById('simGPSBtn');
+    if(btn) btn.textContent='🔴 Sim: J='+window._simJesusIdx+' V='+window._simVirgenIdx+'/'+positions.length;
+  }catch(e){}
+}
+
 function globalSync(){
   try{
     // Detect day: check URL for SE mode, otherwise use currentDay
