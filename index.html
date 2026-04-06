@@ -1991,13 +1991,15 @@ function renderLive(){
     h+='<button onclick="advanceGrupo(1)" style="padding:6px 14px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.3);color:#c084fc;font-size:16px;font-weight:700;cursor:pointer">+</button>';
     h+='</div>';
     // GPS Auto-advance toggle
-    h+='<div style="text-align:center;margin-bottom:4px"><button onclick="autoAdvanceGPS=!autoAdvanceGPS;if(typeof renderLive===\'function\')renderLive();" style="padding:4px 12px;border:1px solid '+(autoAdvanceGPS?'#4CAF50':'#666')+';border-radius:6px;background:'+(autoAdvanceGPS?'rgba(76,175,80,.15)':'rgba(255,255,255,.05)')+';color:'+(autoAdvanceGPS?'#4CAF50':'#888')+';font-size:11px;cursor:pointer;font-family:inherit">'+(autoAdvanceGPS?'📡 GPS Auto: ON':'📡 GPS Auto: OFF')+'</button></div>';
-    // GPS Simulation controls
-    h+='<div style="text-align:center;margin-bottom:4px"><button onclick="toggleSimGPS()" id="simGPSBtn" style="padding:4px 12px;border:1px solid '+(window._simRunning?'#f44336':'#666')+';border-radius:6px;background:'+(window._simRunning?'rgba(244,67,54,.15)':'rgba(255,255,255,.05)')+';color:'+(window._simRunning?'#f44336':'#888')+';font-size:11px;cursor:pointer;font-family:inherit">'+(window._simRunning?'🔴 Simulación GPS: ON':'🧪 Simulación GPS')+'</button></div>';
-    if(window._simRunning){
+    h+='<div style="text-align:center;margin-bottom:4px"><button onclick="autoAdvanceGPS=!autoAdvanceGPS;if(typeof renderLive===\'function\')renderLive();" style="padding:4px 12px;border:1px solid '+(autoAdvanceGPS?'#4CAF50':'#666')+';border-radius:6px;background:'+(autoAdvanceGPS?'rgba(76,175,80,.15)':'rgba(255,255,255,.05)')+';color:'+(autoAdvanceGPS?'#4CAF50':'#888')+';font-size:11px;cursor:pointer;font-family:inherit">'+(autoAdvanceGPS?'📡 GPS: ON':'📡 GPS: OFF')+'</button> <button onclick="toggleAutoTime()" style="padding:4px 12px;border:1px solid '+(window._autoTimeRunning?'#f44336':'#666')+';border-radius:6px;background:'+(window._autoTimeRunning?'rgba(244,67,54,.15)':'rgba(255,255,255,.05)')+';color:'+(window._autoTimeRunning?'#f44336':'#888')+';font-size:11px;cursor:pointer;font-family:inherit">'+(window._autoTimeRunning?'⏱ Auto: ON':'⏱ Auto: OFF')+'</button></div>';
+    if(window._autoTimeRunning){
       h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
-      h+='<span style="font-size:10px;color:#f44336">Jesús: '+(window._simJesusIdx||0)+'/'+positions.length+'</span>';
-      h+='<span style="font-size:10px;color:#93c5fd">Virgen: '+(window._simVirgenIdx||0)+'/'+positions.length+'</span>';
+      h+='<span style="font-size:11px;color:#f44336">Ritmo:</span>';
+      h+='<button onclick="adjustAutoTime(-5)" style="padding:3px 8px;border:1px solid #666;border-radius:4px;background:rgba(255,255,255,.05);color:#ccc;font-size:12px;cursor:pointer">-5m</button>';
+      h+='<button onclick="adjustAutoTime(-1)" style="padding:3px 8px;border:1px solid #666;border-radius:4px;background:rgba(255,255,255,.05);color:#ccc;font-size:12px;cursor:pointer">-1m</button>';
+      h+='<span style="font-size:12px;font-weight:700;color:#f44336;min-width:40px;text-align:center">'+(window._autoTimeOffset>0?'+':'')+window._autoTimeOffset+'m</span>';
+      h+='<button onclick="adjustAutoTime(1)" style="padding:3px 8px;border:1px solid #f44336;border-radius:4px;background:rgba(244,67,54,.15);color:#f44336;font-size:12px;cursor:pointer">+1m</button>';
+      h+='<button onclick="adjustAutoTime(5)" style="padding:3px 8px;border:1px solid #f44336;border-radius:4px;background:rgba(244,67,54,.15);color:#f44336;font-size:12px;cursor:pointer">+5m</button>';
       h+='</div>';
     }
     // Desfase and movidos controls
@@ -2976,7 +2978,6 @@ function advanceGrupo(delta){
   if(tot===0) return;
   var maxCambio=tot+virgenDesfase;
   currentGrupoActual=Math.max(0,Math.min(maxCambio,currentGrupoActual+delta));
-  // Jesus grupo ALWAYS uses 21 groups and hombres saca
   var sacaH=daySaca[currentDay]||17;
   var grp=0,nombre='';
   if(currentGrupoActual>0&&currentGrupoActual<=changes.length){
@@ -2990,6 +2991,17 @@ function advanceGrupo(delta){
   saveAll();
   updateGrupoUI();
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+  // Recalculate auto-time offset so auto follows from this position
+  if(window._autoTimeRunning&&currentGrupoActual>0){
+    var h2=+$('cH').value||15;
+    var mn2=+$('cMn').value||6;
+    var dateStr2=dayDates[currentDay]||new Date().toISOString().slice(0,10);
+    var startTime2=new Date(dateStr2+'T'+String(h2).padStart(2,'0')+':00:00').getTime();
+    // What time SHOULD it be for this cambio?
+    var shouldBeTime=startTime2+(currentGrupoActual-1)*mn2*60000;
+    // Offset = difference between "should be" and actual now
+    window._autoTimeOffset=Math.round((shouldBeTime-Date.now())/60000);
+  }
 }
 
 function setGrupoManual(){
@@ -3008,6 +3020,15 @@ function setGrupoManual(){
   saveAll();
   updateGrupoUI();
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+  // Recalculate auto-time offset
+  if(window._autoTimeRunning&&num>0){
+    var h3=+$('cH').value||15;
+    var mn3=+$('cMn').value||6;
+    var dateStr3=dayDates[currentDay]||localDateStr(new Date());
+    var startTime3=new Date(dateStr3+'T'+String(h3).padStart(2,'0')+':00:00').getTime();
+    var shouldBeTime3=startTime3+(num-1)*mn3*60000;
+    window._autoTimeOffset=Math.round((shouldBeTime3-Date.now())/60000);
+  }
 }
 
 function changeDesfase(delta){
@@ -3306,64 +3327,73 @@ function startDayListeners(){
 <div id="fbTest" style="position:fixed;bottom:0;left:0;right:0;background:#000;color:#0f0;font-size:11px;padding:4px 8px;z-index:9999;font-family:monospace">⏳ Conectando...</div>
 <script>
 // Sync: fetch Firebase and UPDATE UI every 10 seconds
-// ========== GPS SIMULATION ==========
-window._simRunning=false;
-window._simTimer=null;
-window._simJesusIdx=0;
-window._simVirgenIdx=0;
-var SIM_VIRGEN_DELAY=3; // points behind Jesus
-var SIM_INTERVAL=3000; // ms between updates
-var SIM_JITTER=0.00003; // ~3m random noise
+// ========== AUTO-AVANCE POR TIEMPO ==========
+window._autoTimeRunning=false;
+window._autoTimeTimer=null;
+window._autoTimeOffset=0; // manual offset in minutes (+ = adelantar, - = atrasar)
 
-function toggleSimGPS(){
-  if(window._simRunning){
-    // Stop
-    clearInterval(window._simTimer);
-    window._simRunning=false;
-    // Clear GPS markers by writing old timestamp
-    db.ref('jesus').set({lat:0,lng:0,t:0});
-    db.ref('virgen').set({lat:0,lng:0,t:0});
+function toggleAutoTime(){
+  window._autoTimeRunning=!window._autoTimeRunning;
+  if(window._autoTimeRunning){
+    autoTimeStep();
+    window._autoTimeTimer=setInterval(autoTimeStep,5000); // check every 5 sec
   } else {
-    // Start
-    if(positions.length<2){alert('No hay recorrido cargado');return;}
-    window._simJesusIdx=currentGrupoActual||0;
-    window._simVirgenIdx=Math.max(0,window._simJesusIdx-SIM_VIRGEN_DELAY);
-    window._simRunning=true;
-    // Enable GPS Auto
-    autoAdvanceGPS=true;
-    simStep();
-    window._simTimer=setInterval(simStep,SIM_INTERVAL);
+    if(window._autoTimeTimer) clearInterval(window._autoTimeTimer);
+    window._autoTimeTimer=null;
   }
   if(typeof renderLive==='function') renderLive();
 }
 
-function simStep(){
-  if(!positions.length) return;
-  // Advance Jesus
-  if(window._simJesusIdx<positions.length){
-    var jp=positions[window._simJesusIdx];
-    var jLat=jp.lat+(Math.random()-0.5)*SIM_JITTER*2;
-    var jLng=jp.lng+(Math.random()-0.5)*SIM_JITTER*2;
-    db.ref('jesus').set({lat:jLat,lng:jLng,t:Date.now()});
-    window._simJesusIdx++;
-  } else {
-    // Jesus finished route
-    var lastJ=positions[positions.length-1];
-    db.ref('jesus').set({lat:lastJ.lat,lng:lastJ.lng,t:Date.now()});
+function autoTimeStep(){
+  if(!positions.length||!changes.length) return;
+  // If GPS is active and fresh, let GPS handle it
+  if(autoAdvanceGPS&&liveGrupoData&&liveGrupoData.cambio>0){
+    var lastGPSAge=Date.now()-(liveGrupoData.t||0);
+    if(lastGPSAge<60000) return;
   }
-  // Advance Virgen (delayed)
-  if(window._simVirgenIdx<positions.length){
-    var vp=positions[window._simVirgenIdx];
-    var vLat=vp.lat+(Math.random()-0.5)*SIM_JITTER*2;
-    var vLng=vp.lng+(Math.random()-0.5)*SIM_JITTER*2;
-    db.ref('virgen').set({lat:vLat,lng:vLng,t:Date.now()});
-    window._simVirgenIdx++;
+  var h=+$('cH').value||15;
+  var mn=+$('cMn').value||6;
+  var dateStr=dayDates[currentDay]||localDateStr(new Date());
+  var startTime=new Date(dateStr+'T'+String(h).padStart(2,'0')+':00:00').getTime();
+  var now=Date.now()+(window._autoTimeOffset*60000);
+  var elapsed=now-startTime;
+  if(elapsed<0){
+    // Procesión no ha empezado — show waiting state
+    if(currentGrupoActual===0) updateBanners();
+    return;
   }
-  // Update status
-  try{
-    var btn=document.getElementById('simGPSBtn');
-    if(btn) btn.textContent='🔴 Sim: J='+window._simJesusIdx+' V='+window._simVirgenIdx+'/'+positions.length;
-  }catch(e){}
+  var expectedCambio=Math.floor(elapsed/(mn*60000))+1;
+  expectedCambio=Math.min(expectedCambio,positions.length);
+  expectedCambio=Math.max(1,expectedCambio);
+  // Update if different (forward OR backward after manual correction)
+  if(expectedCambio!==currentGrupoActual&&expectedCambio>0){
+    currentGrupoActual=expectedCambio;
+    var sacaH=daySaca[currentDay]||16;
+    var grp=((sacaH-1+expectedCambio-1)%getHomCount())+1;
+    var nombre=(expectedCambio<=changes.length&&changes[expectedCambio-1])?changes[expectedCambio-1].n||'':'';
+    liveGrupoData={cambio:expectedCambio,grp:grp,nombre:nombre,tot:positions.length,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
+    try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+    saveAll();
+    db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+    // Move markers on map
+    if(expectedCambio<=positions.length){
+      var pt=positions[expectedCambio-1];
+      var jitter=(Math.random()-0.5)*0.00004;
+      db.ref('jesus').set({lat:pt.lat+jitter,lng:pt.lng+jitter,t:Date.now()});
+      var vIdx=Math.max(0,expectedCambio-1-virgenDesfase);
+      var vPt=positions[vIdx];
+      db.ref('virgen').set({lat:vPt.lat+jitter,lng:vPt.lng+jitter,t:Date.now()});
+    }
+    if(typeof renderLive==='function') renderLive();
+  }
+  // Always keep banners fresh
+  updateBanners();
+}
+
+function adjustAutoTime(delta){
+  window._autoTimeOffset+=delta;
+  autoTimeStep(); // apply immediately
+  if(typeof renderLive==='function') renderLive();
 }
 
 function globalSync(){
