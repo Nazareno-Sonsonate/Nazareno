@@ -543,7 +543,11 @@ function detectToday(){
   const now=new Date();
   let checkDate=new Date(now);
   if(now.getHours()<5) checkDate.setDate(checkDate.getDate()-1);
-  const today=checkDate.toISOString().slice(0,10);
+  // Use local date, not UTC
+  var y=checkDate.getFullYear();
+  var m=String(checkDate.getMonth()+1).padStart(2,'0');
+  var dd=String(checkDate.getDate()).padStart(2,'0');
+  const today=y+'-'+m+'-'+dd;
   let todayIdx=-1;
   for(var ii=0;ii<dayDates.length;ii++){
     if(dayDates[ii]===today&&todayIdx===-1) todayIdx=ii;
@@ -853,21 +857,22 @@ function getHomCount(){return isSEMode?22:21;}
 // Default sacas: [lun, mar, mie, vie] per type
 const defaultSacaH = [19, 17, 13, 16, 5]; // hombres 21 grupos
 const defaultSacaM = [19, 27, 13, 22, 6]; // mujeres 27 grupos
+function localDateStr(dt){var y=dt.getFullYear();var m=String(dt.getMonth()+1).padStart(2,'0');var d=String(dt.getDate()).padStart(2,'0');return y+'-'+m+'-'+d;}
 function changeDayDate(val){
   dayDates[currentDay]=val;
-  // Auto-fill previous days (one day before each)
+  // Auto-fill using Semana Santa intervals
+  // Gaps: Lun→Mar:1, Mar→Mie:1, Mie→Vie:2 (skip Jueves), Vie→SE:0
+  var gaps=[0,1,1,2,0]; // gap FROM previous day TO this day
   var d=new Date(val+'T12:00:00');
   for(var i=currentDay-1;i>=0;i--){
-    d.setDate(d.getDate()-1);
-    dayDates[i]=d.toISOString().slice(0,10);
+    d.setDate(d.getDate()-gaps[i+1]);
+    dayDates[i]=localDateStr(d);
   }
-  // Auto-fill next days (one day after each)
   d=new Date(val+'T12:00:00');
   for(var j=currentDay+1;j<dayDates.length;j++){
-    d.setDate(d.getDate()+1);
-    if(j===4) d.setDate(d.getDate()-1); // SE same day as Viernes
-    dayDates[j]=d.toISOString().slice(0,10);
-    if(j!==4) d=new Date(dayDates[j]+'T12:00:00');
+    d.setDate(d.getDate()+gaps[j]);
+    dayDates[j]=localDateStr(d);
+    d=new Date(dayDates[j]+'T12:00:00');
   }
   // Auto-calculate sacas: each day's saca = previous day's last group + 1
   for(var k=1;k<5;k++){
