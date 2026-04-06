@@ -105,7 +105,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
         <option value="3">Ⓥ Viernes</option>
         <option value="4" id="seOpt">⚰️ SE</option>
       </select>
-      <button class="btn" onclick="document.getElementById('alertPanel').classList.toggle('open')" style="padding:5px 8px;font-size:11px" id="btnAlert">🔔</button>
+      <button class="btn" onclick="var ap=document.getElementById('alertPanel');var ao=document.getElementById('alertOverlay');var vis=ap.style.display==='none';ap.style.display=vis?'block':'none';ao.style.display=vis?'block':'none';if(vis&&typeof populateAlertSelects==='function')populateAlertSelects()" style="padding:5px 8px;font-size:11px" id="btnAlert">🔔</button>
       <button class="btn" onclick="document.getElementById('cfgP').classList.toggle('open')" style="padding:5px 8px;font-size:11px" id="btnConfig">⚙️</button>
       <button class="btn" onclick="shareWhatsApp()" style="padding:5px 8px;font-size:11px">📤</button>
     </div>
@@ -146,12 +146,16 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
   <div class="adminOnly"><label>Hora de salida</label><div style="display:flex;gap:6px"><select id="cHour" onchange="updateStartTime()" style="flex:1;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:18px;font-family:inherit"><option value="0">12 AM</option><option value="1">1 AM</option><option value="2">2 AM</option><option value="3">3 AM</option><option value="4">4 AM</option><option value="5">5 AM</option><option value="6">6 AM</option><option value="7">7 AM</option><option value="8">8 AM</option><option value="9">9 AM</option><option value="10">10 AM</option><option value="11">11 AM</option><option value="12">12 PM</option><option value="13">1 PM</option><option value="14">2 PM</option><option value="15">3 PM</option><option value="16">4 PM</option><option value="17">5 PM</option><option value="18">6 PM</option><option value="19">7 PM</option><option value="20">8 PM</option><option value="21">9 PM</option><option value="22">10 PM</option><option value="23">11 PM</option></select><select id="cMin" onchange="updateStartTime()" style="width:70px;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:18px;font-family:inherit"><option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option></select></div></div>
   <div class="adminOnly"><label>Min por cambio</label><input type="number" id="cMn" value="6" min="1" max="20" onchange="calc()"></div>
 </div>
-<div class="cfg" id="alertPanel">
-  <div style="font-size:14px;font-weight:700;color:#ff9800;margin-bottom:8px">🔔 Alertas</div>
-  <div><label>🔔 Alerta mi cargada</label><select id="vibrateCfg" onchange="setVibrateN(+this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:4px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
-  <div><label>👁️ Vigilar grupo</label><select id="watchGrpCfg" onchange="localStorage.setItem('watchGroup',this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:4px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
-  <div style="margin-top:8px;padding:8px;background:rgba(255,152,0,.08);border-radius:6px;font-size:12px;color:#ff9800">⚠️ Las alertas vibran con la app abierta. Push notifications próximamente.</div>
+<div class="cfg" id="alertPanel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5000;width:85%;max-width:320px;background:#1a1a2e;border:2px solid #ff9800;border-radius:14px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.8)">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <span style="font-size:16px;font-weight:700;color:#ff9800">🔔 Alertas</span>
+    <button onclick="document.getElementById('alertPanel').style.display='none';document.getElementById('alertOverlay').style.display='none'" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer">✕</button>
+  </div>
+  <div style="margin-bottom:10px"><label style="font-size:14px;color:#eee;display:block;margin-bottom:4px">🔔 Alerta mi cargada</label><select id="vibrateCfg" onchange="setVibrateN(+this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
+  <div style="margin-bottom:10px"><label style="font-size:14px;color:#eee;display:block;margin-bottom:4px">👁️ Vigilar grupo</label><select id="watchGrpCfg" onchange="localStorage.setItem('watchGroup',this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
+  <div style="padding:8px;background:rgba(255,152,0,.08);border-radius:6px;font-size:12px;color:#ff9800">⚠️ Las alertas vibran con la app abierta. Push notifications próximamente.</div>
 </div>
+<div id="alertOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:4999" onclick="document.getElementById('alertPanel').style.display='none';this.style.display='none'"></div>
 
 <div class="vtabs">
   <button class="vtab" onclick="showView(0)">🗺️ MAPA</button>
@@ -174,6 +178,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
       <button onclick="addRef()" class="mapbtn">📌 Ref</button>
       <button onclick="exportPoints()" class="mapbtn">📤 Exportar</button>
       <button id="mapLockBtn" onclick="toggleMapLock()" class="mapbtn">🔓 Mapa libre</button>
+      <button id="bRouteW" onclick="toggleEditWomen()" class="mapbtn" style="font-size:10px">🔵 Ruta mujeres</button>
     </div>
     <!-- Left side: view controls -->
     <div style="position:absolute;top:8px;left:8px;z-index:1000;display:flex;flex-direction:column;gap:5px">
@@ -573,6 +578,10 @@ function detectToday(){
 }
 
 let savedPositions = [null, null, null, null, null];
+let savedPositionsW = [null, null, null, null, null];
+var positionsW = []; // women's route (only when different from men)
+var routeLineW = null;
+var editingWomen = false; // toggle in editor
 let savedRefs = [null, null, null, null, null];
 
 // ========== MARTES: 80 puntos exactos del KML ==========
@@ -623,9 +632,10 @@ function getWPs(){return currentDay===0?LUN_WP_REF:currentDay===1?MART_WP_REF:cu
 function saveAll() {
   try {
     savedPositions[currentDay] = positions.map(p=>({lat:p.lat,lng:p.lng,n:p.n||''}));
+    if(positionsW.length>0) savedPositionsW[currentDay] = positionsW.map(p=>({lat:p.lat,lng:p.lng,n:p.n||''}));
     savedRefs[currentDay] = getWPs().map(w=>({lat:w.lat,lng:w.lng,n:w.n}));
     const data = {
-      sp: savedPositions, sr: savedRefs,
+      sp: savedPositions, sr: savedRefs, spw: savedPositionsW,
       sc: daySaca, sh: dayHours, sm: daySacaManual, sd: dayDates, smj: daySacaMuj,
       cfg: {g:+$('cG').value,t:+$('cType').value,mn:+$('cMn').value,color:+($('cColor')?$('cColor').value:0)},
       cd: currentDay,
@@ -656,6 +666,7 @@ function loadSaved() {
     const d = JSON.parse(raw);
     // Load saved positions (admin uses these, shared users use KML)
     if(d.sp) savedPositions = d.sp;
+    if(d.spw) savedPositionsW = d.spw;
     // Only load refs if user added custom ones
     if(d.sr) savedRefs = d.sr;
     if(d.sc) daySaca = d.sc;
@@ -1155,7 +1166,11 @@ function loadDay(d) {
   allMarkers=[]; wpMarkers=[];
   if(routeLine){routeLine.setMap(null);routeLine=null;}
   if(routeClickLine){routeClickLine.setMap(null);routeClickLine=null;}
+  if(routeLineW){routeLineW.setMap(null);routeLineW=null;}
   $('noti').classList.remove('show');
+  editingWomen=false;
+  var bw=document.getElementById('bRouteW');
+  if(bw){bw.textContent='🔵 Ruta mujeres';bw.style.background='rgba(0,0,0,.6)';}
 
   // Admin: load saved edits if available. Shared: always KML
   const dayPts=[LUN_PTS,MART_PTS,MIER_PTS,VIER_PTS,SE_PTS];
@@ -1163,6 +1178,12 @@ function loadDay(d) {
     positions = savedPositions[d].map(p=>({lat:p.lat,lng:p.lng,n:p.n||''}));
   } else if(dayPts[d] && dayPts[d].length>0){
     positions = dayPts[d].map(p=>({lat:p.lat,lng:p.lng,n:p.n}));
+  }
+  // Load women's positions
+  if(savedPositionsW[d] && savedPositionsW[d].length>0){
+    positionsW = savedPositionsW[d].map(p=>({lat:p.lat,lng:p.lng,n:p.n||''}));
+  } else {
+    positionsW = [];
   }
   if(positions.length>0){
     drawRouteLine();
@@ -1175,6 +1196,7 @@ function loadDay(d) {
 function drawRouteLine() {
   if(routeLine) routeLine.setMap(null);
   if(routeClickLine) routeClickLine.setMap(null);
+  if(routeLineW) routeLineW.setMap(null);
   const path = positions.map(p=>({lat:p.lat,lng:p.lng}));
   routeLine = new google.maps.Polyline({
     path, map:gmap, strokeColor:'#9333ea', strokeWeight:5, strokeOpacity:.8, zIndex:1
@@ -1185,9 +1207,20 @@ function drawRouteLine() {
   });
   routeClickLine.addListener('click', function(e){
     if(isZoom()) return;
-    // e.edge = index of the segment clicked (Google Maps provides this)
-    insertAtPosition(e.latLng.lat(), e.latLng.lng(), e.edge);
+    if(editingWomen){
+      insertAtPositionW(e.latLng.lat(), e.latLng.lng(), e.edge);
+    } else {
+      insertAtPosition(e.latLng.lat(), e.latLng.lng(), e.edge);
+    }
   });
+  // Women's route (blue) - only if different from men
+  if(positionsW.length>=2){
+    var pathW=positionsW.map(function(p){return{lat:p.lat,lng:p.lng};});
+    routeLineW=new google.maps.Polyline({
+      path:pathW, map:gmap, strokeColor:'#3b82f6', strokeWeight:4, strokeOpacity:.7, zIndex:0,
+      icons:[{icon:{path:'M 0,-1 0,1',strokeOpacity:.5,scale:3},offset:'0',repeat:'12px'}]
+    });
+  }
 }
 
 var mapLocked=[false,false,false,false,false];
@@ -1297,6 +1330,58 @@ function distToSegment(p,a,b){
   t=Math.max(0,Math.min(1,t));
   const proj={lat:a.lat+t*dy, lng:a.lng+t*dx};
   return hd(p,proj);
+}
+
+// ========== WOMEN'S ROUTE ==========
+function toggleEditWomen(){
+  editingWomen=!editingWomen;
+  var btn=document.getElementById('bRouteW');
+  if(btn){
+    btn.textContent=editingWomen?'🔵 Editando mujeres':'🔵 Ruta mujeres';
+    btn.style.background=editingWomen?'rgba(59,130,246,.85)':'rgba(0,0,0,.6)';
+  }
+  if(editingWomen&&positionsW.length===0){
+    // Copy men's route as starting point
+    positionsW=positions.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
+    drawRouteLine();
+    var msg='Ruta de mujeres copiada de hombres. Editá los puntos que cambian.';
+    infoWin.setContent('<div style="text-align:center;color:#111;font-size:13px;padding:4px">'+msg+'</div>');
+    infoWin.setPosition(gmap.getCenter());
+    infoWin.open(gmap);
+    setTimeout(function(){infoWin.close();},3000);
+  }
+}
+
+function insertAtPositionW(lat,lng,edge){
+  if(!editMode||isShared) return;
+  if(positionsW.length<2) return;
+  var insertIdx;
+  if(typeof edge==='number'&&edge>=0&&edge<positionsW.length){
+    insertIdx=edge+1;
+  } else {
+    var bestSeg=0,bestD=Infinity;
+    for(var i=0;i<positionsW.length-1;i++){
+      var d=distToSegment({lat:lat,lng:lng},positionsW[i],positionsW[i+1]);
+      if(d<bestD){bestD=d;bestSeg=i;}
+    }
+    insertIdx=bestSeg+1;
+  }
+  positionsW.splice(insertIdx,0,{lat:lat,lng:lng,n:''});
+  drawRouteLine();
+  syncPositionsW();
+  infoWin.setContent('<div style="text-align:center;color:#111;font-size:13px"><b style="color:#3b82f6">🔵 Punto mujeres #'+(insertIdx+1)+'</b></div>');
+  infoWin.setPosition({lat:lat,lng:lng});
+  infoWin.open(gmap);
+  setTimeout(function(){infoWin.close();},2000);
+}
+
+function syncPositionsW(){
+  if(isShared) return;
+  db.ref('positions_w/day'+currentDay).set(
+    positionsW.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};})
+  );
+  savedPositionsW[currentDay]=positionsW.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
+  saveAll();
 }
 
 // Snap a GPS point to the nearest position on the route
@@ -3375,6 +3460,18 @@ function startDayListeners(){
       drawRouteLine();
       calc();
       if(wasEmpty&&positions.length>=2) fitBounds();
+    }
+  });
+  // Women's positions sync
+  var posRefW=db.ref('positions_w/day'+currentDay);
+  activeDayRefs.push(posRefW);
+  posRefW.on('value',function(snap){
+    var d=snap.val();
+    if(!d||!d.length){positionsW=[];return;}
+    var newPosW=d.filter(function(p){return p&&p.lat&&p.lng;}).map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
+    if(JSON.stringify(newPosW)!==JSON.stringify(positionsW)){
+      positionsW=newPosW;
+      drawRouteLine();
     }
   });
 }
