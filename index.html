@@ -861,18 +861,17 @@ function changeDayDate(val){
     d.setDate(d.getDate()-1);
     dayDates[i]=d.toISOString().slice(0,10);
   }
-  // Auto-fill next days (one day after each, skip if already has date)
+  // Auto-fill next days (one day after each)
   d=new Date(val+'T12:00:00');
   for(var j=currentDay+1;j<dayDates.length;j++){
     d.setDate(d.getDate()+1);
-    // Skip day 3→4 (Viernes Mañana and SE are same day)
-    if(j===4) d.setDate(d.getDate()-1);
+    if(j===4) d.setDate(d.getDate()-1); // SE same day as Viernes
     dayDates[j]=d.toISOString().slice(0,10);
     if(j!==4) d=new Date(dayDates[j]+'T12:00:00');
   }
   // Auto-calculate sacas: each day's saca = previous day's last group + 1
   for(var k=1;k<5;k++){
-    if(k===4) continue; // SE has its own saca
+    if(k===4) continue;
     var prevLast=getLastGroup(k-1);
     if(prevLast>0){
       var isM=(+$('cType').value===27);
@@ -882,8 +881,24 @@ function changeDayDate(val){
       else{daySaca[k]=nextSaca;}
     }
   }
+  // Auto-complete past days in Firebase
+  var now=new Date();
+  for(var p=0;p<dayDates.length;p++){
+    var dd=new Date(dayDates[p]+'T23:59:00');
+    if(dd<now&&p!==currentDay){
+      var dayPts=[LUN_PTS,MART_PTS,MIER_PTS,VIER_PTS,SE_PTS];
+      var pts=dayPts[p]||[];
+      var totP=savedPositions[p]?savedPositions[p].length:pts.length;
+      if(totP>0){
+        var sacaP=daySaca[p]||17;
+        var lastGrpP=((sacaP-1+totP-1)%getHomCount())+1;
+        var pastData={cambio:totP,grp:lastGrpP,nombre:'',tot:totP,desfase:0,movidos:0,sacaMuj:daySacaMuj[p]||22,t:Date.now()};
+        db.ref('grupoActual/day'+p).set(pastData);
+      }
+    }
+  }
   detectToday();
-  // Reset avance for this day
+  // Reset avance for current day
   currentGrupoActual=0;
   liveGrupoData={cambio:0,grp:0,nombre:'',tot:positions.length||44,desfase:0,movidos:0,sacaMuj:daySacaMuj[currentDay]||6,t:Date.now()};
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
