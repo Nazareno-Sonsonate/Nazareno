@@ -1163,10 +1163,12 @@ function loadDay(d) {
   // Clear map
   allMarkers.forEach(m=>m.setMap(null));
   wpMarkers.forEach(m=>m.setMap(null));
-  allMarkers=[]; wpMarkers=[];
+  wMarkers.forEach(function(m){m.setMap(null);});
+  allMarkers=[]; wpMarkers=[]; wMarkers=[];
   if(routeLine){routeLine.setMap(null);routeLine=null;}
   if(routeClickLine){routeClickLine.setMap(null);routeClickLine=null;}
   if(routeLineW){routeLineW.setMap(null);routeLineW=null;}
+  if(routeClickLineW){routeClickLineW.setMap(null);routeClickLineW=null;}
   $('noti').classList.remove('show');
   editingWomen=false;
   var bw=document.getElementById('bRouteW');
@@ -1195,39 +1197,55 @@ function loadDay(d) {
 // ========== MIÉRCOLES: draw polyline through exact points ==========
 var routeClickLineW=null;
 function drawRouteLine() {
-  if(routeLine) routeLine.setMap(null);
-  if(routeClickLine) routeClickLine.setMap(null);
-  if(routeLineW) routeLineW.setMap(null);
-  if(routeClickLineW) routeClickLineW.setMap(null);
   // Men's route (purple)
-  const path = positions.map(p=>({lat:p.lat,lng:p.lng}));
-  routeLine = new google.maps.Polyline({
-    path, map:gmap, strokeColor:'#9333ea', strokeWeight:editingWomen?3:5, strokeOpacity:editingWomen?.4:.8, zIndex:1
-  });
+  var path = positions.map(function(p){return{lat:p.lat,lng:p.lng};});
+  if(routeLine){
+    routeLine.setPath(path);
+    routeLine.setOptions({strokeOpacity:editingWomen?.4:.8,strokeWeight:editingWomen?3:5});
+  } else {
+    routeLine = new google.maps.Polyline({path:path, map:gmap, strokeColor:'#9333ea', strokeWeight:editingWomen?3:5, strokeOpacity:editingWomen?.4:.8, zIndex:1});
+  }
+  // Men's click line
   if(!editingWomen){
-    routeClickLine = new google.maps.Polyline({
-      path, map:gmap, strokeColor:'#9333ea', strokeWeight:25, strokeOpacity:0.01, zIndex:2
-    });
-    routeClickLine.addListener('click', function(e){
-      if(isZoom()||!editMode) return;
-      insertAtPosition(e.latLng.lat(), e.latLng.lng(), e.edge);
-    });
+    if(routeClickLine){
+      routeClickLine.setPath(path);
+      routeClickLine.setMap(gmap);
+    } else {
+      routeClickLine = new google.maps.Polyline({path:path, map:gmap, strokeColor:'#9333ea', strokeWeight:25, strokeOpacity:0.01, zIndex:2});
+      routeClickLine.addListener('click', function(e){
+        if(isZoom()||!editMode) return;
+        insertAtPosition(e.latLng.lat(), e.latLng.lng(), e.edge);
+      });
+    }
+  } else if(routeClickLine){
+    routeClickLine.setMap(null);
   }
   // Women's route (blue)
   if(positionsW.length>=2){
     var pathW=positionsW.map(function(p){return{lat:p.lat,lng:p.lng};});
-    routeLineW=new google.maps.Polyline({
-      path:pathW, map:gmap, strokeColor:'#3b82f6', strokeWeight:editingWomen?5:3, strokeOpacity:editingWomen?.9:.6, zIndex:editingWomen?3:0
-    });
-    if(editingWomen){
-      routeClickLineW=new google.maps.Polyline({
-        path:pathW, map:gmap, strokeColor:'#3b82f6', strokeWeight:25, strokeOpacity:0.01, zIndex:4
-      });
-      routeClickLineW.addListener('click', function(e){
-        if(isZoom()||!editMode) return;
-        insertAtPositionW(e.latLng.lat(), e.latLng.lng(), e.edge);
-      });
+    if(routeLineW){
+      routeLineW.setPath(pathW);
+      routeLineW.setOptions({strokeOpacity:editingWomen?.9:.6,strokeWeight:editingWomen?5:3,zIndex:editingWomen?3:0});
+    } else {
+      routeLineW=new google.maps.Polyline({path:pathW, map:gmap, strokeColor:'#3b82f6', strokeWeight:editingWomen?5:3, strokeOpacity:editingWomen?.9:.6, zIndex:editingWomen?3:0});
     }
+    if(editingWomen){
+      if(routeClickLineW){
+        routeClickLineW.setPath(pathW);
+        routeClickLineW.setMap(gmap);
+      } else {
+        routeClickLineW=new google.maps.Polyline({path:pathW, map:gmap, strokeColor:'#3b82f6', strokeWeight:25, strokeOpacity:0.01, zIndex:4});
+        routeClickLineW.addListener('click', function(e){
+          if(isZoom()||!editMode) return;
+          insertAtPositionW(e.latLng.lat(), e.latLng.lng(), e.edge);
+        });
+      }
+    } else if(routeClickLineW){
+      routeClickLineW.setMap(null);
+    }
+  } else {
+    if(routeLineW){routeLineW.setMap(null);routeLineW=null;}
+    if(routeClickLineW){routeClickLineW.setMap(null);routeClickLineW=null;}
   }
 }
 
@@ -1355,46 +1373,64 @@ function toggleEditWomen(){
   }
   // Redraw lines with correct emphasis and click targets
   drawRouteLine();
-  // Rebuild markers for the active route
-  allMarkers.forEach(function(m){m.setMap(null);});
-  allMarkers=[];
   if(editingWomen){
-    // Show women's points as blue markers
     renderMarkersW();
   } else {
-    calc(); // recalcs changes and renders men's markers
+    // Clear women's markers, show men's
+    wMarkers.forEach(function(m){m.setMap(null);});
+    wMarkers=[];
+    allMarkers.forEach(function(m){m.setMap(null);});
+    allMarkers=[];
+    calc();
   }
 }
 
+var wMarkers=[];
 function renderMarkersW(){
-  allMarkers.forEach(function(m){m.setMap(null);});
-  allMarkers=[];
-  for(var i=0;i<positionsW.length;i++){
-    var mk=new google.maps.Marker({
-      position:{lat:positionsW[i].lat,lng:positionsW[i].lng},map:gmap,
-      label:{text:String(i+1),color:'#fff',fontWeight:'bold',fontSize:'10px'},
-      icon:{path:google.maps.SymbolPath.CIRCLE,scale:10,fillColor:'#3b82f6',fillOpacity:1,strokeColor:'#fff',strokeWeight:2},
-      zIndex:3000, draggable:dragMode&&editMode, optimized:true
-    });
-    mk._wIdx=i;
-    (function(mk2,idx){
-      mk2.addListener('click',function(){
-        if(dragMode) return;
-        var del=editMode?'<br><button onclick="deletePointW('+idx+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;font-size:12px;cursor:pointer">🗑️ Eliminar</button>':'';
-        infoWin.setContent('<div style="text-align:center;color:#111;font-size:13px"><b style="color:#3b82f6">🔵 Punto #'+(idx+1)+'</b><br><span style="font-size:11px">Ruta mujeres</span>'+del+'</div>');
-        infoWin.open(gmap,mk2);
+  // Recreate only if count changed
+  if(wMarkers.length!==positionsW.length){
+    wMarkers.forEach(function(m){m.setMap(null);});
+    wMarkers=[];
+    for(var i=0;i<positionsW.length;i++){
+      var mk=new google.maps.Marker({
+        position:{lat:positionsW[i].lat,lng:positionsW[i].lng},map:gmap,
+        label:{text:String(i+1),color:'#fff',fontWeight:'bold',fontSize:'10px'},
+        icon:{path:google.maps.SymbolPath.CIRCLE,scale:dragMode?14:10,fillColor:'#3b82f6',fillOpacity:1,strokeColor:'#fff',strokeWeight:2},
+        zIndex:3000, draggable:dragMode&&editMode, optimized:true
       });
-      if(dragMode&&editMode){
+      (function(mk2,idx){
+        mk2.addListener('click',function(){
+          if(dragMode) return;
+          var del=editMode?'<br><button onclick="deletePointW('+idx+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;font-size:12px;cursor:pointer">🗑️ Eliminar</button>':'';
+          infoWin.setContent('<div style="text-align:center;color:#111;font-size:13px"><b style="color:#3b82f6">🔵 Punto #'+(idx+1)+'</b><br><span style="font-size:11px">Ruta mujeres</span>'+del+'</div>');
+          infoWin.open(gmap,mk2);
+        });
         mk2.addListener('dragend',function(){
           var p=mk2.getPosition();
           positionsW[idx]={lat:p.lat(),lng:p.lng(),n:positionsW[idx].n||''};
           drawRouteLine();
           syncPositionsW();
         });
-      }
-    })(mk,i);
-    allMarkers.push(mk);
+        mk2.addListener('drag',function(){
+          var p=mk2.getPosition();
+          positionsW[idx]={lat:p.lat(),lng:p.lng(),n:positionsW[idx].n||''};
+          // Update line in real-time during drag
+          if(routeLineW) routeLineW.setPath(positionsW.map(function(pt){return{lat:pt.lat,lng:pt.lng};}));
+        });
+      })(mk,i);
+      wMarkers.push(mk);
+    }
+  } else {
+    // Just update positions and draggable state
+    for(var j=0;j<wMarkers.length;j++){
+      wMarkers[j].setPosition({lat:positionsW[j].lat,lng:positionsW[j].lng});
+      wMarkers[j].setDraggable(dragMode&&editMode);
+      wMarkers[j].setIcon({path:google.maps.SymbolPath.CIRCLE,scale:dragMode?14:10,fillColor:'#3b82f6',fillOpacity:1,strokeColor:'#fff',strokeWeight:2});
+      wMarkers[j].setLabel({text:String(j+1),color:'#fff',fontWeight:'bold',fontSize:'10px'});
+    }
   }
+  // Hide men's markers when editing women
+  allMarkers.forEach(function(m){m.setMap(null);});
 }
 
 function deletePointW(idx){
