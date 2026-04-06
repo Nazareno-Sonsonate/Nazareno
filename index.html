@@ -176,6 +176,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
       <button id="bEditClose" onclick="toggleEdit()" class="mapbtn" style="background:rgba(76,175,80,.85)">✏️ Editando</button>
       <button id="bDrag" onclick="toggleDrag()" class="mapbtn">🔀 Mover</button>
       <button onclick="addRef()" class="mapbtn">📌 Ref</button>
+      <button onclick="undoMapEdit()" class="mapbtn">↩️ Deshacer</button>
       <button onclick="exportPoints()" class="mapbtn">📤 Exportar</button>
       <button id="mapLockBtn" onclick="toggleMapLock()" class="mapbtn">🔓 Mapa libre</button>
       <button id="bRouteW" onclick="toggleEditWomen()" class="mapbtn" style="font-size:10px">🔵 Ruta mujeres</button>
@@ -1332,6 +1333,7 @@ function insertAtPosition(lat,lng,edge) {
     insertIdx=bestSeg+1;
   }
 
+  pushMapHistory();
   positions.splice(insertIdx,0,{lat,lng,n:''});
 
   drawRouteLine();
@@ -1359,6 +1361,36 @@ function distToSegment(p,a,b){
 }
 
 // ========== WOMEN'S ROUTE ==========
+var mapHistory=[];
+var mapHistoryW=[];
+
+function pushMapHistory(){
+  mapHistory.push(positions.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};}));
+  if(mapHistory.length>20) mapHistory.shift();
+}
+function pushMapHistoryW(){
+  mapHistoryW.push(positionsW.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};}));
+  if(mapHistoryW.length>20) mapHistoryW.shift();
+}
+
+function undoMapEdit(){
+  if(editingWomen){
+    if(mapHistoryW.length===0){alert('No hay cambios para deshacer');return;}
+    positionsW=mapHistoryW.pop();
+    drawRouteLine();
+    renderMarkersW();
+    syncPositionsW();
+  } else {
+    if(mapHistory.length===0){alert('No hay cambios para deshacer');return;}
+    positions=mapHistory.pop();
+    drawRouteLine();
+    allMarkers.forEach(function(m){m.setMap(null);});
+    allMarkers=[];
+    calc();
+    if(typeof syncPositions==='function') syncPositions();
+  }
+}
+
 function toggleEditWomen(){
   editingWomen=!editingWomen;
   var btn=document.getElementById('bRouteW');
@@ -1435,6 +1467,7 @@ function renderMarkersW(){
 
 function deletePointW(idx){
   if(idx<0||idx>=positionsW.length) return;
+  pushMapHistoryW();
   positionsW.splice(idx,1);
   infoWin.close();
   drawRouteLine();
@@ -1456,6 +1489,7 @@ function insertAtPositionW(lat,lng,edge){
     }
     insertIdx=bestSeg+1;
   }
+  pushMapHistoryW();
   positionsW.splice(insertIdx,0,{lat:lat,lng:lng,n:''});
   drawRouteLine();
   renderMarkersW();
@@ -1786,6 +1820,18 @@ function renderMarkers() {
           infoWin.setContent('<div style="text-align:center;font-family:Georgia;min-width:150px;color:#111;font-size:13px"><b style="font-size:15px">Grupo #'+ch2.grp+'</b><br>Cambio #'+ch2.num+'<br><b>~'+ch2.time+'</b>'+tag+colorTag+ref+ren+del+svBtn2+'</div>');
           infoWin.open(gmap,mk2);
         });
+        mk2.addListener('drag',function(){
+          var p=mk2.getPosition();
+          positions[ci2]={lat:p.lat(),lng:p.lng(),n:positions[ci2].n||''};
+          if(routeLine) routeLine.setPath(positions.map(function(pt){return{lat:pt.lat,lng:pt.lng};}));
+          if(routeClickLine) routeClickLine.setPath(positions.map(function(pt){return{lat:pt.lat,lng:pt.lng};}));
+        });
+        mk2.addListener('dragend',function(){
+          var p=mk2.getPosition();
+          positions[ci2]={lat:p.lat(),lng:p.lng(),n:positions[ci2].n||''};
+          drawRouteLine();calc();
+          if(typeof syncPositions==='function') syncPositions();
+        });
       })(mk,ch,ci,m);
       allMarkers.push(mk);
     });
@@ -1813,6 +1859,7 @@ function renderMarkers() {
 // ========== DELETE CHANGE ==========
 function deleteChange(ci) {
   if(ci<0||ci>=positions.length) return;
+  pushMapHistory();
   const removed = positions[ci];
   positions.splice(ci, 1);
   infoWin.close();
@@ -3623,8 +3670,11 @@ function autoTimeStep(){
       var pt=positions[expectedCambio-1];
       var jitter=(Math.random()-0.5)*0.00004;
       db.ref('jesus').set({lat:pt.lat+jitter,lng:pt.lng+jitter,t:Date.now()});
+      // Virgen follows women's route if available, otherwise men's
       var vIdx=Math.max(0,expectedCambio-1-virgenDesfase);
-      var vPt=positions[vIdx];
+      var vRoute=(positionsW.length>=2)?positionsW:positions;
+      vIdx=Math.min(vIdx,vRoute.length-1);
+      var vPt=vRoute[vIdx];
       db.ref('virgen').set({lat:vPt.lat+jitter,lng:vPt.lng+jitter,t:Date.now()});
     }
     if(typeof renderLive==='function') renderLive();
