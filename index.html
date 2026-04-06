@@ -1959,16 +1959,7 @@ function renderLive(){
   h+='<div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#fff">#'+lastGrpLive+'</div><div style="font-size:8px;color:#888">Asienta</div></div>';
   h+='<div style="text-align:center"><div style="font-size:15px;font-weight:700;color:'+(done>=total?'#4CAF50':'#ff9800')+'">'+done+'/'+total+'</div><div style="font-size:8px;color:#888">Avance</div></div>';
   h+='</div>';
-  // Buscar Andas
-  const jBtn='onclick="buscarAnda(\'jesus\')" style="flex:1;padding:8px;border:1px solid #dc2626;border-radius:8px;background:rgba(220,38,38,.15);color:#f87171;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit"';
-  const vBtn='onclick="buscarAnda(\'virgen\')" style="flex:1;padding:8px;border:1px solid #3b82f6;border-radius:8px;background:rgba(59,130,246,.15);color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit"';
-  if(isSEMode){
-    h+='<div style="display:flex;gap:8px;margin-bottom:8px"><button onclick="buscarAnda(\'jesus\')" style="flex:1;padding:8px;border:1px solid #d4af37;border-radius:8px;background:rgba(212,175,55,.15);color:#d4af37;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">⚰️ Buscar Santo Entierro</button></div>';
-  } else if(isMuj){
-    h+='<div style="display:flex;gap:8px;margin-bottom:8px"><button '+vBtn+'>🔵 Buscar Virgen</button><button '+jBtn+'>🔴 Buscar Jesús</button></div>';
-  } else {
-    h+='<div style="display:flex;gap:8px;margin-bottom:8px"><button '+jBtn+'>🔴 Buscar Jesús</button><button '+vBtn+'>🔵 Buscar Virgen</button></div>';
-  }
+  h+='<div style="text-align:center;margin-bottom:4px;font-size:9px;color:#666">Tocá los banners para buscar en el mapa</div>';
   h+='<div style="text-align:center;margin-bottom:6px;font-size:10px;color:#e08080">⚠️ Las horas son aproximadas y se ajustan en tiempo real</div>';
 
   // Procession complete only when ALL cambios are done or past day
@@ -3096,8 +3087,8 @@ function updateBanners(){
     var vLabel=isSEMode?'Virgen Dolorosa':'María Santísima';
     var jSize=isMuj?'14px':'22px';var jPad=isMuj?'6px':'10px';
     var vSize=isMuj?'22px':'14px';var vPad=isMuj?'10px':'6px';
-    var jHtml='<div id="grupoActualBanner" style="text-align:center;padding:'+jPad+';margin-bottom:6px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div id="grupoActualLabel1" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa">'+jLabel1+'</div><div id="grupoActualLabel2" style="font-size:'+(isMuj?'9px':'11px')+';color:#ccc">Saca</div><div id="grupoActualText" style="font-size:'+jSize+';font-weight:700;color:#c084fc"></div><div id="grupoActualProgress" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa"></div></div>';
-    var vHtml='<div id="grupoVirgenBanner" style="text-align:center;padding:'+vPad+';margin-bottom:6px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div style="font-size:'+(isMuj?'11px':'9px')+';color:#93c5fd">'+vLabel+'</div><div style="font-size:'+(isMuj?'11px':'9px')+';color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:'+vSize+';font-weight:700;color:#93c5fd"></div><div id="grupoVirgenProgress" style="font-size:'+(isMuj?'10px':'8px')+';color:#ff9800"></div></div>';
+    var jHtml='<div id="grupoActualBanner" onclick="buscarAnda(\'jesus\')" style="cursor:pointer;text-align:center;padding:'+jPad+';margin-bottom:6px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div id="grupoActualLabel1" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa">'+jLabel1+'</div><div id="grupoActualLabel2" style="font-size:'+(isMuj?'9px':'11px')+';color:#ccc">Saca</div><div id="grupoActualText" style="font-size:'+jSize+';font-weight:700;color:#c084fc"></div><div id="grupoActualProgress" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa"></div></div>';
+    var vHtml='<div id="grupoVirgenBanner" onclick="buscarAnda(\'virgen\')" style="cursor:pointer;text-align:center;padding:'+vPad+';margin-bottom:6px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div id="grupoVirgenLabel1" style="font-size:'+(isMuj?'11px':'9px')+';color:#93c5fd">'+vLabel+'</div><div id="grupoVirgenLabel2" style="font-size:'+(isMuj?'11px':'9px')+';color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:'+vSize+';font-weight:700;color:#93c5fd"></div><div id="grupoVirgenProgress" style="font-size:'+(isMuj?'10px':'8px')+';color:#ff9800"></div></div>';
     container.innerHTML=isMuj?(vHtml+jHtml):(jHtml+vHtml);
   }
   
@@ -3130,6 +3121,7 @@ function updateBanners(){
   var vEl=document.getElementById('grupoVirgenText');
   var vProg2=document.getElementById('grupoVirgenProgress');
   var vBanner=document.getElementById('grupoVirgenBanner');
+  var vLabel2=document.getElementById('grupoVirgenLabel2');
   if(vEl){
     if(procDone){
       var sacaM2=liveGrupoData?liveGrupoData.sacaMuj||daySacaMuj[currentDay]:daySacaMuj[currentDay]||22;
@@ -3137,6 +3129,7 @@ function updateBanners(){
       var lastM2=(((sacaM2-1+Math.min(cambio,tot)-1-mov2)%getMujCount())+getMujCount())%getMujCount()+1;
       vEl.textContent='✅ Asentó Grupo #'+lastM2;
       if(vProg2) vProg2.textContent=(currentDay>=3)?'Hasta el próximo año':'Procesión completada';
+      if(vLabel2) vLabel2.textContent=(currentDay>=3)?'Hasta el próximo año':'Asentada en el Templo';
       if(vBanner){vBanner.style.background='rgba(76,175,80,.12)';vBanner.style.borderColor='rgba(76,175,80,.4)';}
     } else if(cambio>0&&liveGrupoData){
       var desf=liveGrupoData.desfase||0;
@@ -3148,21 +3141,26 @@ function updateBanners(){
         var lastM=(((sacaM-1+tot-1-mov)%getMujCount())+getMujCount())%getMujCount()+1;
         vEl.textContent='✅ Asentó Grupo #'+lastM;
         if(vProg2) vProg2.textContent=(currentDay>=3)?'Hasta el próximo año':'Procesión completada';
+        if(vLabel2) vLabel2.textContent=(currentDay>=3)?'Hasta el próximo año':'Asentada en el Templo';
         if(vBanner){vBanner.style.background='rgba(76,175,80,.12)';vBanner.style.borderColor='rgba(76,175,80,.4)';}
       } else {
         var grpM=(((sacaM-1+vCambioGrp-1)%getMujCount())+getMujCount())%getMujCount()+1;
         vEl.textContent='Grupo #'+grpM;
         if(vProg2) vProg2.textContent='⚠️ Estimado';
+        if(vLabel2) vLabel2.textContent='Aproximadamente carga';
         if(vBanner){vBanner.style.background='rgba(59,130,246,.08)';vBanner.style.borderColor='rgba(59,130,246,.3)';}
       }
     } else {
       vEl.textContent='Grupo #'+(daySacaMuj[currentDay]||22);
       if(vProg2) vProg2.textContent='Esperando inicio';
+      if(vLabel2) vLabel2.textContent='Saca';
       if(vBanner){vBanner.style.background='rgba(59,130,246,.08)';vBanner.style.borderColor='rgba(59,130,246,.3)';}
     }
   }
   var jLabel1El=document.getElementById('grupoActualLabel1');
   if(jLabel1El) jLabel1El.textContent=isSEMode?'Santo Entierro de Cristo':'Venerada Imagen de Jesús Nazareno';
+  var vLabel1El=document.getElementById('grupoVirgenLabel1');
+  if(vLabel1El) vLabel1El.textContent=isSEMode?'Virgen Dolorosa':'María Santísima';
 }
 // ========== STREET VIEW ==========
 var streetViewPano=null;
