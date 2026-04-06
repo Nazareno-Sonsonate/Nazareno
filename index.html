@@ -89,9 +89,24 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
 </head>
 <body>
 
-<div class="hdr">
-  <h1>✝ SEMANA SANTA · SONSONATE</h1>
-  <div class="s" id="hSub" style="font-size:10px"></div>
+<div class="hdr" style="padding:8px 12px">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <h1 id="hTitle" style="font-size:16px;margin:0">✝️ Lunes Santo</h1>
+      <div class="s" id="hSub" style="font-size:10px;margin-top:2px"></div>
+    </div>
+    <div style="display:flex;gap:4px;align-items:center">
+      <select id="daySelector" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:5px 8px;border-radius:6px;font-size:11px;font-weight:700;font-family:inherit">
+        <option value="0">Ⓛ Lunes</option>
+        <option value="1">Ⓜ Martes</option>
+        <option value="2">Ⓜ Miércoles</option>
+        <option value="3">Ⓥ Viernes</option>
+        <option value="4" id="seOpt">⚰️ SE</option>
+      </select>
+      <button class="btn" onclick="document.getElementById('cfgP').classList.toggle('open')" style="padding:5px 8px;font-size:11px" id="btnConfig">⚙️</button>
+      <button class="btn" onclick="shareWhatsApp()" style="padding:5px 8px;font-size:11px">📤</button>
+    </div>
+  </div>
   <div id="onlineCounter" style="display:none;font-size:10px;color:#4CAF50;margin-top:2px"></div>
 </div>
 
@@ -118,27 +133,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
   <span onclick="event.stopPropagation();dismissInstall()" style="position:absolute;right:10px;top:8px;color:#666;font-size:16px;cursor:pointer">✕</span>
 </div>
 
-<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px;background:rgba(0,0,0,.3)">
-  <select id="daySelector" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:6px 10px;border-radius:6px;font-size:12px;font-weight:700;font-family:inherit">
-    <option value="0">Ⓛ Lunes</option>
-    <option value="1">Ⓜ Martes</option>
-    <option value="2">Ⓜ Miércoles</option>
-    <option value="3">Ⓥ Viernes</option>
-    <option value="4" id="seOpt">⚰️ V. Santo SE</option>
-  </select>
-  <div style="display:flex;gap:4px">
-    <button class="btn" onclick="document.getElementById('cfgP').classList.toggle('open')" style="padding:5px 8px;font-size:11px" id="btnConfig">⚙️</button>
-    <button class="btn" onclick="shareWhatsApp()" style="padding:5px 8px;font-size:11px">📤</button>
-    <button class="btn" onclick="resetData()" style="border-color:#914444;color:#e08080;padding:5px 8px;font-size:11px">🗑️</button>
-  </div>
-</div>
-<div class="days" style="display:none">
-  <button class="day a" onclick="switchDay(0)"><span class="di">Ⓛ</span>LUN</button>
-  <button class="day" onclick="switchDay(1)"><span class="di">Ⓜ</span>MAR</button>
-  <button class="day" onclick="switchDay(2)"><span class="di">Ⓜ</span>MIÉ</button>
-  <button class="day" onclick="switchDay(3)"><span class="di">Ⓥ</span>VIE</button>
-  <button class="day" onclick="switchDay(4)" id="seTab"><span class="di">⚰️</span>SE</button>
-</div>
+
 <div class="cfg" id="cfgP">
   <div><label>¿Cargadores de?</label><select id="cType" onchange="onTypeChange()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="21">Hombres (21 grupos)</option><option value="27">Mujeres (27 grupos)</option></select></div>
   <div><label>¿En qué grupo vas?</label><input type="number" id="cG" value="5" min="1" max="50" onchange="calc()"></div>
@@ -742,8 +737,8 @@ function readParams(){
   }
   // Apply SE theme if day 4
   if(isSEMode){
-    document.querySelector('.hdr h1').textContent='⚰️ SANTO ENTIERRO DE CRISTO';
-    document.querySelector('.hdr h1').style.color='#d4af37';
+    $('hTitle').textContent='⚰️ SANTO ENTIERRO DE CRISTO';
+    $('hTitle').style.color='#d4af37';
     var seStyleEl=document.getElementById('seThemeStyle');
     if(!seStyleEl){
       seStyleEl=document.createElement('style');seStyleEl.id='seThemeStyle';
@@ -1009,8 +1004,8 @@ function initMap() {
   // Apply SE theme if needed
   if(currentDay===4){
     isSEMode=true;
-    document.querySelector('.hdr h1').textContent='⚰️ SANTO ENTIERRO DE CRISTO';
-    document.querySelector('.hdr h1').style.color='#d4af37';
+    $('hTitle').textContent='⚰️ SANTO ENTIERRO DE CRISTO';
+    $('hTitle').style.color='#d4af37';
     var seStyleInit=document.getElementById('seThemeStyle');
     if(!seStyleInit){
       seStyleInit=document.createElement('style');seStyleInit.id='seThemeStyle';
@@ -1035,6 +1030,23 @@ function initMap() {
   if(typeof showUrnaButton==='function') showUrnaButton();
   if(typeof showAdminTools==='function') showAdminTools();
   if(typeof startDayListeners==='function') startDayListeners();
+  // Editor: push dates to Firebase so shared users can detect today
+  if(!isShared){
+    setTimeout(function(){
+      db.ref('config/dates').set(dayDates);
+      syncConfig();
+    },2000);
+  }
+  // Shared: also listen for dates globally and auto-switch to today
+  if(isShared){
+    db.ref('config/dates').on('value',function(snap){
+      var dd=snap.val();
+      if(!dd||!Array.isArray(dd)) return;
+      for(var ddi=0;ddi<dd.length;ddi++){if(dd[ddi]) dayDates[ddi]=dd[ddi];}
+      var todayD=detectToday();
+      if(todayD>=0&&todayD!==currentDay) switchDay(todayD);
+    });
+  }
   // Ensure grupo actual displays after everything loads
   if(typeof updateGrupoUI==='function') setTimeout(updateGrupoUI,500);
 }
@@ -1079,8 +1091,8 @@ function switchDay(d) {
   // Apply/remove SE theme
   var seStyleEl=document.getElementById('seThemeStyle');
   if(isSEMode){
-    document.querySelector('.hdr h1').textContent='⚰️ SANTO ENTIERRO DE CRISTO';
-    document.querySelector('.hdr h1').style.color='#d4af37';
+    $('hTitle').textContent='⚰️ SANTO ENTIERRO DE CRISTO';
+    $('hTitle').style.color='#d4af37';
     if(!seStyleEl){
       seStyleEl=document.createElement('style');seStyleEl.id='seThemeStyle';
       seStyleEl.textContent='.vtab.a{color:#d4af37!important;border-bottom-color:#d4af37!important}.btn{border-color:#8B7355!important;color:#d4af37!important;background:rgba(212,175,55,.12)!important}#grupoActualBanner{background:rgba(212,175,55,.12)!important;border-color:rgba(212,175,55,.3)!important}#grupoActualText{color:#d4af37!important}.live-next .ln-num{color:#d4af37!important}.live-next{border-color:#d4af37!important;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.05))!important}.live-progress-bar{background:linear-gradient(90deg,#d4af37,#8B7355)!important}.bar{background:rgba(212,175,55,.08)!important}.bar .v{color:#d4af37!important}.cfg.open{border-color:rgba(212,175,55,.3)!important}.live-btn-done{background:#8B7355!important}.live-btn-undo{border-color:#8B7355!important;color:#d4af37!important}.hdr{border-bottom-color:rgba(212,175,55,.3)!important}.vtabs{border-bottom-color:rgba(212,175,55,.15)!important}';
@@ -1093,8 +1105,6 @@ function switchDay(d) {
       if(opts[oi].value==='27') opts[oi].textContent='Mujeres (23 grupos)';
     }
   } else {
-    document.querySelector('.hdr h1').textContent='✝️ SEMANA SANTA SONSONATE';
-    document.querySelector('.hdr h1').style.color='#c084fc';
     if(seStyleEl) seStyleEl.remove();
     var opts2=$('cType').options;
     for(var oi2=0;oi2<opts2.length;oi2++){
@@ -1428,7 +1438,11 @@ function calc() {
 
   let extra=currentDay===3?' · ✝️ Cortesías ~11:30-12:00':'';
   const dateStr=dayDates[currentDay]?dayDates[currentDay].slice(5).replace('-','/'):'';
-  $('hSub').textContent=dayNames[currentDay]+' '+dateStr+' · Grupo #'+c.g+' · Saca #'+c.s+' → Asienta #'+lastGrp+extra;
+  var titleIcon=isSEMode?'⚰️':'✝️';
+  var titleText=isSEMode?'Santo Entierro de Cristo':dayNames[currentDay];
+  $('hTitle').textContent=titleIcon+' '+titleText;
+  $('hTitle').style.color=isSEMode?'#d4af37':'#c084fc';
+  $('hSub').textContent=dateStr+' · Grupo #'+c.g+' · Saca #'+c.s+' → Asienta #'+lastGrp+extra;
   const isMuj=c.t===27;
 
   renderTable();
@@ -1899,7 +1913,7 @@ function renderLive(){
   
   // For past days with no carries, show banners only
   if(isPastDay&&changes.length>0&&!myCarries.length){
-    $('livePanel').innerHTML='<div style="text-align:center;padding:8px"><span style="font-size:13px;color:#c084fc;font-weight:700">'+dayNames[currentDay].toUpperCase()+'</span></div>';
+    $('livePanel').innerHTML='';
     return;
   }
 
@@ -1932,19 +1946,18 @@ function renderLive(){
 
   let h='';
 
-  // Header with stats
+  // Compact stats row
   const lastGrpLive=changes.length>0?changes[changes.length-1].grp:'?';
   const cc=cfg();const isMuj=cc.t===27;
   const coloresH=['🟡','🔴','🔵'];
-  const grupoInfo='Grupo #'+cc.g+(isMuj?' '+coloresH[cc.color]:'');
+  const grupoInfo='#'+cc.g+(isMuj?' '+coloresH[cc.color]:'');
   const cargaInfo=isMuj?total+'×2':total;
   const cargaLabel=isMuj?'Cambios':'Cargadas';
-  h+='<div style="text-align:center;margin-bottom:8px"><span style="font-size:20px">✝️</span><br><span style="font-size:13px;color:#c084fc;font-weight:700">'+dayNames[currentDay].toUpperCase()+'</span></div>';
-  // Stats row
-  h+='<div style="display:flex;justify-content:space-around;margin-bottom:8px;padding:8px;background:rgba(124,58,237,.08);border-radius:10px">';
-  h+='<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#c084fc">'+grupoInfo+'</div><div style="font-size:9px;color:#aaa">Tu grupo</div></div>';
-  h+='<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#fff">'+cargaInfo+'</div><div style="font-size:9px;color:#aaa">'+cargaLabel+'</div></div>';
-  h+='<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#fff">#'+lastGrpLive+'</div><div style="font-size:9px;color:#aaa">Asienta</div></div>';
+  h+='<div style="display:flex;justify-content:space-around;margin-bottom:6px;padding:6px;background:rgba(124,58,237,.06);border-radius:8px">';
+  h+='<div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#c084fc">'+grupoInfo+'</div><div style="font-size:8px;color:#888">Mi grupo</div></div>';
+  h+='<div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#fff">'+cargaInfo+'</div><div style="font-size:8px;color:#888">'+cargaLabel+'</div></div>';
+  h+='<div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#fff">#'+lastGrpLive+'</div><div style="font-size:8px;color:#888">Asienta</div></div>';
+  h+='<div style="text-align:center"><div style="font-size:15px;font-weight:700;color:'+(done>=total?'#4CAF50':'#ff9800')+'">'+done+'/'+total+'</div><div style="font-size:8px;color:#888">Avance</div></div>';
   h+='</div>';
   // Buscar Andas
   const jBtn='onclick="buscarAnda(\'jesus\')" style="flex:1;padding:8px;border:1px solid #dc2626;border-radius:8px;background:rgba(220,38,38,.15);color:#f87171;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit"';
@@ -3334,7 +3347,14 @@ function startDayListeners(){
     for(var di=0;di<d.length;di++){
       if(d[di]&&dayDates[di]!==d[di]){dayDates[di]=d[di];changed2=true;}
     }
-    if(changed2){detectToday();if($('cDate'))$('cDate').value=dayDates[currentDay];}
+    if(changed2){
+      var newToday=detectToday();
+      if($('cDate'))$('cDate').value=dayDates[currentDay];
+      // Shared users: auto-switch to today's day
+      if(isShared&&newToday>=0&&newToday!==currentDay){
+        switchDay(newToday);
+      }
+    }
   });
   // Positions sync - ALL users listen
   var posRef=db.ref('positions/day'+currentDay);
