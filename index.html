@@ -58,31 +58,31 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
 .ftr{padding:6px 8px;margin:4px 8px 10px;background:rgba(255,255,255,.04);border-radius:6px;font-size:11px;color:#aaa;line-height:1.4}
 /* EN VIVO */
 .live-card{background:rgba(0,0,0,.3);border:1px solid rgba(178,102,255,.2);border-radius:10px;padding:12px;margin-bottom:8px;text-align:center}
-.live-next{background:linear-gradient(135deg,rgba(178,102,255,.08),rgba(178,102,255,.03));border:2px solid #c084fc;border-radius:12px;padding:14px;margin-bottom:8px;text-align:center}
-.live-next .ln-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px}
-.live-next .ln-num{font-size:38px;font-weight:700;color:#c084fc;line-height:1.1}
-.live-next .ln-ref{font-size:13px;color:#eee;margin-top:4px}
-.live-next .ln-time{font-size:15px;color:#c084fc;margin-top:4px}
-.live-progress{background:rgba(255,255,255,.06);border-radius:10px;height:18px;overflow:hidden;margin:6px 0}
-.live-progress-bar{height:100%;background:linear-gradient(90deg,#c084fc,#7c3aed);border-radius:10px;transition:width .5s;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;min-width:28px}
-.live-btn{width:100%;padding:10px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px}
+.live-next{background:linear-gradient(135deg,rgba(178,102,255,.08),rgba(178,102,255,.03));border:2px solid #c084fc;border-radius:12px;padding:12px;margin-bottom:6px;text-align:center}
+.live-next .ln-label{font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px}
+.live-next .ln-num{font-size:42px;font-weight:700;color:#c084fc;line-height:1.1}
+.live-next .ln-ref{font-size:15px;color:#eee;margin-top:4px}
+.live-next .ln-time{font-size:17px;color:#c084fc;margin-top:4px;font-weight:700}
+.live-progress{background:rgba(255,255,255,.06);border-radius:10px;height:20px;overflow:hidden;margin:6px 0}
+.live-progress-bar{height:100%;background:linear-gradient(90deg,#c084fc,#7c3aed);border-radius:10px;transition:width .5s;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;min-width:28px}
+.live-btn{width:100%;padding:10px;border:none;border-radius:8px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:4px}
 .live-btn-done{background:#4CAF50;color:#fff}
 .live-btn-done:active{background:#388E3C}
-.live-btn-undo{background:none;border:1px solid #555;color:#888;font-size:11px;padding:7px}
+.live-btn-undo{background:none;border:1px solid #555;color:#888;font-size:12px;padding:7px}
 .live-carry{display:flex;align-items:center;padding:8px 10px;border-radius:8px;margin-bottom:3px;border:1px solid rgba(255,255,255,.06);gap:8px}
-.live-carry.done{background:rgba(76,175,80,.05);border-color:rgba(76,175,80,.15);padding:5px 10px}
-.live-carry.pending{background:rgba(255,255,255,.02);padding:5px 10px}
+.live-carry.done{background:rgba(76,175,80,.05);border-color:rgba(76,175,80,.15);padding:6px 10px}
+.live-carry.pending{background:rgba(255,255,255,.02);padding:6px 10px}
 .live-carry.current{background:rgba(178,102,255,.1);border-color:#c084fc;border-width:2px;padding:10px}
-.live-carry .lc-num{font-size:15px;font-weight:700;width:26px;text-align:center;flex-shrink:0}
+.live-carry .lc-num{font-size:18px;font-weight:700;width:28px;text-align:center;flex-shrink:0}
 .live-carry .lc-info{flex:1;min-width:0}
-.live-carry .lc-ref{font-size:12px;font-weight:600;color:#ddd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.live-carry .lc-sub{font-size:9px;color:#777}
-.live-carry .lc-time{font-size:12px;font-weight:700;flex-shrink:0}
-.live-carry.done .lc-num{color:#4CAF50;font-size:13px}
+.live-carry .lc-ref{font-size:14px;font-weight:600;color:#eee}
+.live-carry .lc-sub{font-size:11px;color:#888}
+.live-carry .lc-time{font-size:14px;font-weight:700;flex-shrink:0}
+.live-carry.done .lc-num{color:#4CAF50;font-size:15px}
 .live-carry.current .lc-num{color:#c084fc}
 .live-carry.pending .lc-num{color:#555}
-.live-carry.done .lc-ref{font-size:11px;color:#888}
-.live-carry.done .lc-time{font-size:10px;color:#4CAF50}
+.live-carry.done .lc-ref{font-size:13px;color:#999}
+.live-carry.done .lc-time{font-size:12px;color:#4CAF50}
 .rfloat{display:none;position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:2000;background:#d4af37;color:#1a0a02;font-weight:700;font-size:12px;padding:9px 18px;border-radius:22px;box-shadow:0 3px 12px rgba(212,175,55,.5);cursor:pointer;border:none}
 .rfloat.show{display:block}
 @keyframes flashPulse{0%,100%{opacity:1}50%{opacity:0.3}}
@@ -95,7 +95,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
   <div style="display:flex;align-items:center;justify-content:space-between">
     <div>
       <h1 id="hTitle" style="font-size:16px;margin:0">✝️ Lunes Santo</h1>
-      <div class="s" id="hSub" style="font-size:10px;margin-top:2px"></div>
+      <div class="s" id="hSub" style="font-size:11px;margin-top:2px;color:#aaa"></div>
     </div>
     <div style="display:flex;gap:4px;align-items:center">
       <select id="daySelector" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:5px 8px;border-radius:6px;font-size:11px;font-weight:700;font-family:inherit">
@@ -105,6 +105,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
         <option value="3">Ⓥ Viernes</option>
         <option value="4" id="seOpt">⚰️ SE</option>
       </select>
+      <button class="btn" onclick="document.getElementById('alertPanel').classList.toggle('open')" style="padding:5px 8px;font-size:11px" id="btnAlert">🔔</button>
       <button class="btn" onclick="document.getElementById('cfgP').classList.toggle('open')" style="padding:5px 8px;font-size:11px" id="btnConfig">⚙️</button>
       <button class="btn" onclick="shareWhatsApp()" style="padding:5px 8px;font-size:11px">📤</button>
     </div>
@@ -140,12 +141,16 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
   <div><label>¿Cargadores de?</label><select id="cType" onchange="onTypeChange()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="21">Hombres (21 grupos)</option><option value="27">Mujeres (27 grupos)</option></select></div>
   <div><label>¿En qué grupo vas?</label><input type="number" id="cG" value="5" min="1" max="50" onchange="calc()"></div>
   <div id="colorDiv" style="display:none"><label>¿Tu color?</label><select id="cColor" onchange="calc()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="0">🟡 Amarillo</option><option value="1">🔴 Rojo</option><option value="2">🔵 Azul</option></select></div>
-  <div><label>🔔 Alerta mi cargada</label><select id="vibrateCfg" onchange="setVibrateN(+this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
-  <div><label>👁️ Vigilar grupo</label><select id="watchGrpCfg" onchange="localStorage.setItem('watchGroup',this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
   <div class="adminOnly"><label>¿Qué grupo saca?</label><input type="number" id="cS" value="19" min="1" max="50" onchange="daySacaManual[currentDay]=true;if(+$('cType').value===27){daySacaMuj[currentDay]=+this.value;if(liveGrupoData){liveGrupoData.sacaMuj=+this.value;db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}else{daySaca[currentDay]=+this.value;if(liveGrupoData&&liveGrupoData.cambio>0){liveGrupoData.grp=((+this.value-1+liveGrupoData.cambio-1)%getHomCount())+1;saveAll();db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}calc()"></div>
   <div class="adminOnly"><label>Fecha procesión</label><input type="date" id="cDate" onchange="changeDayDate(this.value)"></div>
   <div class="adminOnly"><label>Hora de salida</label><div style="display:flex;gap:6px"><select id="cHour" onchange="updateStartTime()" style="flex:1;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:18px;font-family:inherit"><option value="0">12 AM</option><option value="1">1 AM</option><option value="2">2 AM</option><option value="3">3 AM</option><option value="4">4 AM</option><option value="5">5 AM</option><option value="6">6 AM</option><option value="7">7 AM</option><option value="8">8 AM</option><option value="9">9 AM</option><option value="10">10 AM</option><option value="11">11 AM</option><option value="12">12 PM</option><option value="13">1 PM</option><option value="14">2 PM</option><option value="15">3 PM</option><option value="16">4 PM</option><option value="17">5 PM</option><option value="18">6 PM</option><option value="19">7 PM</option><option value="20">8 PM</option><option value="21">9 PM</option><option value="22">10 PM</option><option value="23">11 PM</option></select><select id="cMin" onchange="updateStartTime()" style="width:70px;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:18px;font-family:inherit"><option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option></select></div></div>
   <div class="adminOnly"><label>Min por cambio</label><input type="number" id="cMn" value="6" min="1" max="20" onchange="calc()"></div>
+</div>
+<div class="cfg" id="alertPanel">
+  <div style="font-size:14px;font-weight:700;color:#ff9800;margin-bottom:8px">🔔 Alertas</div>
+  <div><label>🔔 Alerta mi cargada</label><select id="vibrateCfg" onchange="setVibrateN(+this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:4px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
+  <div><label>👁️ Vigilar grupo</label><select id="watchGrpCfg" onchange="localStorage.setItem('watchGroup',this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:4px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
+  <div style="margin-top:8px;padding:8px;background:rgba(255,152,0,.08);border-radius:6px;font-size:12px;color:#ff9800">⚠️ Las alertas vibran con la app abierta. Push notifications próximamente.</div>
 </div>
 
 <div class="vtabs">
@@ -1956,10 +1961,10 @@ function renderLive(){
   const cargaInfo=isMuj?total+'×2':total;
   const cargaLabel=isMuj?'Cambios':'Cargadas';
   h+='<div style="display:flex;justify-content:space-around;margin-bottom:6px;padding:6px;background:rgba(124,58,237,.06);border-radius:8px">';
-  h+='<div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#c084fc">'+grupoInfo+'</div><div style="font-size:8px;color:#888">Mi grupo</div></div>';
-  h+='<div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#fff">'+cargaInfo+'</div><div style="font-size:8px;color:#888">'+cargaLabel+'</div></div>';
-  h+='<div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#fff">#'+lastGrpLive+'</div><div style="font-size:8px;color:#888">Asienta</div></div>';
-  h+='<div style="text-align:center"><div style="font-size:15px;font-weight:700;color:'+(done>=total?'#4CAF50':'#ff9800')+'">'+done+'/'+total+'</div><div style="font-size:8px;color:#888">Avance</div></div>';
+  h+='<div style="text-align:center"><div style="font-size:17px;font-weight:700;color:#c084fc">'+grupoInfo+'</div><div style="font-size:10px;color:#888">Mi grupo</div></div>';
+  h+='<div style="text-align:center"><div style="font-size:17px;font-weight:700;color:#fff">'+cargaInfo+'</div><div style="font-size:10px;color:#888">'+cargaLabel+'</div></div>';
+  h+='<div style="text-align:center"><div style="font-size:17px;font-weight:700;color:#fff">#'+lastGrpLive+'</div><div style="font-size:10px;color:#888">Asienta</div></div>';
+  h+='<div style="text-align:center"><div style="font-size:17px;font-weight:700;color:'+(done>=total?'#4CAF50':'#ff9800')+'">'+done+'/'+total+'</div><div style="font-size:10px;color:#888">Avance</div></div>';
   h+='</div>';
   h+='<div style="text-align:center;margin-bottom:4px;font-size:9px;color:#666">Tocá los banners para buscar en el mapa</div>';
   h+='<div style="text-align:center;margin-bottom:6px;font-size:10px;color:#e08080">⚠️ Las horas son aproximadas y se ajustan en tiempo real</div>';
@@ -2888,6 +2893,7 @@ function showAdminTools(){
   if(!isShared){
     document.getElementById('broadcastInput').style.display='block';
     document.getElementById('onlineCounter').style.display='block';
+    var es=document.getElementById('editorStatus');if(es) es.style.display='block';
     db.ref('online').on('value',function(snap){
       var d=snap.val();
       if(!d){document.getElementById('onlineCounter').textContent='👥 0 conectados';return;}
@@ -3267,7 +3273,7 @@ function startDayListeners(){
             var d=JSON.parse(xhr.responseText);
             // Show sync status
             var now=new Date();
-            var ss=document.getElementById('syncStatus');
+            var ss=document.getElementById('editorStatus');
             var syncMsg='🟢 '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+' · FB:'+d.cambio+' Local:'+currentGrupoActual;
             window._lastSync=syncMsg;
             if(ss) ss.textContent=syncMsg;
@@ -3281,25 +3287,25 @@ function startDayListeners(){
               try{if(typeof renderLive==='function') renderLive();}catch(e9){}
             }
           }catch(e){
-            var ss2=document.getElementById('syncStatus');
+            var ss2=document.getElementById('editorStatus');
             if(ss2) ss2.textContent='❌ Error: '+e.message;
           }
         } else {
-          var ss3=document.getElementById('syncStatus');
+          var ss3=document.getElementById('editorStatus');
           if(ss3) ss3.textContent='❌ HTTP '+xhr.status;
         }
       };
       xhr.onerror=function(){
-        var ss4=document.getElementById('syncStatus');
+        var ss4=document.getElementById('editorStatus');
         if(ss4) ss4.textContent='❌ Sin conexión a Firebase';
       };
       xhr.ontimeout=function(){
-        var ss5=document.getElementById('syncStatus');
+        var ss5=document.getElementById('editorStatus');
         if(ss5) ss5.textContent='❌ Timeout';
       };
       xhr.send();
     }catch(e){
-      var ss6=document.getElementById('syncStatus');
+      var ss6=document.getElementById('editorStatus');
       if(ss6) ss6.textContent='❌ XHR Error: '+e.message;
     }
   }
@@ -3458,7 +3464,7 @@ function globalSync(){
     var x=new XMLHttpRequest();
     x.open('GET','https://procesion-sonsonate-default-rtdb.firebaseio.com/grupoActual/day'+day+'.json?_='+Date.now(),true);
     x.onload=function(){
-      var el=document.getElementById('fbTest');
+      var el=document.getElementById('editorStatus');
       if(x.status===200){
         try{
           var d=JSON.parse(x.responseText);
@@ -3482,7 +3488,7 @@ function globalSync(){
         }catch(e){if(el) el.textContent='❌ Parse: '+e.message;}
       } else {if(el) el.textContent='❌ HTTP '+x.status;}
     };
-    x.onerror=function(){var el=document.getElementById('fbTest');if(el) el.textContent='❌ Sin conexión';};
+    x.onerror=function(){var el=document.getElementById('editorStatus');if(el) el.textContent='❌ Sin conexión';};
     x.send();
   }catch(e){}
 }
@@ -3491,5 +3497,6 @@ setTimeout(globalSync,3000);
 setInterval(globalSync,10000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)globalSync();});
 </script>
+<div id="editorStatus" class="adminOnly" style="position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,.85);color:#0f0;font-size:10px;padding:3px 8px;z-index:9999;font-family:monospace;display:none"></div>
 </body>
 </html>
