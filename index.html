@@ -941,6 +941,7 @@ function changeDayDate(val){
   renderLive();
   updateBanners();
   saveAll();
+  syncConfig();
 }
 function onTypeChange(){
   $('colorDiv').style.display=(+$('cType').value===27)?'block':'none';
@@ -1208,6 +1209,7 @@ function toggleMapLock(){
     btn.style.background=mapLocked[currentDay]?'rgba(76,175,80,.85)':'rgba(0,0,0,.6)';
   }
   try{localStorage.setItem('mapLocks',JSON.stringify({l:mapLocked,v:mapSavedView}));}catch(e){}
+  if(typeof syncConfig==='function') syncConfig();
 }
 function restoreMapView(){
   var sv=mapSavedView[currentDay];
@@ -3217,8 +3219,13 @@ function syncConfig(){
     h:st.h,
     hm:st.m,
     mn:+document.getElementById('cMn').value,
+    date:dayDates[currentDay]||'',
+    autoOffset:window._autoTimeOffset||0,
+    mapLock:mapLocked[currentDay]?mapSavedView[currentDay]:null,
     t:Date.now()
   });
+  // Sync all dates
+  db.ref('config/dates').set(dayDates);
 }
 
 // ========== MAP POSITIONS SYNC ==========
@@ -3329,7 +3336,30 @@ function startDayListeners(){
     if(d.s&&+document.getElementById('cS').value!==d.s){document.getElementById('cS').value=d.s;daySaca[currentDay]=d.s;changed=true;}
     if(d.h!==undefined){var curSt=getStartTime();if(curSt.h!==d.h||curSt.m!==(d.hm||0)){setStartTimeUI(d.h,d.hm||0);changed=true;}}
     if(d.mn&&+document.getElementById('cMn').value!==d.mn){document.getElementById('cMn').value=d.mn;changed=true;}
+    if(d.date&&dayDates[currentDay]!==d.date){dayDates[currentDay]=d.date;if($('cDate'))$('cDate').value=d.date;detectToday();changed=true;}
+    if(d.autoOffset!==undefined) window._autoTimeOffset=d.autoOffset;
+    if(d.mapLock){
+      mapLocked[currentDay]=true;
+      mapSavedView[currentDay]=d.mapLock;
+      restoreMapView();
+    } else if(d.mapLock===null&&mapLocked[currentDay]){
+      mapLocked[currentDay]=false;
+      mapSavedView[currentDay]=null;
+      restoreMapView();
+    }
     if(changed) calc();
+  });
+  // Listen for dates sync
+  var datesRef=db.ref('config/dates');
+  activeDayRefs.push(datesRef);
+  datesRef.on('value',function(snap){
+    var d=snap.val();
+    if(!d||!Array.isArray(d)) return;
+    var changed2=false;
+    for(var di=0;di<d.length;di++){
+      if(d[di]&&dayDates[di]!==d[di]){dayDates[di]=d[di];changed2=true;}
+    }
+    if(changed2){detectToday();if($('cDate'))$('cDate').value=dayDates[currentDay];}
   });
   // Positions sync - ALL users listen
   var posRef=db.ref('positions/day'+currentDay);
@@ -3420,7 +3450,8 @@ function autoTimeStep(){
 
 function adjustAutoTime(delta){
   window._autoTimeOffset+=delta;
-  autoTimeStep(); // apply immediately
+  autoTimeStep();
+  if(typeof syncConfig==='function') syncConfig();
   if(typeof renderLive==='function') renderLive();
 }
 
