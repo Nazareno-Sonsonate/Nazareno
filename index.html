@@ -3094,8 +3094,8 @@ function updateBanners(){
     if(procDone){
       var lastJ=((sacaJ-1+Math.min(cambio,tot)-1)%getHomCount()+1);
       jEl.textContent='✅ Asentó Grupo #'+lastJ;
-      if(jProg) jProg.textContent=isSEMode?'Hasta el próximo año, Santo Entierro de Cristo':'Hasta el próximo año, Jesús Nazareno';
-      if(jLabel2) jLabel2.textContent='Hasta el próximo año';
+      if(jProg) jProg.textContent=(currentDay>=3)?((isSEMode)?'Hasta el próximo año, Santo Entierro de Cristo':'Hasta el próximo año, Jesús Nazareno'):'Procesión completada';
+      if(jLabel2) jLabel2.textContent=(currentDay>=3)?'Hasta el próximo año':'Asentada en el Templo';
       if(jBanner){jBanner.style.background='rgba(76,175,80,.12)';jBanner.style.borderColor='rgba(76,175,80,.4)';}
     } else if(cambio>0){
       jEl.textContent='Grupo #'+((sacaJ-1+cambio-1)%getHomCount()+1);
@@ -3119,7 +3119,7 @@ function updateBanners(){
       var mov2=liveGrupoData?liveGrupoData.movidos||0:0;
       var lastM2=(((sacaM2-1+Math.min(cambio,tot)-1-mov2)%getMujCount())+getMujCount())%getMujCount()+1;
       vEl.textContent='✅ Asentó Grupo #'+lastM2;
-      if(vProg2) vProg2.textContent='Hasta el próximo año';
+      if(vProg2) vProg2.textContent=(currentDay>=3)?'Hasta el próximo año':'Procesión completada';
       if(vBanner){vBanner.style.background='rgba(76,175,80,.12)';vBanner.style.borderColor='rgba(76,175,80,.4)';}
     } else if(cambio>0&&liveGrupoData){
       var desf=liveGrupoData.desfase||0;
@@ -3130,7 +3130,7 @@ function updateBanners(){
       if(vCambio>=tot){
         var lastM=(((sacaM-1+tot-1-mov)%getMujCount())+getMujCount())%getMujCount()+1;
         vEl.textContent='✅ Asentó Grupo #'+lastM;
-        if(vProg2) vProg2.textContent='Hasta el próximo año';
+        if(vProg2) vProg2.textContent=(currentDay>=3)?'Hasta el próximo año':'Procesión completada';
         if(vBanner){vBanner.style.background='rgba(76,175,80,.12)';vBanner.style.borderColor='rgba(76,175,80,.4)';}
       } else {
         var grpM=(((sacaM-1+vCambioGrp-1)%getMujCount())+getMujCount())%getMujCount()+1;
