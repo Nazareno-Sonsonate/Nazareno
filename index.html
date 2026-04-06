@@ -1193,33 +1193,41 @@ function loadDay(d) {
 }
 
 // ========== MIÉRCOLES: draw polyline through exact points ==========
+var routeClickLineW=null;
 function drawRouteLine() {
   if(routeLine) routeLine.setMap(null);
   if(routeClickLine) routeClickLine.setMap(null);
   if(routeLineW) routeLineW.setMap(null);
+  if(routeClickLineW) routeClickLineW.setMap(null);
+  // Men's route (purple)
   const path = positions.map(p=>({lat:p.lat,lng:p.lng}));
   routeLine = new google.maps.Polyline({
-    path, map:gmap, strokeColor:'#9333ea', strokeWeight:5, strokeOpacity:.8, zIndex:1
+    path, map:gmap, strokeColor:'#9333ea', strokeWeight:editingWomen?3:5, strokeOpacity:editingWomen?.4:.8, zIndex:1
   });
-  // Fat invisible line for easy tapping
-  routeClickLine = new google.maps.Polyline({
-    path, map:gmap, strokeColor:'#9333ea', strokeWeight:25, strokeOpacity:0.01, zIndex:2
-  });
-  routeClickLine.addListener('click', function(e){
-    if(isZoom()) return;
-    if(editingWomen){
-      insertAtPositionW(e.latLng.lat(), e.latLng.lng(), e.edge);
-    } else {
+  if(!editingWomen){
+    routeClickLine = new google.maps.Polyline({
+      path, map:gmap, strokeColor:'#9333ea', strokeWeight:25, strokeOpacity:0.01, zIndex:2
+    });
+    routeClickLine.addListener('click', function(e){
+      if(isZoom()||!editMode) return;
       insertAtPosition(e.latLng.lat(), e.latLng.lng(), e.edge);
-    }
-  });
-  // Women's route (blue) - only if different from men
+    });
+  }
+  // Women's route (blue)
   if(positionsW.length>=2){
     var pathW=positionsW.map(function(p){return{lat:p.lat,lng:p.lng};});
     routeLineW=new google.maps.Polyline({
-      path:pathW, map:gmap, strokeColor:'#3b82f6', strokeWeight:4, strokeOpacity:.7, zIndex:0,
-      icons:[{icon:{path:'M 0,-1 0,1',strokeOpacity:.5,scale:3},offset:'0',repeat:'12px'}]
+      path:pathW, map:gmap, strokeColor:'#3b82f6', strokeWeight:editingWomen?5:3, strokeOpacity:editingWomen?.9:.6, zIndex:editingWomen?3:0
     });
+    if(editingWomen){
+      routeClickLineW=new google.maps.Polyline({
+        path:pathW, map:gmap, strokeColor:'#3b82f6', strokeWeight:25, strokeOpacity:0.01, zIndex:4
+      });
+      routeClickLineW.addListener('click', function(e){
+        if(isZoom()||!editMode) return;
+        insertAtPositionW(e.latLng.lat(), e.latLng.lng(), e.edge);
+      });
+    }
   }
 }
 
@@ -1343,13 +1351,59 @@ function toggleEditWomen(){
   if(editingWomen&&positionsW.length===0){
     // Copy men's route as starting point
     positionsW=positions.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
-    drawRouteLine();
-    var msg='Ruta de mujeres copiada de hombres. Editá los puntos que cambian.';
-    infoWin.setContent('<div style="text-align:center;color:#111;font-size:13px;padding:4px">'+msg+'</div>');
-    infoWin.setPosition(gmap.getCenter());
-    infoWin.open(gmap);
-    setTimeout(function(){infoWin.close();},3000);
+    syncPositionsW();
   }
+  // Redraw lines with correct emphasis and click targets
+  drawRouteLine();
+  // Rebuild markers for the active route
+  allMarkers.forEach(function(m){m.setMap(null);});
+  allMarkers=[];
+  if(editingWomen){
+    // Show women's points as blue markers
+    renderMarkersW();
+  } else {
+    calc(); // recalcs changes and renders men's markers
+  }
+}
+
+function renderMarkersW(){
+  allMarkers.forEach(function(m){m.setMap(null);});
+  allMarkers=[];
+  for(var i=0;i<positionsW.length;i++){
+    var mk=new google.maps.Marker({
+      position:{lat:positionsW[i].lat,lng:positionsW[i].lng},map:gmap,
+      label:{text:String(i+1),color:'#fff',fontWeight:'bold',fontSize:'10px'},
+      icon:{path:google.maps.SymbolPath.CIRCLE,scale:10,fillColor:'#3b82f6',fillOpacity:1,strokeColor:'#fff',strokeWeight:2},
+      zIndex:3000, draggable:dragMode&&editMode, optimized:true
+    });
+    mk._wIdx=i;
+    (function(mk2,idx){
+      mk2.addListener('click',function(){
+        if(dragMode) return;
+        var del=editMode?'<br><button onclick="deletePointW('+idx+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;font-size:12px;cursor:pointer">🗑️ Eliminar</button>':'';
+        infoWin.setContent('<div style="text-align:center;color:#111;font-size:13px"><b style="color:#3b82f6">🔵 Punto #'+(idx+1)+'</b><br><span style="font-size:11px">Ruta mujeres</span>'+del+'</div>');
+        infoWin.open(gmap,mk2);
+      });
+      if(dragMode&&editMode){
+        mk2.addListener('dragend',function(){
+          var p=mk2.getPosition();
+          positionsW[idx]={lat:p.lat(),lng:p.lng(),n:positionsW[idx].n||''};
+          drawRouteLine();
+          syncPositionsW();
+        });
+      }
+    })(mk,i);
+    allMarkers.push(mk);
+  }
+}
+
+function deletePointW(idx){
+  if(idx<0||idx>=positionsW.length) return;
+  positionsW.splice(idx,1);
+  infoWin.close();
+  drawRouteLine();
+  renderMarkersW();
+  syncPositionsW();
 }
 
 function insertAtPositionW(lat,lng,edge){
@@ -1368,11 +1422,8 @@ function insertAtPositionW(lat,lng,edge){
   }
   positionsW.splice(insertIdx,0,{lat:lat,lng:lng,n:''});
   drawRouteLine();
+  renderMarkersW();
   syncPositionsW();
-  infoWin.setContent('<div style="text-align:center;color:#111;font-size:13px"><b style="color:#3b82f6">🔵 Punto mujeres #'+(insertIdx+1)+'</b></div>');
-  infoWin.setPosition({lat:lat,lng:lng});
-  infoWin.open(gmap);
-  setTimeout(function(){infoWin.close();},2000);
 }
 
 function syncPositionsW(){
@@ -2257,7 +2308,8 @@ function toggleDrag(){
   dragMode=!dragMode;
   $('bDrag').style.background=dragMode?'rgba(76,175,80,.8)':'rgba(0,0,0,.7)';
   $('bDrag').style.borderColor=dragMode?'#4CAF50':'#666';
-  renderMarkers();renderWPmarkers();
+  if(editingWomen){renderMarkersW();}else{renderMarkers();}
+  renderWPmarkers();
 }
 function toggleAll(){showAll=!showAll;$('bAll').textContent=showAll?'👥 Ver otros grupos':'👤 Solo mis cargadas';$('bAll').style.background=showAll?'rgba(0,0,0,.75)':'rgba(76,175,80,.8)';renderMarkers();}
 function showView(n){document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('a',i===n));document.querySelectorAll('.pnl').forEach((p,i)=>p.classList.toggle('a',i===n));}
