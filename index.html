@@ -1896,26 +1896,10 @@ function renderLive(){
   var now=new Date();
   var isPastDay=(dayDate<now);
   
-  // For past days with no carries, still show completion info
+  // For past days with no carries, show banners only
   if(isPastDay&&changes.length>0&&!myCarries.length){
-    var sacaPD2=daySaca[currentDay]||17;
-    var totPD2=changes.length;
-    var lastGrpPD2=((sacaPD2-1+totPD2-1)%getHomCount())+1;
-    var sacaPDM2=daySacaMuj[currentDay]||22;
-    var lastGrpPDM2=(((sacaPDM2-1+totPD2-1)%getMujCount())+getMujCount())%getMujCount()+1;
-    var ph='<div style="text-align:center;padding:8px;margin-bottom:8px"><span style="font-size:20px">✝️</span><br><span style="font-size:13px;color:#c084fc;font-weight:700">'+dayNames[currentDay].toUpperCase()+'</span></div>';
-    ph+='<div style="text-align:center;padding:16px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(76,175,80,.08),rgba(46,125,50,.15));border:1px solid rgba(76,175,80,.4)">';
-    ph+='<div style="font-size:11px;color:#aaa;letter-spacing:1px">VENERADA IMAGEN DE JESÚS NAZARENO</div>';
-    ph+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">✝️ Asentada en el Templo</div>';
-    ph+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#4CAF50">#'+lastGrpPD2+'</b></div>';
-    ph+='<div style="font-size:11px;color:#888;margin-top:6px;font-style:italic">Gloria y honor a Jesús Nazareno de Sonsonate</div>';
-    ph+='</div>';
-    ph+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(59,130,246,.15));border:1px solid rgba(59,130,246,.3)">';
-    ph+='<div style="font-size:11px;color:#93c5fd;letter-spacing:1px">MARÍA SANTÍSIMA</div>';
-    ph+='<div style="font-size:16px;font-weight:700;color:#93c5fd;margin:6px 0">✝️ Asentada en el Templo</div>';
-    ph+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#93c5fd">#'+lastGrpPDM2+'</b></div>';
-    ph+='</div>';
-    $('livePanel').innerHTML=ph;return;
+    $('livePanel').innerHTML='<div style="text-align:center;padding:8px"><span style="font-size:13px;color:#c084fc;font-weight:700">'+dayNames[currentDay].toUpperCase()+'</span></div>';
+    return;
   }
 
   if(!myCarries.length&&!isPastDay){$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">No hay cargadas. Verificá la configuración.</p></div>';return;}
@@ -1976,32 +1960,8 @@ function renderLive(){
   // Procession complete only when ALL cambios are done or past day
   var procComplete=(done>=total&&total>0)||isPastDay;
 
-  if(isPastDay){
-    // Past day: show completion message at top
-    var sacaPast=daySaca[currentDay]||17;
-    var totPast=changes.length;
-    var lastGrpPast=((sacaPast-1+totPast-1)%getHomCount())+1;
-    var jesusLabel=isSEMode?'SANTO ENTIERRO DE CRISTO':'VENERADA IMAGEN DE JESÚS NAZARENO';
-    var jesusMsg=isSEMode?'Hasta el próximo año':'✝️ Asentada en el Templo';
-    var jesusFooter=isSEMode?'Hasta el próximo año, Santo Entierro de Cristo':'Gloria y honor a Jesús Nazareno de Sonsonate';
-    var virgenLabel=isSEMode?'VIRGEN DOLOROSA':'MARÍA SANTÍSIMA';
-    h+='<div style="text-align:center;padding:16px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(76,175,80,.08),rgba(46,125,50,.15));border:1px solid rgba(76,175,80,.4)">';
-    h+='<div style="font-size:11px;color:#aaa;letter-spacing:1px">'+jesusLabel+'</div>';
-    h+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">'+jesusMsg+'</div>';
-    h+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#4CAF50">#'+lastGrpPast+'</b></div>';
-    h+='<div style="font-size:11px;color:#888;margin-top:6px;font-style:italic">'+jesusFooter+'</div>';
-    h+='</div>';
-    var sacaPastM=daySacaMuj[currentDay]||22;
-    var lastGrpPastM=(((sacaPastM-1+totPast-1)%getMujCount())+getMujCount())%getMujCount()+1;
-    h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(59,130,246,.15));border:1px solid rgba(59,130,246,.3)">';
-    h+='<div style="font-size:11px;color:#93c5fd;letter-spacing:1px">'+virgenLabel+'</div>';
-    h+='<div style="font-size:16px;font-weight:700;color:#93c5fd;margin:6px 0">✝️ Asentada en el Templo</div>';
-    h+='<div style="font-size:13px;color:#ccc">Último grupo en cargar: <b style="color:#93c5fd">#'+lastGrpPastM+'</b></div>';
-    h+='</div>';
-    var bc=document.getElementById('bannersContainer');if(bc) bc.innerHTML='';
-  }
-  // Always show banners for non-past days
-  if(!isPastDay) updateBanners();
+  // Banners always updated (updateBanners handles isPastDay styling)
+  updateBanners();
 
   // Admin controls (only for non-past, non-shared)
   if(!isShared&&!isPastDay){
@@ -2070,15 +2030,8 @@ function renderLive(){
   }
 
   if(procComplete&&!isPastDay){
-    // Your carries are done - show summary
-    var allCambiosDone=(liveGrupoData&&liveGrupoData.cambio>0&&liveGrupoData.cambio>=(positions.length||changes.length));
-    if(allCambiosDone){
-      h+='<div style="text-align:center;padding:16px;margin-bottom:8px;border-radius:12px;background:linear-gradient(135deg,rgba(76,175,80,.08),rgba(46,125,50,.15));border:1px solid rgba(76,175,80,.4)">';
-      h+='<div style="font-size:20px;font-weight:700;color:#4CAF50;margin:8px 0">✝️ Asentada en el Templo</div>';
-      h+='<div style="font-size:12px;color:#aaa;font-style:italic">'+(isSEMode?'Hasta el próximo año, Santo Entierro de Cristo · Sonsonate 2026':'Hasta el próximo año, Jesús Nazareno de Sonsonate')+'</div>';
-      h+='<div style="font-size:11px;color:#888;margin-top:8px">Hasta el próximo año 🙏</div>';
-      h+='</div>';
-    } else {
+    // Your carries are done
+    if(!(liveGrupoData&&liveGrupoData.cambio>0&&liveGrupoData.cambio>=(positions.length||changes.length))){
       h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3)">';
       h+='<div style="font-size:16px;font-weight:700;color:#4CAF50">✅ ¡Completaste todas tus cargadas!</div>';
       h+='</div>';
@@ -3116,6 +3069,9 @@ function updateBanners(){
   var cambio=(liveGrupoData&&liveGrupoData.cambio)?liveGrupoData.cambio:0;
   var tot=positions.length||changes.length||147;
   var isMuj=(+$('cType').value===27);
+  var dayDate=new Date(dayDates[currentDay]+'T23:59:00');
+  var isPast=(dayDate<new Date());
+  var procDone=(cambio>=tot&&tot>0)||isPast;
   
   // Create banner HTML if not exists
   if(!document.getElementById('grupoActualBanner')){
@@ -3128,31 +3084,44 @@ function updateBanners(){
     container.innerHTML=isMuj?(vHtml+jHtml):(jHtml+vHtml);
   }
   
-  // Update Jesus/SE banner
+  // Jesus/SE banner
   var jEl=document.getElementById('grupoActualText');
   var jProg=document.getElementById('grupoActualProgress');
   var jLabel2=document.getElementById('grupoActualLabel2');
+  var jBanner=document.getElementById('grupoActualBanner');
   if(jEl){
     var sacaJ=daySaca[currentDay]||16;
-    if(cambio>0&&cambio>tot){
-      jEl.textContent='\u2705 Asentó Grupo #'+((sacaJ-1+tot-1)%getHomCount()+1);
+    if(procDone){
+      var lastJ=((sacaJ-1+Math.min(cambio,tot)-1)%getHomCount()+1);
+      jEl.textContent='✅ Asentó Grupo #'+lastJ;
       if(jProg) jProg.textContent=isSEMode?'Hasta el próximo año, Santo Entierro de Cristo':'Hasta el próximo año, Jesús Nazareno';
       if(jLabel2) jLabel2.textContent='Hasta el próximo año';
+      if(jBanner){jBanner.style.background='rgba(76,175,80,.12)';jBanner.style.borderColor='rgba(76,175,80,.4)';}
     } else if(cambio>0){
       jEl.textContent='Grupo #'+((sacaJ-1+cambio-1)%getHomCount()+1);
       if(jProg) jProg.textContent=(liveGrupoData&&liveGrupoData.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
       if(jLabel2) jLabel2.textContent='En este momento carga';
+      if(jBanner){jBanner.style.background='rgba(192,132,252,.12)';jBanner.style.borderColor='rgba(192,132,252,.3)';}
     } else {
       jEl.textContent='Grupo #'+sacaJ;
       if(jProg) jProg.textContent='Esperando inicio';
       if(jLabel2) jLabel2.textContent='Saca';
+      if(jBanner){jBanner.style.background='rgba(192,132,252,.12)';jBanner.style.borderColor='rgba(192,132,252,.3)';}
     }
   }
-  // Update Virgen banner
+  // Virgen banner
   var vEl=document.getElementById('grupoVirgenText');
   var vProg2=document.getElementById('grupoVirgenProgress');
+  var vBanner=document.getElementById('grupoVirgenBanner');
   if(vEl){
-    if(cambio>0&&liveGrupoData){
+    if(procDone){
+      var sacaM2=liveGrupoData?liveGrupoData.sacaMuj||daySacaMuj[currentDay]:daySacaMuj[currentDay]||22;
+      var mov2=liveGrupoData?liveGrupoData.movidos||0:0;
+      var lastM2=(((sacaM2-1+Math.min(cambio,tot)-1-mov2)%getMujCount())+getMujCount())%getMujCount()+1;
+      vEl.textContent='✅ Asentó Grupo #'+lastM2;
+      if(vProg2) vProg2.textContent='Hasta el próximo año';
+      if(vBanner){vBanner.style.background='rgba(76,175,80,.12)';vBanner.style.borderColor='rgba(76,175,80,.4)';}
+    } else if(cambio>0&&liveGrupoData){
       var desf=liveGrupoData.desfase||0;
       var sacaM=liveGrupoData.sacaMuj||daySacaMuj[currentDay]||6;
       var mov=liveGrupoData.movidos||0;
@@ -3160,19 +3129,21 @@ function updateBanners(){
       var vCambioGrp=Math.max(1,vCambio-mov);
       if(vCambio>=tot){
         var lastM=(((sacaM-1+tot-1-mov)%getMujCount())+getMujCount())%getMujCount()+1;
-        vEl.textContent='\u2705 Asentó Grupo #'+lastM;
+        vEl.textContent='✅ Asentó Grupo #'+lastM;
         if(vProg2) vProg2.textContent='Hasta el próximo año';
+        if(vBanner){vBanner.style.background='rgba(76,175,80,.12)';vBanner.style.borderColor='rgba(76,175,80,.4)';}
       } else {
         var grpM=(((sacaM-1+vCambioGrp-1)%getMujCount())+getMujCount())%getMujCount()+1;
         vEl.textContent='Grupo #'+grpM;
-        if(vProg2) vProg2.textContent='\u26A0\uFE0F Estimado';
+        if(vProg2) vProg2.textContent='⚠️ Estimado';
+        if(vBanner){vBanner.style.background='rgba(59,130,246,.08)';vBanner.style.borderColor='rgba(59,130,246,.3)';}
       }
     } else {
       vEl.textContent='Grupo #'+(daySacaMuj[currentDay]||22);
       if(vProg2) vProg2.textContent='Esperando inicio';
+      if(vBanner){vBanner.style.background='rgba(59,130,246,.08)';vBanner.style.borderColor='rgba(59,130,246,.3)';}
     }
   }
-  // Update label for SE mode
   var jLabel1El=document.getElementById('grupoActualLabel1');
   if(jLabel1El) jLabel1El.textContent=isSEMode?'Santo Entierro de Cristo':'Venerada Imagen de Jesús Nazareno';
 }
