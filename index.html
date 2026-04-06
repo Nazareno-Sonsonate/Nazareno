@@ -147,7 +147,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
   <div><label>👁️ Vigilar grupo</label><select id="watchGrpCfg" onchange="localStorage.setItem('watchGroup',this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
   <div class="adminOnly"><label>¿Qué grupo saca?</label><input type="number" id="cS" value="19" min="1" max="50" onchange="daySacaManual[currentDay]=true;if(+$('cType').value===27){daySacaMuj[currentDay]=+this.value;if(liveGrupoData){liveGrupoData.sacaMuj=+this.value;db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}else{daySaca[currentDay]=+this.value;if(liveGrupoData&&liveGrupoData.cambio>0){liveGrupoData.grp=((+this.value-1+liveGrupoData.cambio-1)%getHomCount())+1;saveAll();db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}calc()"></div>
   <div class="adminOnly"><label>Fecha procesión</label><input type="date" id="cDate" onchange="changeDayDate(this.value)"></div>
-  <div class="adminOnly"><label>Hora de salida</label><input type="number" id="cH" value="15" min="0" max="23" onchange="calc()"></div>
+  <div class="adminOnly"><label>Hora de salida</label><div style="display:flex;gap:6px"><select id="cHour" onchange="updateStartTime()" style="flex:1;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:18px;font-family:inherit"><option value="0">12 AM</option><option value="1">1 AM</option><option value="2">2 AM</option><option value="3">3 AM</option><option value="4">4 AM</option><option value="5">5 AM</option><option value="6">6 AM</option><option value="7">7 AM</option><option value="8">8 AM</option><option value="9">9 AM</option><option value="10">10 AM</option><option value="11">11 AM</option><option value="12">12 PM</option><option value="13">1 PM</option><option value="14">2 PM</option><option value="15">3 PM</option><option value="16">4 PM</option><option value="17">5 PM</option><option value="18">6 PM</option><option value="19">7 PM</option><option value="20">8 PM</option><option value="21">9 PM</option><option value="22">10 PM</option><option value="23">11 PM</option></select><select id="cMin" onchange="updateStartTime()" style="width:70px;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:18px;font-family:inherit"><option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option></select></div></div>
   <div class="adminOnly"><label>Min por cambio</label><input type="number" id="cMn" value="6" min="1" max="20" onchange="calc()"></div>
 </div>
 
@@ -850,7 +850,8 @@ function shareWhatsApp(){
 const $ = id => document.getElementById(id);
 function cfg() {
   var mujGrupos=isSEMode?23:27;
-  return {g:+$('cG').value||5, t:+$('cType').value||21, s:+$('cS').value||19, h:+$('cH').value||15, mn:+$('cMn').value||6, color:+($('cColor')?$('cColor').value:0), mujG:mujGrupos};
+  var st=getStartTime();
+  return {g:+$('cG').value||5, t:+$('cType').value||21, s:+$('cS').value||19, h:st.h, hm:st.m, mn:+$('cMn').value||6, color:+($('cColor')?$('cColor').value:0), mujG:mujGrupos};
 }
 function getMujCount(){return isSEMode?23:27;}
 function getHomCount(){return isSEMode?22:21;}
@@ -858,6 +859,30 @@ function getHomCount(){return isSEMode?22:21;}
 const defaultSacaH = [19, 17, 13, 16, 5]; // hombres 21 grupos
 const defaultSacaM = [19, 27, 13, 22, 6]; // mujeres 27 grupos
 function localDateStr(dt){var y=dt.getFullYear();var m=String(dt.getMonth()+1).padStart(2,'0');var d=String(dt.getDate()).padStart(2,'0');return y+'-'+m+'-'+d;}
+function getStartTime(){
+  var h=+($('cHour')?$('cHour').value:15);
+  var m=+($('cMin')?$('cMin').value:0);
+  return{h:h,m:m};
+}
+function parseTimeStr(v){
+  if(typeof v==='number') return{h:v,m:0};
+  if(typeof v==='string'&&v.indexOf(':')>=0){var p=v.split(':');return{h:parseInt(p[0])||15,m:parseInt(p[1])||0};}
+  return{h:parseInt(v)||15,m:0};
+}
+function updateStartTime(){
+  var st=getStartTime();
+  dayHours[currentDay]=String(st.h).padStart(2,'0')+':'+String(st.m).padStart(2,'0');
+  calc();
+  if(window._autoTimeRunning) autoTimeStep();
+}
+function setStartTimeUI(h,m){
+  if($('cHour')) $('cHour').value=h;
+  if($('cMin')){
+    // Snap to nearest 5
+    var snapped=Math.round(m/5)*5;if(snapped>=60)snapped=55;
+    $('cMin').value=snapped;
+  }
+}
 function changeDayDate(val){
   dayDates[currentDay]=val;
   // Auto-fill using Semana Santa intervals
@@ -997,7 +1022,7 @@ function initMap() {
     }
   }
   $('cS').value = (+$('cType').value===27)?daySacaMuj[currentDay]:daySaca[currentDay];
-  $('cH').value = dayHours[currentDay];
+  var _st1=parseTimeStr(dayHours[currentDay]);setStartTimeUI(_st1.h,_st1.m);
   if($('cDate')) $('cDate').value=dayDates[currentDay]||'';
 
   window.currentDay=currentDay;
@@ -1030,7 +1055,7 @@ function switchDay(d) {
   } else {
     daySaca[currentDay]=+$('cS').value||19;
   }
-  dayHours[currentDay] = +$('cH').value||15;
+  var _st3=getStartTime();dayHours[currentDay]=String(_st3.h).padStart(2,'0')+':'+String(_st3.m).padStart(2,'0');
   saveAll();
 
   // Auto-calculate saca for the new day if not manually set
@@ -1079,7 +1104,7 @@ function switchDay(d) {
   // Restore config for this day
   var isM=(+$('cType').value===27);
   $('cS').value = isM?daySacaMuj[d]:daySaca[d];
-  $('cH').value = dayHours[d];
+  var _st2=parseTimeStr(dayHours[d]);setStartTimeUI(_st2.h,_st2.m);
   if($('cDate')) $('cDate').value=dayDates[d]||'';
 
   // Save map view if locked before switching
@@ -1314,7 +1339,7 @@ const VIER_LAST_EXTRA = 0.10;     // last change 10% longer
 function calcTime(num, tot, c) {
   if(currentDay !== 3) {
     // Simple: fixed min/change
-    return c.h * 60 + num * c.mn;
+    return c.h * 60 + (c.hm||0) + num * c.mn;
   }
   // VIERNES: 6AM start, cortesías at 11:30 (change 40), asienta ~1:30PM
   // Before cortesías: 330 min for 40 changes = 8.25 min/cambio
@@ -1337,7 +1362,7 @@ function calcTime(num, tot, c) {
       elapsed += VIER_CORTESIAS_MIN;
     }
   }
-  return c.h * 60 + elapsed;
+  return c.h * 60 + (c.hm||0) + elapsed;
 }
 
 function calc() {
@@ -1378,7 +1403,7 @@ function calc() {
   const km=(totalM/1000).toFixed(2);
 
   // Estimated end time - use real average if available
-  let endTime=tot>0?calcTime(tot,tot,c):c.h*60;
+  let endTime=tot>0?calcTime(tot,tot,c):c.h*60+(c.hm||0);
   let endLabel='Asienta (est.)';
   const realAvg=getRealAvg();
   if(realAvg && doneCount()>0){
@@ -1519,14 +1544,10 @@ function copyToClip(txt){
 
 // ========== MARKERS ==========
 function renderMarkers() {
-  allMarkers.forEach(m=>m.setMap(null));
-  allMarkers=[];
-
   const zoom=gmap?gmap.getZoom():15;
   const showOthers=showAll&&(zoom>=15||editMode);
   const bounds=gmap?gmap.getBounds():null;
   
-  // At low zoom with many points, show fewer markers
   var step=1;
   if(!editMode&&changes.length>60){
     if(zoom<=14) step=8;
@@ -1534,32 +1555,29 @@ function renderMarkers() {
     else if(zoom<=16) step=3;
   }
 
-  var markersToAdd=[];
-  changes.forEach((ch,ci)=>{
-    if(!ch.mine&&!showOthers) return;
-    if(bounds&&!bounds.contains({lat:ch.lat,lng:ch.lng})) return;
-    if(!ch.mine&&step>1&&ci%step!==0) return;
-    markersToAdd.push({ch:ch,ci:ci});
-  });
+  // Recreate if changes count changed
+  if(allMarkers.length>0&&allMarkers.length!==changes.length){
+    allMarkers.forEach(function(m){m.setMap(null);});
+    allMarkers=[];
+  }
 
-  // Batch create markers
-  for(var mi=0;mi<markersToAdd.length;mi++){
-    var ch=markersToAdd[mi].ch,ci=markersToAdd[mi].ci;
-    var m=ch.mine;
-    var sc=m?(dragMode?20:13):(dragMode?14:7);
-    var fc=m?'#c084fc':'#5599ff';
-    if(m){var mc2=myCarries.find(function(x){return x.num===ch.num});if(mc2&&mc2.colorHex) fc=mc2.colorHex;}
-    // Simpler labels at low zoom
-    var lbl=zoom>=16?{text:String(ch.grp),color:m?'#111':'#fff',fontWeight:'bold',fontSize:m?'12px':'9px'}:
-            (m?{text:String(ch.grp),color:'#111',fontWeight:'bold',fontSize:'11px'}:null);
-    var mk=new google.maps.Marker({
-      position:{lat:ch.lat,lng:ch.lng},map:gmap,
-      label:lbl,
-      icon:{path:google.maps.SymbolPath.CIRCLE,scale:sc,fillColor:fc,fillOpacity:m?1:.35,strokeColor:m?'#fff':fc,strokeWeight:m?2:0},
-      zIndex:m?3000:100, draggable:dragMode&&editMode,
-      optimized:true, clickable:zoom>=15||m
-    });
-    if(zoom>=15||m){
+  // First time: create all markers
+  if(allMarkers.length===0&&changes.length>0){
+    changes.forEach(function(ch,ci){
+      var m=ch.mine;
+      var sc=m?13:7;
+      var fc=m?'#c084fc':'#5599ff';
+      if(m){var mc2=myCarries.find(function(x){return x.num===ch.num});if(mc2&&mc2.colorHex) fc=mc2.colorHex;}
+      var lbl={text:String(ch.grp),color:m?'#111':'#fff',fontWeight:'bold',fontSize:m?'12px':'9px'};
+      var mk=new google.maps.Marker({
+        position:{lat:ch.lat,lng:ch.lng},map:null,
+        label:lbl,
+        icon:{path:google.maps.SymbolPath.CIRCLE,scale:sc,fillColor:fc,fillOpacity:m?1:.35,strokeColor:m?'#fff':fc,strokeWeight:m?2:0},
+        zIndex:m?3000:100, draggable:false,
+        optimized:true, clickable:true
+      });
+      mk._isMine=m;mk._ci=ci;mk._ch=ch;
+      // Click handler
       (function(mk2,ch2,ci2,m2){
         mk2.addListener('click',function(){
           if(isZoom())return;
@@ -1573,18 +1591,26 @@ function renderMarkers() {
           infoWin.open(gmap,mk2);
         });
       })(mk,ch,ci,m);
+      allMarkers.push(mk);
+    });
+  }
+
+  // Show/hide based on zoom, bounds, step
+  for(var mi=0;mi<allMarkers.length;mi++){
+    var mk=allMarkers[mi];
+    var visible=true;
+    if(!mk._isMine&&!showOthers) visible=false;
+    if(!mk._isMine&&step>1&&mi%step!==0) visible=false;
+    if(bounds&&!bounds.contains(mk.getPosition())) visible=false;
+    mk.setMap(visible?gmap:null);
+    // Update draggable for edit mode
+    if(dragMode&&editMode&&mk.getDraggable()!==true){
+      mk.setDraggable(true);
+      mk.setIcon({path:google.maps.SymbolPath.CIRCLE,scale:mk._isMine?20:14,fillColor:mk._isMine?'#c084fc':'#5599ff',fillOpacity:mk._isMine?1:.35,strokeColor:mk._isMine?'#fff':'#5599ff',strokeWeight:mk._isMine?2:0});
+    } else if(!dragMode&&mk.getDraggable()===true){
+      mk.setDraggable(false);
+      mk.setIcon({path:google.maps.SymbolPath.CIRCLE,scale:mk._isMine?13:7,fillColor:mk._isMine?'#c084fc':'#5599ff',fillOpacity:mk._isMine?1:.35,strokeColor:mk._isMine?'#fff':'#5599ff',strokeWeight:mk._isMine?2:0});
     }
-    if(dragMode&&editMode){
-      (function(mk3,ci3){
-        mk3.addListener('dragend',function(){
-          var p=mk3.getPosition();
-          positions[ci3]={lat:p.lat(),lng:p.lng(),n:positions[ci3].n};
-          drawRouteLine();calc();
-          if(typeof syncPositions==='function') syncPositions();
-        });
-      })(mk,ci);
-    }
-    allMarkers.push(mk);
   }
 }
 
@@ -2993,10 +3019,10 @@ function advanceGrupo(delta){
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
   // Recalculate auto-time offset so auto follows from this position
   if(window._autoTimeRunning&&currentGrupoActual>0){
-    var h2=+$('cH').value||15;
+    var _stA=getStartTime();var h2=_stA.h;
     var mn2=+$('cMn').value||6;
     var dateStr2=dayDates[currentDay]||new Date().toISOString().slice(0,10);
-    var startTime2=new Date(dateStr2+'T'+String(h2).padStart(2,'0')+':00:00').getTime();
+    var startTime2=new Date(dateStr2+'T'+String(_stA.h).padStart(2,'0')+':'+String(_stA.m).padStart(2,'0')+':00').getTime();
     // What time SHOULD it be for this cambio?
     var shouldBeTime=startTime2+(currentGrupoActual-1)*mn2*60000;
     // Offset = difference between "should be" and actual now
@@ -3022,10 +3048,10 @@ function setGrupoManual(){
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
   // Recalculate auto-time offset
   if(window._autoTimeRunning&&num>0){
-    var h3=+$('cH').value||15;
+    var _stB=getStartTime();var h3=_stB.h;
     var mn3=+$('cMn').value||6;
     var dateStr3=dayDates[currentDay]||localDateStr(new Date());
-    var startTime3=new Date(dateStr3+'T'+String(h3).padStart(2,'0')+':00:00').getTime();
+    var startTime3=new Date(dateStr3+'T'+String(_stB.h).padStart(2,'0')+':'+String(_stB.m).padStart(2,'0')+':00').getTime();
     var shouldBeTime3=startTime3+(num-1)*mn3*60000;
     window._autoTimeOffset=Math.round((shouldBeTime3-Date.now())/60000);
   }
@@ -3185,9 +3211,11 @@ function closeStreetView(){
 // ========== CONFIG SYNC ==========
 function syncConfig(){
   if(isShared) return;
+  var st=getStartTime();
   db.ref('config/day'+currentDay).set({
     s:+document.getElementById('cS').value,
-    h:+document.getElementById('cH').value,
+    h:st.h,
+    hm:st.m,
     mn:+document.getElementById('cMn').value,
     t:Date.now()
   });
@@ -3286,7 +3314,7 @@ function startDayListeners(){
   document.addEventListener('visibilitychange',function(){if(!document.hidden)syncGrupo();});
   // Config sync
   if(!isShared){
-    ['cS','cH','cMn'].forEach(function(id){
+    ['cS','cHour','cMin','cMn'].forEach(function(id){
       var el=document.getElementById(id);
       if(el) el.addEventListener('change',function(){setTimeout(syncConfig,100);});
     });
@@ -3299,7 +3327,7 @@ function startDayListeners(){
     if(!d) return;
     var changed=false;
     if(d.s&&+document.getElementById('cS').value!==d.s){document.getElementById('cS').value=d.s;daySaca[currentDay]=d.s;changed=true;}
-    if(d.h&&+document.getElementById('cH').value!==d.h){document.getElementById('cH').value=d.h;changed=true;}
+    if(d.h!==undefined){var curSt=getStartTime();if(curSt.h!==d.h||curSt.m!==(d.hm||0)){setStartTimeUI(d.h,d.hm||0);changed=true;}}
     if(d.mn&&+document.getElementById('cMn').value!==d.mn){document.getElementById('cMn').value=d.mn;changed=true;}
     if(changed) calc();
   });
@@ -3351,10 +3379,10 @@ function autoTimeStep(){
     var lastGPSAge=Date.now()-(liveGrupoData.t||0);
     if(lastGPSAge<60000) return;
   }
-  var h=+$('cH').value||15;
+  var _stC=getStartTime();var h=_stC.h;
   var mn=+$('cMn').value||6;
   var dateStr=dayDates[currentDay]||localDateStr(new Date());
-  var startTime=new Date(dateStr+'T'+String(h).padStart(2,'0')+':00:00').getTime();
+  var startTime=new Date(dateStr+'T'+String(_stC.h).padStart(2,'0')+':'+String(_stC.m).padStart(2,'0')+':00').getTime();
   var now=Date.now()+(window._autoTimeOffset*60000);
   var elapsed=now-startTime;
   if(elapsed<0){
