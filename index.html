@@ -57,30 +57,32 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
 .tbl .rs{font-size:11px;color:#aaa}
 .ftr{padding:6px 8px;margin:4px 8px 10px;background:rgba(255,255,255,.04);border-radius:6px;font-size:11px;color:#aaa;line-height:1.4}
 /* EN VIVO */
-.live-card{background:rgba(0,0,0,.3);border:1px solid rgba(178,102,255,.2);border-radius:10px;padding:14px;margin-bottom:10px;text-align:center}
-.live-next{background:linear-gradient(135deg,rgba(178,102,255,.1),rgba(178,102,255,.05));border:2px solid #c084fc;border-radius:12px;padding:18px 14px;margin-bottom:12px;text-align:center}
-.live-next .ln-label{font-size:13px;color:#ccc;text-transform:uppercase;letter-spacing:1px}
-.live-next .ln-num{font-size:48px;font-weight:700;color:#c084fc;line-height:1.1}
-.live-next .ln-ref{font-size:16px;color:#fff;margin-top:6px}
-.live-next .ln-time{font-size:20px;color:#c084fc;margin-top:6px}
-.live-progress{background:rgba(0,0,0,.4);border-radius:20px;height:26px;overflow:hidden;margin:10px 0;border:1px solid rgba(178,102,255,.2)}
-.live-progress-bar{height:100%;background:linear-gradient(90deg,#c084fc,#7c3aed);border-radius:20px;transition:width .5s;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#111}
-.live-btn{width:100%;padding:18px;border:none;border-radius:10px;font-family:inherit;font-size:18px;font-weight:700;cursor:pointer;margin-bottom:8px}
+.live-card{background:rgba(0,0,0,.3);border:1px solid rgba(178,102,255,.2);border-radius:10px;padding:12px;margin-bottom:8px;text-align:center}
+.live-next{background:linear-gradient(135deg,rgba(178,102,255,.08),rgba(178,102,255,.03));border:2px solid #c084fc;border-radius:12px;padding:14px;margin-bottom:8px;text-align:center}
+.live-next .ln-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px}
+.live-next .ln-num{font-size:38px;font-weight:700;color:#c084fc;line-height:1.1}
+.live-next .ln-ref{font-size:13px;color:#eee;margin-top:4px}
+.live-next .ln-time{font-size:15px;color:#c084fc;margin-top:4px}
+.live-progress{background:rgba(255,255,255,.06);border-radius:10px;height:18px;overflow:hidden;margin:6px 0}
+.live-progress-bar{height:100%;background:linear-gradient(90deg,#c084fc,#7c3aed);border-radius:10px;transition:width .5s;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;min-width:28px}
+.live-btn{width:100%;padding:10px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px}
 .live-btn-done{background:#4CAF50;color:#fff}
 .live-btn-done:active{background:#388E3C}
-.live-btn-undo{background:rgba(178,102,255,.1);color:#c084fc;border:1px solid #7c3aed;font-size:14px;padding:12px}
-.live-carry{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:8px;margin-bottom:6px;border:1px solid rgba(255,255,255,.1)}
-.live-carry.done{background:rgba(76,175,80,.1);border-color:rgba(76,175,80,.3)}
-.live-carry.pending{background:rgba(255,255,255,.03)}
-.live-carry.current{background:rgba(178,102,255,.1);border-color:#c084fc;border-width:2px}
-.live-carry .lc-num{font-size:20px;font-weight:700;width:32px}
-.live-carry .lc-info{flex:1;padding:0 8px}
-.live-carry .lc-ref{font-size:14px;font-weight:600;color:#fff}
-.live-carry .lc-sub{font-size:11px;color:#aaa}
-.live-carry .lc-time{font-size:15px;font-weight:700}
-.live-carry.done .lc-num{color:#4CAF50}
+.live-btn-undo{background:none;border:1px solid #555;color:#888;font-size:11px;padding:7px}
+.live-carry{display:flex;align-items:center;padding:8px 10px;border-radius:8px;margin-bottom:3px;border:1px solid rgba(255,255,255,.06);gap:8px}
+.live-carry.done{background:rgba(76,175,80,.05);border-color:rgba(76,175,80,.15);padding:5px 10px}
+.live-carry.pending{background:rgba(255,255,255,.02);padding:5px 10px}
+.live-carry.current{background:rgba(178,102,255,.1);border-color:#c084fc;border-width:2px;padding:10px}
+.live-carry .lc-num{font-size:15px;font-weight:700;width:26px;text-align:center;flex-shrink:0}
+.live-carry .lc-info{flex:1;min-width:0}
+.live-carry .lc-ref{font-size:12px;font-weight:600;color:#ddd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.live-carry .lc-sub{font-size:9px;color:#777}
+.live-carry .lc-time{font-size:12px;font-weight:700;flex-shrink:0}
+.live-carry.done .lc-num{color:#4CAF50;font-size:13px}
 .live-carry.current .lc-num{color:#c084fc}
-.live-carry.pending .lc-num{color:#666}
+.live-carry.pending .lc-num{color:#555}
+.live-carry.done .lc-ref{font-size:11px;color:#888}
+.live-carry.done .lc-time{font-size:10px;color:#4CAF50}
 .rfloat{display:none;position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:2000;background:#d4af37;color:#1a0a02;font-weight:700;font-size:12px;padding:9px 18px;border-radius:22px;box-shadow:0 3px 12px rgba(212,175,55,.5);cursor:pointer;border:none}
 .rfloat.show{display:block}
 @keyframes flashPulse{0%,100%{opacity:1}50%{opacity:0.3}}
@@ -2087,8 +2089,10 @@ function renderLive(){
     h+='</div>';
 
     // Mark done buttons
-    h+='<button class="live-btn live-btn-done" onclick="markDone('+nextCarry.ci+')">✅ Registrar cargada #'+nextCarry.ci+'</button>';
-    h+='<button style="width:100%;padding:10px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#ccc;font-size:12px;font-family:inherit;cursor:pointer;margin-bottom:8px" onclick="markDoneWithTime('+nextCarry.ci+')">🕐 Registrar con otra hora</button>';
+    h+='<div style="display:flex;gap:4px;margin-bottom:4px">';
+    h+='<button class="live-btn live-btn-done" style="flex:3" onclick="markDone('+nextCarry.ci+')">✅ Registrar #'+nextCarry.ci+'</button>';
+    h+='<button style="flex:1;padding:8px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#888;font-size:10px;font-family:inherit;cursor:pointer" onclick="markDoneWithTime('+nextCarry.ci+')">🕐 Otra hora</button>';
+    h+='</div>';
   }
 
   // Undo
@@ -2127,10 +2131,7 @@ function renderLive(){
 
   h+='<div style="text-align:center;margin-top:12px"><button onclick="resetLive()" style="background:none;border:1px solid #914444;color:#e08080;padding:6px 14px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit">🗑️ Reiniciar cargadas</button></div>';
 
-  h+='<div id="syncStatus" style="text-align:center;font-size:14px;color:#ff9800;padding:10px;margin-top:8px;background:rgba(255,152,0,.1);border-radius:8px">⏳ Conectando...</div>';
   $('livePanel').innerHTML=h;
-  // Restore sync status after render
-  if(window._lastSync){var ss=document.getElementById('syncStatus');if(ss)ss.textContent=window._lastSync;}
   updateCountdown();
   if(typeof updateGrupoUI==='function') updateGrupoUI();
   if(typeof startCrono==='function') startCrono();
@@ -3374,8 +3375,8 @@ function startDayListeners(){
 
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_lMqEQiLroj-jhx-a9d_o-6uWFfOCbg0&libraries=geometry&callback=initMap" async defer></script>
-<div id="ahsecStatus" style="position:fixed;bottom:20px;left:0;right:0;background:#1a1000;color:#d4af37;font-size:10px;padding:3px 8px;z-index:9999;font-family:monospace;display:none"></div>
-<div id="fbTest" style="position:fixed;bottom:0;left:0;right:0;background:#000;color:#0f0;font-size:11px;padding:4px 8px;z-index:9999;font-family:monospace">⏳ Conectando...</div>
+
+
 <script>
 // Sync: fetch Firebase and UPDATE UI every 10 seconds
 // ========== AUTO-AVANCE POR TIEMPO ==========
