@@ -547,11 +547,18 @@ let dayHours = [15, 15, 15, 6, 17];
 let daySaca = [19, 17, 13, 16, 5];
 let daySacaManual = [true, true, false, false, true];
 
+function isDayPast(dayIdx){
+  // A procession day is "past" only after 3:30 AM of the NEXT day
+  if(!dayDates[dayIdx]) return false;
+  var nextDay=new Date(dayDates[dayIdx]+'T03:30:00');
+  nextDay.setDate(nextDay.getDate()+1);
+  return new Date()>nextDay;
+}
+
 function detectToday(){
   const now=new Date();
   let checkDate=new Date(now);
   if(now.getHours()<5) checkDate.setDate(checkDate.getDate()-1);
-  // Use local date, not UTC
   var y=checkDate.getFullYear();
   var m=String(checkDate.getMonth()+1).padStart(2,'0');
   var dd=String(checkDate.getDate()).padStart(2,'0');
@@ -836,8 +843,7 @@ function shareWhatsApp(){
   const base=window.location.origin+window.location.pathname;
   // Santo Entierro share
   if(currentDay===4){
-    var sacaSE=daySaca[4]||5;
-    const link=base+'?saca='+sacaSE+'&dia=4';
+    const link=base+'?se=1';
     const msg='⚰️ *Santo Entierro de Cristo · Sonsonate*\n\n'
       +'Rastreo en vivo del Santo Entierro\n'
       +'Abrí el link y elegí tu grupo:\n'+link;
@@ -848,14 +854,14 @@ function shareWhatsApp(){
     }
     return;
   }
-  const sacaH=daySaca[currentDay]||17;
-  const link=base+'?saca='+sacaH+'&dia='+currentDay;
-  const msg='✝️ *Procesión '+dayNames[currentDay]+'*\n'
-    +'Saca: Grupo #'+sacaH+'\n\n'
+  // Single link for all days - Firebase auto-detects today
+  const link=base+'?saca=1';
+  const msg='✝️ *Procesión de Semana Santa · Sonsonate*\n\n'
+    +'Rastreo en vivo de la procesión\n'
     +'Abrí el link, elegí tu grupo y mirá tus cargadas:\n'+link;
   
   if(navigator.share){
-    navigator.share({title:'Procesión '+dayNames[currentDay],text:msg,url:link}).catch(()=>{});
+    navigator.share({title:'Procesión Semana Santa · Sonsonate',text:msg,url:link}).catch(()=>{});
   } else {
     window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
   }
@@ -895,8 +901,8 @@ function updateStartTime(){
 }
 function forceAndaPosition(){
   if(!positions.length) return;
-  // If GPS is active and fresh, don't override - GPS manda
-  if(autoAdvanceGPS&&liveGrupoData&&liveGrupoData.t&&(Date.now()-liveGrupoData.t<60000)) return;
+  // If real GPS is active, don't override
+  if(Date.now()-window._lastRealGPS<60000) return;
   var _stF=getStartTime();
   var mn=+$('cMn').value||6;
   var dateStr=dayDates[currentDay]||localDateStr(new Date());
@@ -967,8 +973,8 @@ function changeDayDate(val){
   // Auto-complete past days in Firebase
   var now=new Date();
   for(var p=0;p<dayDates.length;p++){
-    var dd=new Date(dayDates[p]+'T23:59:00');
-    if(dd<now&&p!==currentDay){
+    var ddPast=isDayPast(p);
+    if(ddPast&&p!==currentDay){
       var dayPts=[LUN_PTS,MART_PTS,MIER_PTS,VIER_PTS,SE_PTS];
       var pts=dayPts[p]||[];
       var totP=savedPositions[p]?savedPositions[p].length:pts.length;
@@ -1117,6 +1123,8 @@ function initMap() {
   }
   // Ensure grupo actual displays after everything loads
   if(typeof updateGrupoUI==='function') setTimeout(updateGrupoUI,500);
+  // Auto-start if today is procession day and near departure (editor only)
+  if(!isShared) setTimeout(function(){if(typeof startAutoIfNeeded==='function')startAutoIfNeeded();},3000);
 }
 
 // ========== DAY SWITCHING ==========
@@ -1139,6 +1147,11 @@ function switchDay(d) {
   }
   var _st3=getStartTime();dayHours[currentDay]=String(_st3.h).padStart(2,'0')+':'+String(_st3.m).padStart(2,'0');
   saveAll();
+
+  // Stop auto timer before switching day
+  if(window._autoTimeTimer){clearInterval(window._autoTimeTimer);window._autoTimeTimer=null;}
+  window._autoTimeRunning=false;
+  window._autoTimeOffset=0;
 
   // Auto-calculate saca for the new day if not manually set
   if(d>0 && !daySacaManual[d]){
@@ -1196,7 +1209,24 @@ function switchDay(d) {
   currentGrupoActual=0;
   liveGrupoData=null;
   var bc=document.getElementById('bannersContainer');if(bc) bc.innerHTML='';
-
+  // If this day is TODAY, clear stale completed data from Firebase
+  var nowDate=localDateStr(new Date());
+  if(dayDates[d]===nowDate){
+    // Clear any stale completed data
+    try{localStorage.removeItem('grupoActual_day'+d);}catch(e){}
+    db.ref('grupoActual/day'+d).once('value',function(snap){
+      var gd=snap.val();
+      if(gd&&gd.cambio>0&&gd.cambio>=(positions.length||44)){
+        // Stale completed data - reset
+        var resetData={cambio:0,grp:0,nombre:'',tot:positions.length||44,desfase:0,movidos:0,sacaMuj:daySacaMuj[d]||22,t:Date.now()};
+        db.ref('grupoActual/day'+d).set(resetData);
+        currentGrupoActual=0;
+        liveGrupoData=resetData;
+        if(typeof renderLive==='function') renderLive();
+        updateBanners();
+      }
+    });
+  }
   loadDay(d);
   // Restore saved map view if locked
   restoreMapView();
@@ -2182,9 +2212,7 @@ function renderLive(){
     return;
   }
   // Check if this day is in the past
-  var dayDate=new Date(dayDates[currentDay]+'T23:59:00');
-  var now=new Date();
-  var isPastDay=(dayDate<now);
+  var isPastDay=isDayPast(currentDay);
   
   // For past days with no carries, show banners only
   if(isPastDay&&changes.length>0&&!myCarries.length){
@@ -2194,10 +2222,7 @@ function renderLive(){
 
   if(!myCarries.length&&!isPastDay){$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">No hay cargadas. Verificá la configuración.</p></div>';return;}
   
-  // Check if this day is in the past
-  var dayDate=new Date(dayDates[currentDay]+'T23:59:00');
-  var now=new Date();
-  var isPastDay=(dayDate<now);
+  var isPastDay=isDayPast(currentDay);
   
   // For past days, auto-set grupo actual to last cambio
   if(isPastDay&&changes.length>0){
@@ -2724,6 +2749,7 @@ function toggleUrna(tipo){
       var now=Date.now();
       if(lastWrite[tipo]&&now-lastWrite[tipo]<8000) return;
       lastWrite[tipo]=now;
+      if(tipo==='jesus') window._lastRealGPS=now;
       db.ref(tipo).set({lat:pos.coords.latitude,lng:pos.coords.longitude,t:now});
     },function(err){
       console.log(tipo+' GPS error',err);
@@ -2850,9 +2876,9 @@ function listenAnda(tipo,imgUrl,color,zIdx){
     }
     // GPS Auto-advance: if this is the main anda (jesus) and auto is on
     if(tipo==='jesus'&&autoAdvanceGPS&&!isShared){
+      window._lastRealGPS=Date.now(); // Mark real GPS activity
       var nearCambio=findNearestCambio(ll.lat,ll.lng);
       if(nearCambio>0&&nearCambio>currentGrupoActual){
-        // Auto-advance to this cambio
         currentGrupoActual=nearCambio;
         var sacaH=daySaca[currentDay]||16;
         var tot=positions.length;
@@ -2864,6 +2890,16 @@ function listenAnda(tipo,imgUrl,color,zIdx){
         updateGrupoUI();
         db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
         if(typeof renderLive==='function') renderLive();
+        // Sync auto-time offset so it continues from here if GPS drops
+        if(window._autoTimeRunning){
+          var _stG=getStartTime();
+          var mnG=+$('cMn').value||6;
+          var dateStrG=dayDates[currentDay]||localDateStr(new Date());
+          var startTimeG=new Date(dateStrG+'T'+String(_stG.h).padStart(2,'0')+':'+String(_stG.m).padStart(2,'0')+':00').getTime();
+          var shouldBeG=startTimeG+(nearCambio-1)*mnG*60000;
+          window._autoTimeOffset=Math.round((shouldBeG-Date.now())/60000);
+          if(typeof syncAutoState==='function') syncAutoState();
+        }
       }
     }
   });
@@ -3265,6 +3301,7 @@ function advanceGrupo(delta){
     var shouldBeTime=startTime2+(currentGrupoActual-1)*mn2*60000;
     // Offset = difference between "should be" and actual now
     window._autoTimeOffset=Math.round((shouldBeTime-Date.now())/60000);
+    if(typeof syncAutoState==='function') syncAutoState();
   }
 }
 
@@ -3292,6 +3329,7 @@ function setGrupoManual(){
     var startTime3=new Date(dateStr3+'T'+String(_stB.h).padStart(2,'0')+':'+String(_stB.m).padStart(2,'0')+':00').getTime();
     var shouldBeTime3=startTime3+(num-1)*mn3*60000;
     window._autoTimeOffset=Math.round((shouldBeTime3-Date.now())/60000);
+    if(typeof syncAutoState==='function') syncAutoState();
   }
 }
 
@@ -3353,8 +3391,7 @@ function updateBanners(){
   var cambio=(liveGrupoData&&liveGrupoData.cambio)?liveGrupoData.cambio:0;
   var tot=positions.length||changes.length||147;
   var isMuj=(+$('cType').value===27);
-  var dayDate=new Date(dayDates[currentDay]+'T23:59:00');
-  var isPast=(dayDate<new Date());
+  var isPast=isDayPast(currentDay);
   var procDone=(cambio>=tot&&tot>0)||isPast;
   
   // Create banner HTML if not exists
@@ -3510,16 +3547,27 @@ function stopDayListeners(){
 
 function startDayListeners(){
   stopDayListeners();
-  // Load grupo actual from localStorage for correct day
   if(typeof loadGrupoFromStorage==='function') loadGrupoFromStorage();
+  if(typeof loadAutoState==='function') loadAutoState();
   // Grupo actual
   var gaRef=db.ref('grupoActual/day'+currentDay);
   activeDayRefs.push(gaRef);
   gaRef.on('value',function(snap){
     var d=snap.val();
-    if(!d){
-      // Never clear if we have local data
-      return;
+    if(!d) return;
+    // Check for stale auto-completed data: if today and cambio>=tot, reset
+    var nowDateGA=localDateStr(new Date());
+    if(dayDates[currentDay]===nowDateGA&&d.cambio>0){
+      var totGA=positions.length||changes.length||44;
+      if(d.cambio>=totGA&&!isShared){
+        var resetD={cambio:0,grp:0,nombre:'',tot:totGA,desfase:d.desfase||0,movidos:d.movidos||0,sacaMuj:d.sacaMuj||daySacaMuj[currentDay],t:Date.now()};
+        db.ref('grupoActual/day'+currentDay).set(resetD);
+        currentGrupoActual=0;
+        liveGrupoData=resetD;
+        if(typeof renderLive==='function') renderLive();
+        updateBanners();
+        return;
+      }
     }
     currentGrupoActual=d.cambio||0;
     liveGrupoData=d;
@@ -3669,79 +3717,175 @@ function startDayListeners(){
 // ========== AUTO-AVANCE POR TIEMPO ==========
 window._autoTimeRunning=false;
 window._autoTimeTimer=null;
-window._autoTimeOffset=0; // manual offset in minutes (+ = adelantar, - = atrasar)
+window._autoTimeOffset=0;
+window._lastRealGPS=0;
+var GPS_TIMEOUT=120000; // 2 min — GPS can drop briefly between buildings
+
+function startAutoIfNeeded(){
+  if(isShared) return;
+  if(window._autoTimeRunning) return;
+  // Consider past midnight: before 5 AM = still previous day
+  var now=new Date();
+  var checkDate=new Date(now);
+  if(now.getHours()<5) checkDate.setDate(checkDate.getDate()-1);
+  var todayStr=localDateStr(checkDate);
+  if(dayDates[currentDay]!==todayStr) return;
+  // Don't start if procession already finished (past 3:30 AM next day)
+  if(isDayPast(currentDay)) return;
+  var _stA=getStartTime();
+  var startMs=new Date(dayDates[currentDay]+'T'+String(_stA.h).padStart(2,'0')+':'+String(_stA.m).padStart(2,'0')+':00').getTime();
+  var diff=now.getTime()-startMs;
+  if(diff>-1800000){
+    toggleAutoTime();
+  }
+}
 
 function toggleAutoTime(){
   window._autoTimeRunning=!window._autoTimeRunning;
   if(window._autoTimeRunning){
+    // Sync offset to current grupo position if needed
+    if(currentGrupoActual>0){
+      var _stI=getStartTime();
+      var mnI=+$('cMn').value||6;
+      var dateStrI=dayDates[currentDay]||localDateStr(new Date());
+      var startTimeI=new Date(dateStrI+'T'+String(_stI.h).padStart(2,'0')+':'+String(_stI.m).padStart(2,'0')+':00').getTime();
+      var shouldBeI=startTimeI+(currentGrupoActual-1)*mnI*60000;
+      window._autoTimeOffset=Math.round((shouldBeI-Date.now())/60000);
+    }
     autoTimeStep();
-    window._autoTimeTimer=setInterval(autoTimeStep,3000); // every 3 sec for smooth movement
+    window._autoTimeTimer=setInterval(autoTimeStep,3000);
   } else {
     if(window._autoTimeTimer) clearInterval(window._autoTimeTimer);
     window._autoTimeTimer=null;
   }
+  // Save state to Firebase
+  syncAutoState();
   if(typeof renderLive==='function') renderLive();
 }
 
+function syncAutoState(){
+  if(isShared) return;
+  db.ref('config/auto/day'+currentDay).set({
+    running:window._autoTimeRunning,
+    offset:window._autoTimeOffset,
+    t:Date.now()
+  });
+}
+
+function loadAutoState(){
+  db.ref('config/auto/day'+currentDay).once('value',function(snap){
+    var d=snap.val();
+    if(!d) return;
+    if(d.offset!==undefined) window._autoTimeOffset=d.offset;
+    if(d.running&&!window._autoTimeRunning){
+      window._autoTimeRunning=true;
+      autoTimeStep();
+      window._autoTimeTimer=setInterval(autoTimeStep,3000);
+      if(typeof renderLive==='function') renderLive();
+    }
+  });
+  // Keep listening for changes from editor
+  db.ref('config/auto/day'+currentDay).on('value',function(snap){
+    var d=snap.val();
+    if(!d) return;
+    if(d.offset!==undefined) window._autoTimeOffset=d.offset;
+    if(d.running&&!window._autoTimeRunning){
+      window._autoTimeRunning=true;
+      autoTimeStep();
+      window._autoTimeTimer=setInterval(autoTimeStep,3000);
+      if(typeof renderLive==='function') renderLive();
+    } else if(!d.running&&window._autoTimeRunning){
+      window._autoTimeRunning=false;
+      if(window._autoTimeTimer) clearInterval(window._autoTimeTimer);
+      window._autoTimeTimer=null;
+      if(typeof renderLive==='function') renderLive();
+    }
+  });
+}
+
 function autoTimeStep(){
-  if(!positions.length||!changes.length) return;
-  // If GPS is active and fresh, let GPS handle it
-  if(autoAdvanceGPS&&liveGrupoData&&liveGrupoData.cambio>0){
-    var lastGPSAge=Date.now()-(liveGrupoData.t||0);
-    if(lastGPSAge<60000) return;
-  }
-  var _stC=getStartTime();var h=_stC.h;
+  if(!positions.length) return;
+  var tot=positions.length;
+  var gpsActive=(Date.now()-window._lastRealGPS<GPS_TIMEOUT);
+
+  var _stC=getStartTime();
   var mn=+$('cMn').value||6;
   var dateStr=dayDates[currentDay]||localDateStr(new Date());
   var startTime=new Date(dateStr+'T'+String(_stC.h).padStart(2,'0')+':'+String(_stC.m).padStart(2,'0')+':00').getTime();
   var now=Date.now()+(window._autoTimeOffset*60000);
   var elapsed=now-startTime;
+
   if(elapsed<0){
-    if(currentGrupoActual===0) updateBanners();
+    if(!gpsActive){
+      db.ref('jesus').set({lat:positions[0].lat,lng:positions[0].lng,t:Date.now()});
+      var vRoute0=(positionsW.length>=2)?positionsW:positions;
+      db.ref('virgen').set({lat:vRoute0[0].lat,lng:vRoute0[0].lng,t:Date.now()});
+    }
+    updateBanners();
     return;
   }
-  var mnMs=mn*60000;
-  // Fractional position: which cambio + how far to next
-  var exactPos=elapsed/mnMs; // e.g. 4.6 = 60% between cambio 5 and 6
-  var currentCambio=Math.floor(exactPos)+1;
-  var fraction=exactPos-Math.floor(exactPos); // 0..1 between points
-  currentCambio=Math.min(currentCambio,positions.length);
-  currentCambio=Math.max(1,currentCambio);
 
-  // Update grupo only when cambio changes
-  if(currentCambio!==currentGrupoActual&&currentCambio>0){
+  var mnMs=mn*60000;
+  var exactPos=elapsed/mnMs;
+  var currentCambio=Math.floor(exactPos)+1;
+  var fraction=exactPos-Math.floor(exactPos);
+  currentCambio=Math.min(currentCambio,tot);
+  currentCambio=Math.max(1,currentCambio);
+  var procFinished=(currentCambio>=tot);
+  if(procFinished) fraction=1;
+
+  // Auto-stop when procession is done
+  if(procFinished&&window._autoTimeRunning){
+    // Keep running 2 more min for virgen to finish, then stop
+    var vRoute2=(positionsW.length>=2)?positionsW:positions;
+    var vExact2=Math.max(0,exactPos-virgenDesfase);
+    if(vExact2>=vRoute2.length){
+      window._autoTimeRunning=false;
+      if(window._autoTimeTimer){clearInterval(window._autoTimeTimer);window._autoTimeTimer=null;}
+      syncAutoState();
+      if(typeof renderLive==='function') renderLive();
+      updateBanners();
+      return;
+    }
+  }
+
+  // Update grupo when cambio changes (only if GPS not active)
+  if(!gpsActive&&currentCambio!==currentGrupoActual&&currentCambio>0){
     currentGrupoActual=currentCambio;
     var sacaH=daySaca[currentDay]||16;
     var grp=((sacaH-1+currentCambio-1)%getHomCount())+1;
     var nombre=(currentCambio<=changes.length&&changes[currentCambio-1])?changes[currentCambio-1].n||'':'';
-    liveGrupoData={cambio:currentCambio,grp:grp,nombre:nombre,tot:positions.length,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
+    liveGrupoData={cambio:currentCambio,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
     try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
     saveAll();
     db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
     if(typeof renderLive==='function') renderLive();
   }
 
-  // Smooth marker position: interpolate between current and next point
-  var idxA=Math.min(currentCambio-1,positions.length-1);
-  var idxB=Math.min(currentCambio,positions.length-1);
-  var ptA=positions[idxA];
-  var ptB=positions[idxB];
-  var jLat=ptA.lat+(ptB.lat-ptA.lat)*fraction;
-  var jLng=ptA.lng+(ptB.lng-ptA.lng)*fraction;
-  db.ref('jesus').set({lat:jLat,lng:jLng,t:Date.now()});
+  // Animate markers smoothly (unless real GPS is active)
+  if(!gpsActive){
+    var idxA=Math.min(currentCambio-1,tot-1);
+    var idxB=Math.min(currentCambio,tot-1);
+    if(procFinished){idxA=tot-1;idxB=tot-1;fraction=0;}
+    var ptA=positions[idxA],ptB=positions[idxB];
+    var jLat=ptA.lat+(ptB.lat-ptA.lat)*fraction;
+    var jLng=ptA.lng+(ptB.lng-ptA.lng)*fraction;
+    db.ref('jesus').set({lat:jLat,lng:jLng,t:Date.now()});
 
-  // Virgen: smooth on women's route (or men's if no women route)
-  var vRoute=(positionsW.length>=2)?positionsW:positions;
-  var vExactPos=Math.max(0,exactPos-virgenDesfase);
-  var vCambio=Math.floor(vExactPos);
-  var vFrac=vExactPos-vCambio;
-  var vIdxA=Math.min(vCambio,vRoute.length-1);
-  var vIdxB=Math.min(vCambio+1,vRoute.length-1);
-  var vPtA=vRoute[vIdxA];
-  var vPtB=vRoute[vIdxB];
-  var vLat=vPtA.lat+(vPtB.lat-vPtA.lat)*vFrac;
-  var vLng=vPtA.lng+(vPtB.lng-vPtA.lng)*vFrac;
-  db.ref('virgen').set({lat:vLat,lng:vLng,t:Date.now()});
+    var vRoute=(positionsW.length>=2)?positionsW:positions;
+    var vTot=vRoute.length;
+    var vExactPos=Math.max(0,exactPos-virgenDesfase);
+    var vCambio=Math.floor(vExactPos);
+    var vFrac=vExactPos-vCambio;
+    var vFinished=(vCambio>=vTot-1);
+    if(vFinished){vCambio=vTot-1;vFrac=0;}
+    var vIdxA=Math.min(vCambio,vTot-1);
+    var vIdxB=Math.min(vCambio+1,vTot-1);
+    var vPtA=vRoute[vIdxA],vPtB=vRoute[vIdxB];
+    var vLat=vPtA.lat+(vPtB.lat-vPtA.lat)*vFrac;
+    var vLng=vPtA.lng+(vPtB.lng-vPtA.lng)*vFrac;
+    db.ref('virgen').set({lat:vLat,lng:vLng,t:Date.now()});
+  }
 
   updateBanners();
 }
@@ -3749,6 +3893,7 @@ function autoTimeStep(){
 function adjustAutoTime(delta){
   window._autoTimeOffset+=delta;
   autoTimeStep();
+  syncAutoState();
   if(typeof syncConfig==='function') syncConfig();
   if(typeof renderLive==='function') renderLive();
 }
