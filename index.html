@@ -3626,7 +3626,7 @@ function toggleAutoTime(){
   window._autoTimeRunning=!window._autoTimeRunning;
   if(window._autoTimeRunning){
     autoTimeStep();
-    window._autoTimeTimer=setInterval(autoTimeStep,5000); // check every 5 sec
+    window._autoTimeTimer=setInterval(autoTimeStep,3000); // every 3 sec for smooth movement
   } else {
     if(window._autoTimeTimer) clearInterval(window._autoTimeTimer);
     window._autoTimeTimer=null;
@@ -3648,38 +3648,52 @@ function autoTimeStep(){
   var now=Date.now()+(window._autoTimeOffset*60000);
   var elapsed=now-startTime;
   if(elapsed<0){
-    // Procesión no ha empezado — show waiting state
     if(currentGrupoActual===0) updateBanners();
     return;
   }
-  var expectedCambio=Math.floor(elapsed/(mn*60000))+1;
-  expectedCambio=Math.min(expectedCambio,positions.length);
-  expectedCambio=Math.max(1,expectedCambio);
-  // Update if different (forward OR backward after manual correction)
-  if(expectedCambio!==currentGrupoActual&&expectedCambio>0){
-    currentGrupoActual=expectedCambio;
+  var mnMs=mn*60000;
+  // Fractional position: which cambio + how far to next
+  var exactPos=elapsed/mnMs; // e.g. 4.6 = 60% between cambio 5 and 6
+  var currentCambio=Math.floor(exactPos)+1;
+  var fraction=exactPos-Math.floor(exactPos); // 0..1 between points
+  currentCambio=Math.min(currentCambio,positions.length);
+  currentCambio=Math.max(1,currentCambio);
+
+  // Update grupo only when cambio changes
+  if(currentCambio!==currentGrupoActual&&currentCambio>0){
+    currentGrupoActual=currentCambio;
     var sacaH=daySaca[currentDay]||16;
-    var grp=((sacaH-1+expectedCambio-1)%getHomCount())+1;
-    var nombre=(expectedCambio<=changes.length&&changes[expectedCambio-1])?changes[expectedCambio-1].n||'':'';
-    liveGrupoData={cambio:expectedCambio,grp:grp,nombre:nombre,tot:positions.length,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
+    var grp=((sacaH-1+currentCambio-1)%getHomCount())+1;
+    var nombre=(currentCambio<=changes.length&&changes[currentCambio-1])?changes[currentCambio-1].n||'':'';
+    liveGrupoData={cambio:currentCambio,grp:grp,nombre:nombre,tot:positions.length,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
     try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
     saveAll();
     db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
-    // Move markers on map
-    if(expectedCambio<=positions.length){
-      var pt=positions[expectedCambio-1];
-      var jitter=(Math.random()-0.5)*0.00004;
-      db.ref('jesus').set({lat:pt.lat+jitter,lng:pt.lng+jitter,t:Date.now()});
-      // Virgen follows women's route if available, otherwise men's
-      var vIdx=Math.max(0,expectedCambio-1-virgenDesfase);
-      var vRoute=(positionsW.length>=2)?positionsW:positions;
-      vIdx=Math.min(vIdx,vRoute.length-1);
-      var vPt=vRoute[vIdx];
-      db.ref('virgen').set({lat:vPt.lat+jitter,lng:vPt.lng+jitter,t:Date.now()});
-    }
     if(typeof renderLive==='function') renderLive();
   }
-  // Always keep banners fresh
+
+  // Smooth marker position: interpolate between current and next point
+  var idxA=Math.min(currentCambio-1,positions.length-1);
+  var idxB=Math.min(currentCambio,positions.length-1);
+  var ptA=positions[idxA];
+  var ptB=positions[idxB];
+  var jLat=ptA.lat+(ptB.lat-ptA.lat)*fraction;
+  var jLng=ptA.lng+(ptB.lng-ptA.lng)*fraction;
+  db.ref('jesus').set({lat:jLat,lng:jLng,t:Date.now()});
+
+  // Virgen: smooth on women's route (or men's if no women route)
+  var vRoute=(positionsW.length>=2)?positionsW:positions;
+  var vExactPos=Math.max(0,exactPos-virgenDesfase);
+  var vCambio=Math.floor(vExactPos);
+  var vFrac=vExactPos-vCambio;
+  var vIdxA=Math.min(vCambio,vRoute.length-1);
+  var vIdxB=Math.min(vCambio+1,vRoute.length-1);
+  var vPtA=vRoute[vIdxA];
+  var vPtB=vRoute[vIdxB];
+  var vLat=vPtA.lat+(vPtB.lat-vPtA.lat)*vFrac;
+  var vLng=vPtA.lng+(vPtB.lng-vPtA.lng)*vFrac;
+  db.ref('virgen').set({lat:vLat,lng:vLng,t:Date.now()});
+
   updateBanners();
 }
 
