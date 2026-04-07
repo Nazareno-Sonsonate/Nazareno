@@ -2843,6 +2843,7 @@ function findNearestCambio(lat,lng){
   return bestP+1;
 }
 
+var rawGpsDots={};
 function listenAnda(tipo,imgUrl,color,zIdx){
   db.ref(tipo).on('value',function(snap){
     const d=snap.val();
@@ -2851,10 +2852,14 @@ function listenAnda(tipo,imgUrl,color,zIdx){
         if(urnaMarkers[tipo]._ring){urnaMarkers[tipo]._ring.setMap(null);}
         urnaMarkers[tipo].setMap(null);urnaMarkers[tipo]=null;
       }
+      if(rawGpsDots[tipo]){rawGpsDots[tipo].setMap(null);rawGpsDots[tipo]=null;}
       return;
     }
     const raw={lat:d.lat,lng:d.lng};
-    const ll=snapToRoute(raw);
+    // Only snapToRoute if real GPS is active (Auto positions are already precise)
+    var isRealGPS=(Date.now()-window._lastRealGPS<GPS_TIMEOUT);
+    const ll=isRealGPS?snapToRoute(raw):raw;
+
     if(!urnaMarkers[tipo]&&gmap){
       urnaMarkers[tipo]=new google.maps.Marker({
         position:ll, map:gmap, zIndex:zIdx,
@@ -2874,9 +2879,25 @@ function listenAnda(tipo,imgUrl,color,zIdx){
       urnaMarkers[tipo].setPosition(ll);
       if(urnaMarkers[tipo]._ring) urnaMarkers[tipo]._ring.setCenter(ll);
     }
+    // Show small raw GPS dot when real GPS is active (to see if drifting)
+    if(isRealGPS&&tipo==='jesus'&&!isShared){
+      if(!rawGpsDots[tipo]&&gmap){
+        rawGpsDots[tipo]=new google.maps.Circle({
+          center:raw,map:gmap,radius:4,
+          fillColor:'#ff0',fillOpacity:0.8,
+          strokeColor:'#ff0',strokeWeight:1,strokeOpacity:0.6,
+          zIndex:zIdx+1
+        });
+      } else if(rawGpsDots[tipo]){
+        rawGpsDots[tipo].setCenter(raw);
+        rawGpsDots[tipo].setMap(gmap);
+      }
+    } else if(rawGpsDots[tipo]){
+      rawGpsDots[tipo].setMap(null);
+    }
     // GPS Auto-advance: if this is the main anda (jesus) and auto is on
     if(tipo==='jesus'&&autoAdvanceGPS&&!isShared){
-      window._lastRealGPS=Date.now(); // Mark real GPS activity
+      window._lastRealGPS=Date.now();
       var nearCambio=findNearestCambio(ll.lat,ll.lng);
       if(nearCambio>0&&nearCambio>currentGrupoActual){
         currentGrupoActual=nearCambio;
