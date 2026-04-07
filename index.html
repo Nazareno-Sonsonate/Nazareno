@@ -20,8 +20,8 @@
 <meta name="twitter:card" content="summary_large_image">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
-.hdr{text-align:center;padding:4px 8px 2px;border-bottom:1px solid rgba(178,102,255,.2)}
+body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;padding-top:52px}
+.hdr{position:fixed;top:0;left:0;right:0;z-index:3001;padding:4px 10px;border-bottom:1px solid rgba(178,102,255,.2);background:#111}
 .hdr h1{font-size:12px;color:#c084fc;letter-spacing:2px}
 .hdr .s{font-size:11px;color:#ccc}
 .days{display:flex;gap:0;border-bottom:2px solid rgba(178,102,255,.2)}
@@ -91,13 +91,13 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
 </head>
 <body>
 
-<div class="hdr" style="padding:8px 12px">
+<div class="hdr">
   <div style="display:flex;align-items:center;justify-content:space-between">
-    <div>
-      <h1 id="hTitle" style="font-size:18px;margin:0">✝️ Lunes Santo</h1>
-      <div class="s" id="hSub" style="font-size:12px;margin-top:2px;color:#aaa"></div>
+    <div style="min-width:0;flex:1">
+      <h1 id="hTitle" style="font-size:16px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">✝️ Lunes Santo</h1>
+      <div class="s" id="hSub" style="font-size:11px;margin-top:1px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
     </div>
-    <div style="display:flex;gap:4px;align-items:center">
+    <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
       <select id="daySelector" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:5px 8px;border-radius:6px;font-size:11px;font-weight:700;font-family:inherit">
         <option value="0">Ⓛ Lunes</option>
         <option value="1">Ⓜ Martes</option>
@@ -110,8 +110,9 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh}
       <button class="btn" onclick="shareWhatsApp()" style="padding:5px 8px;font-size:11px">📤</button>
     </div>
   </div>
-  <div id="onlineCounter" style="display:none;font-size:10px;color:#4CAF50;margin-top:2px"></div>
+  <div id="onlineCounter" style="display:none;font-size:10px;color:#4CAF50;margin-top:1px"></div>
 </div>
+<div style="height:52px"></div>
 
 <!-- Live broadcast banner (everyone sees) -->
 <div id="broadcastBanner" style="display:none;padding:10px;background:rgba(255,152,0,.12);border-bottom:1px solid rgba(255,152,0,.3);text-align:center">
@@ -895,14 +896,21 @@ function updateStartTime(){
   calc();
   if(typeof renderLive==='function') renderLive();
   if(typeof syncConfig==='function') syncConfig();
-  // Force-update anda position based on new time settings
+  // Recalculate Auto offset from scratch based on current grupo
+  if(window._autoTimeRunning&&currentGrupoActual>0){
+    var mn=+$('cMn').value||6;
+    var dateStr=dayDates[currentDay]||localDateStr(new Date());
+    var startTime=new Date(dateStr+'T'+String(st.h).padStart(2,'0')+':'+String(st.m).padStart(2,'0')+':00').getTime();
+    var shouldBe=startTime+(currentGrupoActual-1)*mn*60000;
+    window._autoTimeOffset=Math.round((shouldBe-Date.now())/60000);
+    syncAutoState();
+    autoTimeStep();
+  }
   forceAndaPosition();
-  if(window._autoTimeRunning) autoTimeStep();
 }
 function forceAndaPosition(){
   if(!positions.length) return;
-  // If real GPS is active, don't override
-  if(Date.now()-window._lastRealGPS<60000) return;
+  if(Date.now()-window._lastRealGPS<GPS_TIMEOUT) return;
   var _stF=getStartTime();
   var mn=+$('cMn').value||6;
   var dateStr=dayDates[currentDay]||localDateStr(new Date());
@@ -1642,9 +1650,10 @@ const VIER_CORTESIAS_MIN = 45;    // 45 min pause (11:30-12:15)
 const VIER_LAST_EXTRA = 0.10;     // last change 10% longer
 
 function calcTime(num, tot, c) {
+  var departMin=c.h * 60 + (c.hm||0);
   if(currentDay !== 3) {
-    // Simple: fixed min/change
-    return c.h * 60 + (c.hm||0) + num * c.mn;
+    // Cambio 1 = departure, each next = +mn
+    return departMin + (num-1) * c.mn;
   }
   // VIERNES: 6AM start, cortesías at 11:30 (change 40), asienta ~1:30PM
   // Before cortesías: 330 min for 40 changes = 8.25 min/cambio
@@ -1657,7 +1666,7 @@ function calcTime(num, tot, c) {
   var mpcAfter = remaining > 0 ? afterCort / remaining : mpcBefore;
 
   let elapsed = 0;
-  for(let i = 1; i <= num; i++) {
+  for(let i = 2; i <= num; i++) {
     if(i <= VIER_CORTESIAS_CHANGE) {
       elapsed += mpcBefore;
     } else {
