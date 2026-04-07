@@ -98,12 +98,12 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
       <div class="s" id="hSub" style="font-size:11px;margin-top:1px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
     </div>
     <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-      <select id="daySelector" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:5px 8px;border-radius:6px;font-size:11px;font-weight:700;font-family:inherit">
-        <option value="0">Ⓛ Lunes</option>
-        <option value="1">Ⓜ Martes</option>
-        <option value="2">Ⓜ Miércoles</option>
-        <option value="3">Ⓥ Viernes</option>
-        <option value="4" id="seOpt">⚰️ SE</option>
+      <select id="daySelector" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:4px 6px;border-radius:6px;font-size:11px;font-weight:700;font-family:inherit">
+        <option value="0">Lun</option>
+        <option value="1">Mar</option>
+        <option value="2">Mié</option>
+        <option value="3">Vie</option>
+        <option value="4" id="seOpt">SE</option>
       </select>
       <button class="btn" onclick="var ap=document.getElementById('alertPanel');var ao=document.getElementById('alertOverlay');var vis=ap.style.display==='none';ap.style.display=vis?'block':'none';ao.style.display=vis?'block':'none';if(vis&&typeof populateAlertSelects==='function')populateAlertSelects()" style="padding:5px 8px;font-size:11px" id="btnAlert">🔔</button>
       <button class="btn" onclick="openCfg()" style="padding:5px 8px;font-size:11px" id="btnConfig">⚙️</button>
@@ -112,7 +112,6 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
   </div>
   <div id="onlineCounter" style="display:none;font-size:10px;color:#4CAF50;margin-top:1px"></div>
 </div>
-<div style="height:52px"></div>
 
 <!-- Live broadcast banner (everyone sees) -->
 <div id="broadcastBanner" style="display:none;padding:10px;background:rgba(255,152,0,.12);border-bottom:1px solid rgba(255,152,0,.3);text-align:center">
@@ -584,7 +583,7 @@ function detectToday(){
   }
   // Mark labels in dropdown
   var ds=document.getElementById('daySelector');
-  var labels=['Ⓛ Lunes','Ⓜ Martes','Ⓜ Miércoles','Ⓥ Viernes','⚰️ V. Santo SE'];
+  var labels=['Lun','Mar','Mié','Vie','SE'];
   if(ds){
     for(var j=0;j<ds.options.length;j++){
       var idx=+ds.options[j].value;
@@ -1816,7 +1815,8 @@ function calc() {
   var titleText=isSEMode?'Santo Entierro de Cristo':dayNames[currentDay];
   $('hTitle').textContent=titleIcon+' '+titleText;
   $('hTitle').style.color=isSEMode?'#d4af37':'#c084fc';
-  $('hSub').textContent=dateStr+' · Grupo #'+c.g+' · Saca #'+c.s+' → Asienta #'+lastGrp+extra;
+  var depTimeStr=fmt(c.h*60+(c.hm||0));
+  $('hSub').textContent=dateStr+' · Sale '+depTimeStr+' · #'+c.g+' · Saca #'+c.s+' → #'+lastGrp+extra;
   const isMuj=c.t===27;
 
   renderTable();
@@ -2350,7 +2350,21 @@ function renderLive(){
   // Banners always updated (updateBanners handles isPastDay styling)
   updateBanners();
 
-  // Admin controls moved to ⚙️ popup
+  // Admin grupo +/- (front panel, not popup)
+  if(!isShared&&!isPastDay){
+    var sacaDef=daySaca[currentDay]||16;
+    var adminGText='#'+sacaDef;
+    if(liveGrupoData&&liveGrupoData.cambio>0){
+      var adminTot=positions.length||changes.length;
+      if(liveGrupoData.cambio>=adminTot){adminGText='✅';}
+      else{adminGText='#'+(((sacaDef-1+liveGrupoData.cambio-1)%getHomCount())+1);}
+    }
+    h+='<div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;justify-content:center">';
+    h+='<button onclick="advanceGrupo(-1)" style="padding:8px 16px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#ccc;font-size:18px;font-weight:700;cursor:pointer">−</button>';
+    h+='<span onclick="setGrupoManual()" style="font-size:22px;font-weight:700;color:#c084fc;min-width:50px;text-align:center;cursor:pointer">'+adminGText+'</span>';
+    h+='<button onclick="advanceGrupo(1)" style="padding:8px 16px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.3);color:#c084fc;font-size:18px;font-weight:700;cursor:pointer">+</button>';
+    h+='</div>';
+  }
   // Chronometer (everyone sees, not past days)
   if(!isPastDay){
     h+='<div style="text-align:center;margin-bottom:8px"><span id="grupoCrono" style="font-size:18px;font-weight:700;color:#ff9800;font-family:monospace">⏱ 0:00</span><br><span id="grupoLastUpdate" style="font-size:10px;color:#888"></span></div>';
