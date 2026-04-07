@@ -93,23 +93,17 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
 
 <div class="hdr">
   <div style="display:flex;align-items:center;justify-content:space-between">
-    <div style="min-width:0;flex:1">
-      <h1 id="hTitle" style="font-size:16px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">✝️ Lunes Santo</h1>
-      <div class="s" id="hSub" style="font-size:11px;margin-top:1px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-    </div>
-    <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-      <select id="daySelector" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:4px 6px;border-radius:6px;font-size:11px;font-weight:700;font-family:inherit">
-        <option value="0">Lun</option>
-        <option value="1">Mar</option>
-        <option value="2">Mié</option>
-        <option value="3">Vie</option>
-        <option value="4" id="seOpt">SE</option>
+    <h1 id="hTitle" style="font-size:15px;margin:0;white-space:nowrap">✝️ Lunes Santo</h1>
+    <div style="display:flex;gap:3px;align-items:center;flex-shrink:0">
+      <select id="daySelector" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:3px 5px;border-radius:5px;font-size:10px;font-weight:700;font-family:inherit">
+        <option value="0">Lun</option><option value="1">Mar</option><option value="2">Mié</option><option value="3">Vie</option><option value="4" id="seOpt">SE</option>
       </select>
-      <button class="btn" onclick="var ap=document.getElementById('alertPanel');var ao=document.getElementById('alertOverlay');var vis=ap.style.display==='none';ap.style.display=vis?'block':'none';ao.style.display=vis?'block':'none';if(vis&&typeof populateAlertSelects==='function')populateAlertSelects()" style="padding:5px 8px;font-size:11px" id="btnAlert">🔔</button>
-      <button class="btn" onclick="openCfg()" style="padding:5px 8px;font-size:11px" id="btnConfig">⚙️</button>
-      <button class="btn" onclick="shareWhatsApp()" style="padding:5px 8px;font-size:11px">📤</button>
+      <button class="btn" onclick="var ap=document.getElementById('alertPanel');var ao=document.getElementById('alertOverlay');var vis=ap.style.display==='none';ap.style.display=vis?'block':'none';ao.style.display=vis?'block':'none';if(vis&&typeof populateAlertSelects==='function')populateAlertSelects()" style="padding:4px 7px;font-size:11px" id="btnAlert">🔔</button>
+      <button class="btn" onclick="openCfg()" style="padding:4px 7px;font-size:11px" id="btnConfig">⚙️</button>
+      <button class="btn" onclick="shareWhatsApp()" style="padding:4px 7px;font-size:11px">📤</button>
     </div>
   </div>
+  <div id="hSub" style="font-size:11px;color:#aaa;overflow-x:auto;white-space:nowrap;padding:1px 0"></div>
   <div id="onlineCounter" style="display:none;font-size:10px;color:#4CAF50;margin-top:1px"></div>
 </div>
 
@@ -2426,25 +2420,21 @@ function renderLive(){
     const estTime=getEstimate(nextCarry);
     const realAvg=getRealAvg();
 
-    h+='<div class="live-next"'+(nextCarry.colorHex?' style="border-color:'+nextCarry.colorHex+'"':'')+'>';
-    h+='<div class="ln-label">Próxima cargada</div>';
+    h+='<div class="live-next" onclick="zoomTo('+(nextCarry.ci-1)+')" style="cursor:pointer;'+(nextCarry.colorHex?'border-color:'+nextCarry.colorHex:'')+'\">';
+    h+='<div class="ln-label">Próxima cargada · tocá para ver en mapa</div>';
     h+='<div class="ln-num"'+(nextCarry.colorHex?' style="color:'+nextCarry.colorHex+'"':'')+'>#'+nextCarry.ci+'</div>';
     if(nextCarry.carryLabel) h+='<div style="font-size:14px;margin:4px 0">'+nextCarry.carryLabel+'</div>';
     h+='<div class="ln-ref">📍 '+ref+'</div>';
-    if(isSEMode){
-      h+='<div style="font-size:11px;color:#888;margin-top:2px">Hora estimada: ~'+estTime+'</div>';
-    } else {
-      h+='<div class="ln-time">~'+estTime+'</div>';
-    }
+    h+='<div class="ln-time">~'+estTime+'</div>';
     h+='<div id="countdownText" style="font-size:13px;margin-top:4px"></div>';
-    if(realAvg) h+='<div style="font-size:10px;color:#4CAF50;margin-top:2px">⏱️ Promedio: '+realAvg.toFixed(1)+' min/cambio</div>';
-    h+='<div style="font-size:10px;color:#aaa;margin-top:4px">Cambio #'+nextCarry.num+'</div>';
+    if(realAvg) h+='<div style="font-size:11px;color:#4CAF50;margin-top:2px">⏱ Ritmo real: '+realAvg.toFixed(1)+' min/cambio</div>';
+    h+='<div style="font-size:10px;color:#aaa;margin-top:2px">Cambio #'+nextCarry.num+'</div>';
     h+='</div>';
 
-    // Mark done buttons
+    // Compact register buttons
     h+='<div style="display:flex;gap:4px;margin-bottom:4px">';
-    h+='<button class="live-btn live-btn-done" style="flex:3" onclick="markDone('+nextCarry.ci+')">✅ Registrar #'+nextCarry.ci+'</button>';
-    h+='<button style="flex:1;padding:8px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#888;font-size:10px;font-family:inherit;cursor:pointer" onclick="markDoneWithTime('+nextCarry.ci+')">🕐 Otra hora</button>';
+    h+='<button onclick="markDone('+nextCarry.ci+')" style="flex:3;padding:8px;border:none;border-radius:8px;background:#4CAF50;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">✅ Registrar #'+nextCarry.ci+'</button>';
+    h+='<button onclick="markDoneWithTime('+nextCarry.ci+')" style="flex:1;padding:6px;border:1px solid #555;border-radius:8px;background:none;color:#888;font-size:9px;font-family:inherit;cursor:pointer">🕐</button>';
     h+='</div>';
   }
 
@@ -2955,6 +2945,23 @@ function listenAnda(tipo,imgUrl,color,zIdx){
       window._lastRealGPS=Date.now();
       var nearCambio=findNearestCambio(ll.lat,ll.lng);
       if(nearCambio>0&&nearCambio>currentGrupoActual){
+        // Track real rhythm
+        if(!window._grupoTimestamps) window._grupoTimestamps=[];
+        window._grupoTimestamps.push({cambio:nearCambio,t:Date.now()});
+        if(window._grupoTimestamps.length>=3){
+          var ts=window._grupoTimestamps;
+          var totalTime=ts[ts.length-1].t-ts[0].t;
+          var totalCambios=ts[ts.length-1].cambio-ts[0].cambio;
+          if(totalCambios>0){
+            var realMn=Math.round(totalTime/(totalCambios*60000));
+            if(realMn>=1&&realMn<=20&&realMn!==(+$('cMn').value)){
+              $('cMn').value=realMn;
+              calc();if(typeof renderLive==='function')renderLive();
+              if(typeof syncConfig==='function')syncConfig();
+            }
+          }
+          if(window._grupoTimestamps.length>10) window._grupoTimestamps=window._grupoTimestamps.slice(-5);
+        }
         currentGrupoActual=nearCambio;
         var sacaH=daySaca[currentDay]||16;
         var tot=positions.length;
@@ -3410,7 +3417,7 @@ function setGrupoManual(){
 }
 
 function changeDesfase(delta){
-  virgenDesfase=Math.max(0,Math.min(30,virgenDesfase+delta));
+  virgenDesfase=Math.max(1,Math.min(30,virgenDesfase+delta));
   if(liveGrupoData){liveGrupoData.desfase=virgenDesfase;}
   var el=document.getElementById('desfaseNum');
   if(el) el.textContent=virgenDesfase;
@@ -3463,8 +3470,10 @@ function updateBanners(){
     var vLabel=isSEMode?'Virgen Dolorosa':'María Santísima';
     var jSize=isMuj?'14px':'22px';var jPad=isMuj?'6px':'10px';
     var vSize=isMuj?'22px':'14px';var vPad=isMuj?'10px':'6px';
-    var jHtml='<div id="grupoActualBanner" onclick="buscarAnda(\'jesus\')" style="cursor:pointer;text-align:center;padding:'+jPad+';margin-bottom:6px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><div id="grupoActualLabel1" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa">'+jLabel1+'</div><div id="grupoActualLabel2" style="font-size:'+(isMuj?'9px':'11px')+';color:#ccc">Saca</div><div id="grupoActualText" style="font-size:'+jSize+';font-weight:700;color:#c084fc"></div><div id="grupoActualProgress" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa"></div></div>';
-    var vHtml='<div id="grupoVirgenBanner" onclick="buscarAnda(\'virgen\')" style="cursor:pointer;text-align:center;padding:'+vPad+';margin-bottom:6px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><div id="grupoVirgenLabel1" style="font-size:'+(isMuj?'11px':'9px')+';color:#93c5fd">'+vLabel+'</div><div id="grupoVirgenLabel2" style="font-size:'+(isMuj?'11px':'9px')+';color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:'+vSize+';font-weight:700;color:#93c5fd"></div><div id="grupoVirgenProgress" style="font-size:'+(isMuj?'10px':'8px')+';color:#ff9800"></div></div>';
+    var jImg=isSEMode?'se-entierro-marker.png':'jesus-marker.png';
+    var vImg=isSEMode?'se-virgen-marker.png':'maria-marker.png';
+    var jHtml='<div id="grupoActualBanner" onclick="buscarAnda(\'jesus\')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:'+jPad+';margin-bottom:6px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><img src="'+jImg+'" style="width:36px;height:44px;object-fit:contain;flex-shrink:0" onerror="this.style.display=\'none\'"><div style="flex:1;text-align:center"><div id="grupoActualLabel1" style="font-size:'+(isMuj?'9px':'12px')+';color:#aaa">'+jLabel1+'</div><div id="grupoActualLabel2" style="font-size:'+(isMuj?'9px':'12px')+';color:#ccc">Saca</div><div id="grupoActualText" style="font-size:'+jSize+';font-weight:700;color:#c084fc"></div><div id="grupoActualProgress" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa"></div></div></div>';
+    var vHtml='<div id="grupoVirgenBanner" onclick="buscarAnda(\'virgen\')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:'+vPad+';margin-bottom:6px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><img src="'+vImg+'" style="width:36px;height:44px;object-fit:contain;flex-shrink:0" onerror="this.style.display=\'none\'"><div style="flex:1;text-align:center"><div id="grupoVirgenLabel1" style="font-size:'+(isMuj?'12px':'9px')+';color:#93c5fd">'+vLabel+'</div><div id="grupoVirgenLabel2" style="font-size:'+(isMuj?'12px':'9px')+';color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:'+vSize+';font-weight:700;color:#93c5fd"></div><div id="grupoVirgenProgress" style="font-size:'+(isMuj?'10px':'9px')+';color:#ff9800"></div></div></div>';
     container.innerHTML=isMuj?(vHtml+jHtml):(jHtml+vHtml);
   }
   
@@ -3925,7 +3934,7 @@ function autoTimeStep(){
     if(typeof renderLive==='function') renderLive();
   }
 
-  // Animate markers smoothly (unless real GPS is active)
+  // Animate Jesus marker (only if real GPS not active)
   if(!gpsActive){
     var idxA=Math.min(currentCambio-1,tot-1);
     var idxB=Math.min(currentCambio,tot-1);
@@ -3934,10 +3943,14 @@ function autoTimeStep(){
     var jLat=ptA.lat+(ptB.lat-ptA.lat)*fraction;
     var jLng=ptA.lng+(ptB.lng-ptA.lng)*fraction;
     db.ref('jesus').set({lat:jLat,lng:jLng,t:Date.now()});
-
+  }
+  // Always animate Virgen (she doesn't have her own GPS usually)
+  var virgenHasGPS=(urnaActive&&urnaActive.virgen);
+  if(!virgenHasGPS){
     var vRoute=(positionsW.length>=2)?positionsW:positions;
     var vTot=vRoute.length;
-    var vExactPos=Math.max(0,exactPos-virgenDesfase);
+    var vDesfaseMin=Math.max(virgenDesfase,1); // minimum 1 cambio behind
+    var vExactPos=Math.max(0,exactPos-vDesfaseMin);
     var vCambio=Math.floor(vExactPos);
     var vFrac=vExactPos-vCambio;
     var vFinished=(vCambio>=vTot-1);
