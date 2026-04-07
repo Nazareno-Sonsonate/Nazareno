@@ -1074,6 +1074,17 @@ function updateAdminLiveControls(){
   h+='<span style="font-size:18px;font-weight:700;color:#f59e0b;min-width:30px;text-align:center">'+(virgenMovidos>0?'+':'')+virgenMovidos+'</span>';
   h+='<button onclick="changeMovidos(1);updateAdminLiveControls()" style="padding:5px 12px;border:1px solid #f59e0b;border-radius:6px;background:rgba(245,158,11,.2);color:#f59e0b;font-size:16px;cursor:pointer">+</button>';
   h+='</div>';
+  // Virgen own rhythm - only when she has her own route
+  if(positionsW.length>=2){
+    var vMnDisplay=virgenMn||+$('cMn').value||6;
+    h+='<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;justify-content:center">';
+    h+='<span style="font-size:13px;color:#3b82f6">Ritmo Virgen:</span>';
+    h+='<button onclick="changeVirgenMn(-1);updateAdminLiveControls()" style="padding:5px 12px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:16px;cursor:pointer">−</button>';
+    h+='<span style="font-size:18px;font-weight:700;color:#3b82f6;min-width:40px;text-align:center">'+vMnDisplay+'</span>';
+    h+='<button onclick="changeVirgenMn(1);updateAdminLiveControls()" style="padding:5px 12px;border:1px solid #3b82f6;border-radius:6px;background:rgba(59,130,246,.2);color:#93c5fd;font-size:16px;cursor:pointer">+</button>';
+    h+='<span style="font-size:10px;color:#888">min</span>';
+    h+='</div>';
+  }
   el.innerHTML=h;
 }
 function onTypeChange(){
@@ -3308,6 +3319,19 @@ let currentGrupoActual=0;
 var liveGrupoData=null;
 var virgenDesfase=5;
 var virgenMovidos=0;
+var virgenMn=0; // 0 = same as Jesus, >0 = independent rhythm
+
+function changeVirgenMn(delta){
+  var current=virgenMn||+$('cMn').value||6;
+  virgenMn=Math.max(1,Math.min(20,current+delta));
+  if(liveGrupoData){liveGrupoData.virgenMn=virgenMn;}
+  if(liveGrupoData&&liveGrupoData.cambio>0){
+    try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+    saveAll();
+    db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+  }
+  if(typeof renderLive==='function') renderLive();
+}
 var daySacaMuj=[19,27,13,22,6]; // saca de mujeres por día
 
 function loadGrupoFromStorage(){
@@ -3318,6 +3342,7 @@ function loadGrupoFromStorage(){
       if(sg&&sg.cambio){currentGrupoActual=sg.cambio;liveGrupoData=sg;}
       if(sg&&sg.desfase!==undefined) virgenDesfase=sg.desfase;
       if(sg&&sg.movidos!==undefined) virgenMovidos=sg.movidos;
+      if(sg&&sg.virgenMn) virgenMn=sg.virgenMn;
     }
   }catch(e){}
 }
@@ -3470,10 +3495,10 @@ function updateBanners(){
     var vLabel=isSEMode?'Virgen Dolorosa':'María Santísima';
     var jSize=isMuj?'14px':'22px';var jPad=isMuj?'6px':'10px';
     var vSize=isMuj?'22px':'14px';var vPad=isMuj?'10px':'6px';
-    var jImg=isSEMode?'se-entierro-marker.png':'jesus-marker.png';
-    var vImg=isSEMode?'se-virgen-marker.png':'maria-marker.png';
-    var jHtml='<div id="grupoActualBanner" onclick="buscarAnda(\'jesus\')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:'+jPad+';margin-bottom:6px;border-radius:10px;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><img src="'+jImg+'" style="width:36px;height:44px;object-fit:contain;flex-shrink:0" onerror="this.style.display=\'none\'"><div style="flex:1;text-align:center"><div id="grupoActualLabel1" style="font-size:'+(isMuj?'9px':'12px')+';color:#aaa">'+jLabel1+'</div><div id="grupoActualLabel2" style="font-size:'+(isMuj?'9px':'12px')+';color:#ccc">Saca</div><div id="grupoActualText" style="font-size:'+jSize+';font-weight:700;color:#c084fc"></div><div id="grupoActualProgress" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa"></div></div></div>';
-    var vHtml='<div id="grupoVirgenBanner" onclick="buscarAnda(\'virgen\')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:'+vPad+';margin-bottom:6px;border-radius:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><img src="'+vImg+'" style="width:36px;height:44px;object-fit:contain;flex-shrink:0" onerror="this.style.display=\'none\'"><div style="flex:1;text-align:center"><div id="grupoVirgenLabel1" style="font-size:'+(isMuj?'12px':'9px')+';color:#93c5fd">'+vLabel+'</div><div id="grupoVirgenLabel2" style="font-size:'+(isMuj?'12px':'9px')+';color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:'+vSize+';font-weight:700;color:#93c5fd"></div><div id="grupoVirgenProgress" style="font-size:'+(isMuj?'10px':'9px')+';color:#ff9800"></div></div></div>';
+    var jImg=isSEMode?'se-entierro.jpg':'jesus.jpg';
+    var vImg=isSEMode?'se-virgen.jpg':'maria.jpg';
+    var jHtml='<div id="grupoActualBanner" onclick="buscarAnda(\'jesus\')" style="cursor:pointer;display:flex;align-items:stretch;margin-bottom:6px;border-radius:10px;overflow:hidden;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><img src="'+jImg+'" style="width:60px;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'"><div style="flex:1;padding:'+jPad+';text-align:center;display:flex;flex-direction:column;justify-content:center"><div id="grupoActualLabel1" style="font-size:'+(isMuj?'9px':'12px')+';color:#aaa">'+jLabel1+'</div><div id="grupoActualLabel2" style="font-size:'+(isMuj?'9px':'12px')+';color:#ccc">Saca</div><div id="grupoActualText" style="font-size:'+jSize+';font-weight:700;color:#c084fc"></div><div id="grupoActualProgress" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa"></div></div></div>';
+    var vHtml='<div id="grupoVirgenBanner" onclick="buscarAnda(\'virgen\')" style="cursor:pointer;display:flex;align-items:stretch;margin-bottom:6px;border-radius:10px;overflow:hidden;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><img src="'+vImg+'" style="width:60px;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'"><div style="flex:1;padding:'+vPad+';text-align:center;display:flex;flex-direction:column;justify-content:center"><div id="grupoVirgenLabel1" style="font-size:'+(isMuj?'12px':'9px')+';color:#93c5fd">'+vLabel+'</div><div id="grupoVirgenLabel2" style="font-size:'+(isMuj?'12px':'9px')+';color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:'+vSize+';font-weight:700;color:#93c5fd"></div><div id="grupoVirgenProgress" style="font-size:'+(isMuj?'10px':'9px')+';color:#ff9800"></div></div></div>';
     container.innerHTML=isMuj?(vHtml+jHtml):(jHtml+vHtml);
   }
   
@@ -3645,6 +3670,7 @@ function startDayListeners(){
     liveGrupoData=d;
     if(d.desfase!==undefined) virgenDesfase=d.desfase;
     if(d.movidos!==undefined) virgenMovidos=d.movidos;
+    if(d.virgenMn) virgenMn=d.virgenMn;
     if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
     try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(d));}catch(e){}
     try{updateGrupoUI();}catch(e8){}
@@ -3671,6 +3697,7 @@ function startDayListeners(){
               liveGrupoData=d;
               if(d.desfase!==undefined) virgenDesfase=d.desfase;
               if(d.movidos!==undefined) virgenMovidos=d.movidos;
+    if(d.virgenMn) virgenMn=d.virgenMn;
               if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
               try{updateGrupoUI();}catch(e7){}
               try{if(typeof renderLive==='function') renderLive();}catch(e9){}
@@ -3949,13 +3976,19 @@ function autoTimeStep(){
   if(!virgenHasGPS){
     var vRoute=(positionsW.length>=2)?positionsW:positions;
     var vTot=vRoute.length;
-    var vDesfaseMin=Math.max(virgenDesfase,1); // minimum 1 cambio behind
-    var vExactPos=Math.max(0,exactPos-vDesfaseMin);
+    var vDesfaseMin=Math.max(virgenDesfase,1);
+    // Virgen's own rhythm when she has her own route
+    var vMn=(positionsW.length>=2&&virgenMn>0)?virgenMn:mn;
+    var vMnMs=vMn*60000;
+    var vStartDelay=vDesfaseMin*mnMs; // she starts desfase*jesus_mn later
+    var vElapsed=elapsed-vStartDelay;
+    var vExactPos=vElapsed>0?(vElapsed/vMnMs):0;
     var vCambio=Math.floor(vExactPos);
     var vFrac=vExactPos-vCambio;
     var vFinished=(vCambio>=vTot-1);
     if(vFinished){vCambio=vTot-1;vFrac=0;}
-    var vIdxA=Math.min(vCambio,vTot-1);
+    if(vElapsed<0){vCambio=0;vFrac=0;}
+    var vIdxA=Math.min(Math.max(vCambio,0),vTot-1);
     var vIdxB=Math.min(vCambio+1,vTot-1);
     var vPtA=vRoute[vIdxA],vPtB=vRoute[vIdxB];
     var vLat=vPtA.lat+(vPtB.lat-vPtA.lat)*vFrac;
@@ -3995,6 +4028,7 @@ function globalSync(){
             window.liveGrupoData=d;
             if(d.desfase!==undefined) window.virgenDesfase=d.desfase;
             if(d.movidos!==undefined) window.virgenMovidos=d.movidos;
+            if(d.virgenMn) window.virgenMn=d.virgenMn;
             if(d.sacaMuj&&window.daySacaMuj) window.daySacaMuj[day]=d.sacaMuj;
             try{if(typeof window.updateGrupoUI==='function') window.updateGrupoUI();}catch(e2){}
             // Rebuild panel to update carries
