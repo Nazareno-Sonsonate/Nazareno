@@ -106,7 +106,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
         <option value="4" id="seOpt">⚰️ SE</option>
       </select>
       <button class="btn" onclick="var ap=document.getElementById('alertPanel');var ao=document.getElementById('alertOverlay');var vis=ap.style.display==='none';ap.style.display=vis?'block':'none';ao.style.display=vis?'block':'none';if(vis&&typeof populateAlertSelects==='function')populateAlertSelects()" style="padding:5px 8px;font-size:11px" id="btnAlert">🔔</button>
-      <button class="btn" onclick="document.getElementById('cfgP').classList.toggle('open')" style="padding:5px 8px;font-size:11px" id="btnConfig">⚙️</button>
+      <button class="btn" onclick="openCfg()" style="padding:5px 8px;font-size:11px" id="btnConfig">⚙️</button>
       <button class="btn" onclick="shareWhatsApp()" style="padding:5px 8px;font-size:11px">📤</button>
     </div>
   </div>
@@ -138,15 +138,29 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
 </div>
 
 
-<div class="cfg" id="cfgP">
-  <div><label>¿Cargadores de?</label><select id="cType" onchange="onTypeChange()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="21">Hombres (21 grupos)</option><option value="27">Mujeres (27 grupos)</option></select></div>
-  <div><label>¿En qué grupo vas?</label><input type="number" id="cG" value="5" min="1" max="50" onchange="calc()"></div>
-  <div id="colorDiv" style="display:none"><label>¿Tu color?</label><select id="cColor" onchange="calc()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;font-size:16px"><option value="0">🟡 Amarillo</option><option value="1">🔴 Rojo</option><option value="2">🔵 Azul</option></select></div>
-  <div class="adminOnly"><label>¿Qué grupo saca?</label><input type="number" id="cS" value="19" min="1" max="50" onchange="daySacaManual[currentDay]=true;if(+$('cType').value===27){daySacaMuj[currentDay]=+this.value;if(liveGrupoData){liveGrupoData.sacaMuj=+this.value;db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}else{daySaca[currentDay]=+this.value;if(liveGrupoData&&liveGrupoData.cambio>0){liveGrupoData.grp=((+this.value-1+liveGrupoData.cambio-1)%getHomCount())+1;saveAll();db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}calc()"></div>
-  <div class="adminOnly"><label>Fecha procesión</label><input type="date" id="cDate" onchange="changeDayDate(this.value)"></div>
-  <div class="adminOnly"><label>Hora de salida</label><div style="display:flex;gap:6px"><select id="cHour" onchange="updateStartTime()" style="flex:1;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:18px;font-family:inherit"><option value="0">12 AM</option><option value="1">1 AM</option><option value="2">2 AM</option><option value="3">3 AM</option><option value="4">4 AM</option><option value="5">5 AM</option><option value="6">6 AM</option><option value="7">7 AM</option><option value="8">8 AM</option><option value="9">9 AM</option><option value="10">10 AM</option><option value="11">11 AM</option><option value="12">12 PM</option><option value="13">1 PM</option><option value="14">2 PM</option><option value="15">3 PM</option><option value="16">4 PM</option><option value="17">5 PM</option><option value="18">6 PM</option><option value="19">7 PM</option><option value="20">8 PM</option><option value="21">9 PM</option><option value="22">10 PM</option><option value="23">11 PM</option></select><select id="cMin" onchange="updateStartTime()" style="width:70px;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:18px;font-family:inherit"><option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option></select></div></div>
-  <div class="adminOnly"><label>Min por cambio</label><input type="number" id="cMn" value="6" min="1" max="20" onchange="calc();if(typeof renderLive==='function')renderLive();if(typeof syncConfig==='function')syncConfig();if(typeof forceAndaPosition==='function')forceAndaPosition()"></div>
+<div id="cfgP" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5000;width:90%;max-width:340px;background:#1a1a2e;border:2px solid #7c3aed;border-radius:14px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.8);max-height:80vh;overflow-y:auto">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <span style="font-size:16px;font-weight:700;color:#c084fc">⚙️ Configuración</span>
+    <button onclick="closeCfg()" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer">✕</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+    <div><label style="font-size:13px;color:#ccc;display:block;margin-bottom:2px">Cargadores de</label><select id="cType" onchange="onTypeChange()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;font-size:14px"><option value="21">Hombres (21)</option><option value="27">Mujeres (27)</option></select></div>
+    <div><label style="font-size:13px;color:#ccc;display:block;margin-bottom:2px">Tu grupo</label><input type="number" id="cG" value="5" min="1" max="50" onchange="calc();closeCfg()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;text-align:center;font-size:18px"></div>
+  </div>
+  <div id="colorDiv" style="display:none;margin-bottom:10px"><label style="font-size:13px;color:#ccc;display:block;margin-bottom:2px">Tu color</label><select id="cColor" onchange="calc()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;font-size:14px"><option value="0">🟡 Amarillo</option><option value="1">🔴 Rojo</option><option value="2">🔵 Azul</option></select></div>
+  <!-- Admin controls -->
+  <div id="cfgAdminSection" class="adminOnly" style="border-top:1px solid rgba(124,58,237,.2);padding-top:10px;margin-top:4px">
+    <div style="font-size:13px;font-weight:700;color:#c084fc;margin-bottom:8px">🔧 Editor</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Grupo saca</label><input type="number" id="cS" value="19" min="1" max="50" onchange="daySacaManual[currentDay]=true;if(+$('cType').value===27){daySacaMuj[currentDay]=+this.value;if(liveGrupoData){liveGrupoData.sacaMuj=+this.value;db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}else{daySaca[currentDay]=+this.value;if(liveGrupoData&&liveGrupoData.cambio>0){liveGrupoData.grp=((+this.value-1+liveGrupoData.cambio-1)%getHomCount())+1;saveAll();db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}calc()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;text-align:center;font-size:18px"></div>
+      <div><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Min/cambio</label><input type="number" id="cMn" value="6" min="1" max="20" onchange="calc();if(typeof renderLive==='function')renderLive();if(typeof syncConfig==='function')syncConfig();if(typeof forceAndaPosition==='function')forceAndaPosition()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;text-align:center;font-size:18px"></div>
+    </div>
+    <div style="margin-bottom:8px"><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Fecha procesión</label><input type="date" id="cDate" onchange="changeDayDate(this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;font-size:16px"></div>
+    <div style="margin-bottom:8px"><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Hora de salida</label><div style="display:flex;gap:6px"><select id="cHour" onchange="updateStartTime()" style="flex:1;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:16px;font-family:inherit"><option value="0">12 AM</option><option value="1">1 AM</option><option value="2">2 AM</option><option value="3">3 AM</option><option value="4">4 AM</option><option value="5">5 AM</option><option value="6">6 AM</option><option value="7">7 AM</option><option value="8">8 AM</option><option value="9">9 AM</option><option value="10">10 AM</option><option value="11">11 AM</option><option value="12">12 PM</option><option value="13">1 PM</option><option value="14">2 PM</option><option value="15">3 PM</option><option value="16">4 PM</option><option value="17">5 PM</option><option value="18">6 PM</option><option value="19">7 PM</option><option value="20">8 PM</option><option value="21">9 PM</option><option value="22">10 PM</option><option value="23">11 PM</option></select><select id="cMin" onchange="updateStartTime()" style="width:70px;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:16px;font-family:inherit"><option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option></select></div></div>
+    <div id="adminLiveControls"></div>
+  </div>
 </div>
+<div id="cfgOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:4999" onclick="closeCfg()"></div>
 <div class="cfg" id="alertPanel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5000;width:85%;max-width:320px;background:#1a1a2e;border:2px solid #ff9800;border-radius:14px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.8)">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <span style="font-size:16px;font-weight:700;color:#ff9800">🔔 Alertas</span>
@@ -1009,6 +1023,65 @@ function changeDayDate(val){
   updateBanners();
   saveAll();
   syncConfig();
+}
+function openCfg(){
+  $('cfgP').style.display='block';
+  $('cfgOverlay').style.display='block';
+  updateAdminLiveControls();
+}
+function closeCfg(){
+  $('cfgP').style.display='none';
+  $('cfgOverlay').style.display='none';
+}
+function updateAdminLiveControls(){
+  var el=$('adminLiveControls');
+  if(!el||isShared) return;
+  var h='';
+  // Grupo actual +/-
+  var sacaDef=daySaca[currentDay]||16;
+  var adminGText='#'+sacaDef;
+  if(liveGrupoData&&liveGrupoData.cambio>0){
+    var adminTot=positions.length||changes.length;
+    if(liveGrupoData.cambio>adminTot){adminGText='✅#'+(((sacaDef-1+adminTot-1)%getHomCount())+1);}
+    else{adminGText='#'+(((sacaDef-1+liveGrupoData.cambio-1)%getHomCount())+1);}
+  }
+  h+='<div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;justify-content:center">';
+  h+='<span style="font-size:13px;color:#aaa">'+(isSEMode?'SE:':'Jesús:')+'</span>';
+  h+='<button onclick="advanceGrupo(-1);updateAdminLiveControls()" style="padding:8px 16px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#ccc;font-size:18px;font-weight:700;cursor:pointer">−</button>';
+  h+='<span onclick="setGrupoManual();updateAdminLiveControls()" style="font-size:22px;font-weight:700;color:#c084fc;min-width:50px;text-align:center;cursor:pointer;text-decoration:underline">'+adminGText+'</span>';
+  h+='<button onclick="advanceGrupo(1);updateAdminLiveControls()" style="padding:8px 16px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.3);color:#c084fc;font-size:18px;font-weight:700;cursor:pointer">+</button>';
+  h+='</div>';
+  // GPS + Auto toggles
+  h+='<div style="display:flex;gap:6px;margin-bottom:8px;justify-content:center">';
+  h+='<button onclick="autoAdvanceGPS=!autoAdvanceGPS;updateAdminLiveControls();if(typeof renderLive===\'function\')renderLive();" style="flex:1;padding:8px;border:1px solid '+(autoAdvanceGPS?'#4CAF50':'#666')+';border-radius:8px;background:'+(autoAdvanceGPS?'rgba(76,175,80,.15)':'rgba(255,255,255,.05)')+';color:'+(autoAdvanceGPS?'#4CAF50':'#888')+';font-size:13px;cursor:pointer;font-family:inherit">'+(autoAdvanceGPS?'📡 GPS: ON':'📡 GPS: OFF')+'</button>';
+  h+='<button onclick="toggleAutoTime();updateAdminLiveControls();" style="flex:1;padding:8px;border:1px solid '+(window._autoTimeRunning?'#f44336':'#666')+';border-radius:8px;background:'+(window._autoTimeRunning?'rgba(244,67,54,.15)':'rgba(255,255,255,.05)')+';color:'+(window._autoTimeRunning?'#f44336':'#888')+';font-size:13px;cursor:pointer;font-family:inherit">'+(window._autoTimeRunning?'⏱ Auto: ON':'⏱ Auto: OFF')+'</button>';
+  h+='</div>';
+  // Ritmo offset
+  if(window._autoTimeRunning){
+    h+='<div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;justify-content:center">';
+    h+='<span style="font-size:12px;color:#f44336">Ritmo:</span>';
+    h+='<button onclick="adjustAutoTime(-5);updateAdminLiveControls()" style="padding:4px 10px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:14px;cursor:pointer">-5m</button>';
+    h+='<button onclick="adjustAutoTime(-1);updateAdminLiveControls()" style="padding:4px 10px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:14px;cursor:pointer">-1m</button>';
+    h+='<span style="font-size:14px;font-weight:700;color:#f44336;min-width:40px;text-align:center">'+(window._autoTimeOffset>0?'+':'')+window._autoTimeOffset+'m</span>';
+    h+='<button onclick="adjustAutoTime(1);updateAdminLiveControls()" style="padding:4px 10px;border:1px solid #f44336;border-radius:6px;background:rgba(244,67,54,.15);color:#f44336;font-size:14px;cursor:pointer">+1m</button>';
+    h+='<button onclick="adjustAutoTime(5);updateAdminLiveControls()" style="padding:4px 10px;border:1px solid #f44336;border-radius:6px;background:rgba(244,67,54,.15);color:#f44336;font-size:14px;cursor:pointer">+5m</button>';
+    h+='</div>';
+  }
+  // Desfase Virgen
+  h+='<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;justify-content:center">';
+  h+='<span style="font-size:13px;color:#93c5fd">Desfase Virgen:</span>';
+  h+='<button onclick="changeDesfase(-1);updateAdminLiveControls()" style="padding:5px 12px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:16px;cursor:pointer">−</button>';
+  h+='<span style="font-size:18px;font-weight:700;color:#93c5fd;min-width:30px;text-align:center">'+virgenDesfase+'</span>';
+  h+='<button onclick="changeDesfase(1);updateAdminLiveControls()" style="padding:5px 12px;border:1px solid #3b82f6;border-radius:6px;background:rgba(59,130,246,.2);color:#93c5fd;font-size:16px;cursor:pointer">+</button>';
+  h+='</div>';
+  // Movidos Virgen
+  h+='<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;justify-content:center">';
+  h+='<span style="font-size:13px;color:#f59e0b">Movidos Virgen:</span>';
+  h+='<button onclick="changeMovidos(-1);updateAdminLiveControls()" style="padding:5px 12px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:16px;cursor:pointer">−</button>';
+  h+='<span style="font-size:18px;font-weight:700;color:#f59e0b;min-width:30px;text-align:center">'+(virgenMovidos>0?'+':'')+virgenMovidos+'</span>';
+  h+='<button onclick="changeMovidos(1);updateAdminLiveControls()" style="padding:5px 12px;border:1px solid #f59e0b;border-radius:6px;background:rgba(245,158,11,.2);color:#f59e0b;font-size:16px;cursor:pointer">+</button>';
+  h+='</div>';
+  el.innerHTML=h;
 }
 function onTypeChange(){
   $('colorDiv').style.display=(+$('cType').value===27)?'block':'none';
@@ -2277,48 +2350,7 @@ function renderLive(){
   // Banners always updated (updateBanners handles isPastDay styling)
   updateBanners();
 
-  // Admin controls (only for non-past, non-shared)
-  if(!isShared&&!isPastDay){
-    h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
-    h+='<span style="font-size:12px;color:#aaa">'+(isSEMode?'SE:':'Jesús:')+'</span>';
-    h+='<button onclick="advanceGrupo(-1)" style="padding:6px 14px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#ccc;font-size:16px;font-weight:700;cursor:pointer">−</button>';
-    var sacaDef=daySaca[currentDay]||16;
-    var adminGText='#'+sacaDef;
-    if(liveGrupoData&&liveGrupoData.cambio>0){
-      var adminTot=positions.length||changes.length;
-      if(liveGrupoData.cambio>adminTot){adminGText='✅#'+(((sacaDef-1+adminTot-1)%getHomCount())+1);}
-      else{adminGText='#'+(((sacaDef-1+liveGrupoData.cambio-1)%getHomCount())+1);}
-    }
-    h+='<span id="grupoActualAdmin" onclick="setGrupoManual()" style="font-size:20px;font-weight:700;color:#c084fc;min-width:40px;text-align:center;cursor:pointer;text-decoration:underline">'+adminGText+'</span>';
-    h+='<button onclick="advanceGrupo(1)" style="padding:6px 14px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.3);color:#c084fc;font-size:16px;font-weight:700;cursor:pointer">+</button>';
-    h+='</div>';
-    // GPS Auto-advance toggle
-    h+='<div style="text-align:center;margin-bottom:4px"><button onclick="autoAdvanceGPS=!autoAdvanceGPS;if(typeof renderLive===\'function\')renderLive();" style="padding:4px 12px;border:1px solid '+(autoAdvanceGPS?'#4CAF50':'#666')+';border-radius:6px;background:'+(autoAdvanceGPS?'rgba(76,175,80,.15)':'rgba(255,255,255,.05)')+';color:'+(autoAdvanceGPS?'#4CAF50':'#888')+';font-size:11px;cursor:pointer;font-family:inherit">'+(autoAdvanceGPS?'📡 GPS: ON':'📡 GPS: OFF')+'</button> <button onclick="toggleAutoTime()" style="padding:4px 12px;border:1px solid '+(window._autoTimeRunning?'#f44336':'#666')+';border-radius:6px;background:'+(window._autoTimeRunning?'rgba(244,67,54,.15)':'rgba(255,255,255,.05)')+';color:'+(window._autoTimeRunning?'#f44336':'#888')+';font-size:11px;cursor:pointer;font-family:inherit">'+(window._autoTimeRunning?'⏱ Auto: ON':'⏱ Auto: OFF')+'</button></div>';
-    if(window._autoTimeRunning){
-      h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
-      h+='<span style="font-size:11px;color:#f44336">Ritmo:</span>';
-      h+='<button onclick="adjustAutoTime(-5)" style="padding:3px 8px;border:1px solid #666;border-radius:4px;background:rgba(255,255,255,.05);color:#ccc;font-size:12px;cursor:pointer">-5m</button>';
-      h+='<button onclick="adjustAutoTime(-1)" style="padding:3px 8px;border:1px solid #666;border-radius:4px;background:rgba(255,255,255,.05);color:#ccc;font-size:12px;cursor:pointer">-1m</button>';
-      h+='<span style="font-size:12px;font-weight:700;color:#f44336;min-width:40px;text-align:center">'+(window._autoTimeOffset>0?'+':'')+window._autoTimeOffset+'m</span>';
-      h+='<button onclick="adjustAutoTime(1)" style="padding:3px 8px;border:1px solid #f44336;border-radius:4px;background:rgba(244,67,54,.15);color:#f44336;font-size:12px;cursor:pointer">+1m</button>';
-      h+='<button onclick="adjustAutoTime(5)" style="padding:3px 8px;border:1px solid #f44336;border-radius:4px;background:rgba(244,67,54,.15);color:#f44336;font-size:12px;cursor:pointer">+5m</button>';
-      h+='</div>';
-    }
-    // Desfase and movidos controls
-    h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
-    h+='<span style="font-size:12px;color:#93c5fd">Desfase Virgen:</span>';
-    h+='<button onclick="changeDesfase(-1)" style="padding:4px 10px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:14px;cursor:pointer">−</button>';
-    h+='<span id="desfaseNum" style="font-size:16px;font-weight:700;color:#93c5fd;min-width:30px;text-align:center">'+virgenDesfase+'</span>';
-    h+='<button onclick="changeDesfase(1)" style="padding:4px 10px;border:1px solid #3b82f6;border-radius:6px;background:rgba(59,130,246,.2);color:#93c5fd;font-size:14px;cursor:pointer">+</button>';
-    h+='<span style="font-size:10px;color:#888">cambios</span>';
-    h+='</div>';
-    h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
-    h+='<span style="font-size:12px;color:#f59e0b">Movidos Virgen:</span>';
-    h+='<button onclick="changeMovidos(-1)" style="padding:4px 10px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:14px;cursor:pointer">−</button>';
-    h+='<span id="movidosNum" style="font-size:16px;font-weight:700;color:#f59e0b;min-width:30px;text-align:center">'+(virgenMovidos>0?'+':'')+virgenMovidos+'</span>';
-    h+='<button onclick="changeMovidos(1)" style="padding:4px 10px;border:1px solid #f59e0b;border-radius:6px;background:rgba(245,158,11,.2);color:#f59e0b;font-size:14px;cursor:pointer">+</button>';
-    h+='</div>';
-  }
+  // Admin controls moved to ⚙️ popup
   // Chronometer (everyone sees, not past days)
   if(!isPastDay){
     h+='<div style="text-align:center;margin-bottom:8px"><span id="grupoCrono" style="font-size:18px;font-weight:700;color:#ff9800;font-family:monospace">⏱ 0:00</span><br><span id="grupoLastUpdate" style="font-size:10px;color:#888"></span></div>';
@@ -3394,22 +3426,9 @@ function changeMovidos(delta){
 function updateGrupoUI(){
   if(!changes||changes.length===0) return;
   var tot=changes.length;
-  var adminEl=document.getElementById('grupoActualAdmin');
-  if(adminEl){
-    if(liveGrupoData&&liveGrupoData.cambio>0){
-      var adminTot=positions.length||changes.length;
-      if(liveGrupoData.cambio>adminTot){
-        var sacaH3=daySaca[currentDay]||17;
-        var lastG=((sacaH3-1+adminTot-1)%getHomCount())+1;
-        adminEl.textContent='✅#'+lastG;
-      } else {
-        var sacaAdm=daySaca[currentDay]||16;
-        var admGrp=((sacaAdm-1+liveGrupoData.cambio-1)%getHomCount())+1;
-        adminEl.textContent='#'+admGrp;
-      }
-    } else {
-      adminEl.textContent='#'+(daySaca[currentDay]||16);
-    }
+  // Update popup controls if open
+  if($('cfgP')&&$('cfgP').style.display==='block'){
+    updateAdminLiveControls();
   }
   updateCrono();
   updateBanners();
