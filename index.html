@@ -1949,7 +1949,11 @@ function calc() {
   $('hTitle').textContent=titleIcon+' '+titleText;
   $('hTitle').style.color=isSEMode?'#d4af37':'#c084fc';
   var depTimeStr=fmt(c.h*60+(c.hm||0));
-  $('hSub').textContent=dateStr+' · Sale '+depTimeStr+' · '+c.mn+'min · #'+c.g+' · Saca #'+c.s+' → #'+lastGrp+extra;
+  if(isShared){
+    $('hSub').textContent=dateStr+' · Sale '+depTimeStr+' · Grupo #'+c.g;
+  } else {
+    $('hSub').textContent=dateStr+' · Sale '+depTimeStr+' · '+c.mn+'min · #'+c.g+' · Saca #'+c.s+' → #'+lastGrp+extra;
+  }
   const isMuj=c.t===27;
 
   renderTable();
@@ -2570,6 +2574,7 @@ function renderLive(){
       else{adminG2='#'+(((sacaDef2-1+liveGrupoData.cambio-1)%getHomCount())+1);}
     }
     si+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
+    si+='<span style="font-size:10px;color:#888">Carga:</span>';
     si+='<button onclick="advanceGrupo(-1)" style="padding:6px 14px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#ccc;font-size:16px;font-weight:700;cursor:pointer">−</button>';
     si+='<span onclick="setGrupoManual()" style="font-size:20px;font-weight:700;color:#c084fc;min-width:45px;text-align:center;cursor:pointer">'+adminG2+'</span>';
     si+='<button onclick="advanceGrupo(1)" style="padding:6px 14px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.3);color:#c084fc;font-size:16px;font-weight:700;cursor:pointer">+</button>';
@@ -3189,6 +3194,14 @@ function findNearestCambio(lat,lng){
 }
 
 var rawGpsDots={};
+function getAndaIcon(tipo){
+  if(tipo==='jesus') return isSEMode?'se-entierro-marker.png':'jesus-marker.png';
+  return isSEMode?'se-virgen-marker.png':'maria-marker.png';
+}
+function getAndaColor(tipo){
+  if(isSEMode) return '#d4af37';
+  return tipo==='jesus'?'#dc2626':'#3b82f6';
+}
 function listenAnda(tipo,imgUrl,color,zIdx){
   db.ref(tipo).on('value',function(snap){
     const d=snap.val();
@@ -3201,28 +3214,36 @@ function listenAnda(tipo,imgUrl,color,zIdx){
       return;
     }
     const raw={lat:d.lat,lng:d.lng};
-    // Only snapToRoute if real GPS is active (Auto positions are already precise)
     var isRealGPS=(Date.now()-window._lastRealGPS<GPS_TIMEOUT);
     const ll=isRealGPS?snapToRoute(raw):raw;
+    var curIcon=getAndaIcon(tipo);
+    var curColor=getAndaColor(tipo);
 
     if(!urnaMarkers[tipo]&&gmap){
       urnaMarkers[tipo]=new google.maps.Marker({
         position:ll, map:gmap, zIndex:zIdx,
         icon:{
-          url:imgUrl,
+          url:curIcon,
           scaledSize:new google.maps.Size(54,66),
           anchor:new google.maps.Point(27,66)
         }
       });
+      urnaMarkers[tipo]._iconUrl=curIcon;
       urnaMarkers[tipo]._ring=new google.maps.Circle({
         center:ll,map:gmap,radius:15,
-        fillColor:color,fillOpacity:0.25,
-        strokeColor:color,strokeWeight:5,strokeOpacity:0.9,
+        fillColor:curColor,fillOpacity:0.25,
+        strokeColor:curColor,strokeWeight:5,strokeOpacity:0.9,
         zIndex:zIdx-1
       });
     } else if(urnaMarkers[tipo]){
       urnaMarkers[tipo].setPosition(ll);
       if(urnaMarkers[tipo]._ring) urnaMarkers[tipo]._ring.setCenter(ll);
+      // Update icon if SE mode changed
+      if(urnaMarkers[tipo]._iconUrl!==curIcon){
+        urnaMarkers[tipo].setIcon({url:curIcon,scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)});
+        urnaMarkers[tipo]._iconUrl=curIcon;
+        if(urnaMarkers[tipo]._ring){urnaMarkers[tipo]._ring.setOptions({fillColor:curColor,strokeColor:curColor});}
+      }
     }
     // Show small raw GPS dot when real GPS is active (to see if drifting)
     if(isRealGPS&&tipo==='jesus'&&!isShared){
