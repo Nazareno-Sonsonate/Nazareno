@@ -2875,25 +2875,68 @@ function initPush(){
 
 function subscribePush(){
   if(!('Notification' in window)){alert('Tu navegador no soporta notificaciones');return;}
+  // Already denied by browser - show instructions
+  if(Notification.permission==='denied'){
+    showPermissionHelp();
+    return;
+  }
+  // Already granted - just get token
+  if(Notification.permission==='granted'){
+    getPushToken();
+    return;
+  }
+  // Never asked - show custom dialog first
+  showPushPreDialog();
+}
+
+function showPushPreDialog(){
+  var d=document.createElement('div');
+  d.id='pushPreDialog';
+  d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  d.innerHTML='<div style="background:#1a1a2e;border:2px solid #7c3aed;border-radius:14px;padding:20px;max-width:300px;text-align:center">'
+    +'<div style="font-size:40px;margin-bottom:10px">🔔</div>'
+    +'<div style="font-size:16px;font-weight:700;color:#c084fc;margin-bottom:8px">¿Querés recibir alertas?</div>'
+    +'<div style="font-size:13px;color:#ccc;margin-bottom:16px">Te avisamos cuando tu grupo esté por cargar, aunque la app esté cerrada.</div>'
+    +'<button onclick="closePushPreDialog();requestBrowserPush()" style="width:100%;padding:12px;border:none;border-radius:8px;background:#7c3aed;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;font-family:inherit">Sí, activar alertas</button>'
+    +'<button onclick="closePushPreDialog()" style="width:100%;padding:10px;border:1px solid #666;border-radius:8px;background:none;color:#888;font-size:13px;cursor:pointer;font-family:inherit">Ahora no</button>'
+    +'</div>';
+  document.body.appendChild(d);
+}
+function closePushPreDialog(){
+  var d=document.getElementById('pushPreDialog');if(d)d.remove();
+}
+function requestBrowserPush(){
   Notification.requestPermission().then(function(perm){
     if(perm==='granted'){
-      return navigator.serviceWorker.ready.then(function(reg){
-        return fcmMessaging.getToken({vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
-      });
+      getPushToken();
     } else {
-      alert('Necesitás permitir las notificaciones para recibir alertas');
-      return null;
+      showPermissionHelp();
     }
+  });
+}
+function getPushToken(){
+  navigator.serviceWorker.ready.then(function(reg){
+    return fcmMessaging.getToken({vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
   }).then(function(token){
     if(!token) return;
     pushSubscribed=true;
     try{localStorage.setItem('pushToken',token);}catch(e){}
     updatePushToken();
     updatePushUI();
+    alert('✅ ¡Notificaciones activadas! Te avisaremos cuando tu grupo esté por cargar.');
   }).catch(function(err){
-    console.log('Push subscribe error',err);
-    alert('Error al activar notificaciones: '+err.message);
+    console.log('Push token error',err);
+    alert('Error: '+err.message);
   });
+}
+function showPermissionHelp(){
+  var msg='⚠️ Las notificaciones están bloqueadas.\n\n';
+  msg+='Para activarlas:\n';
+  msg+='1. Tocá el candado 🔒 junto a la URL\n';
+  msg+='2. Tocá "Permisos" o "Configuración del sitio"\n';
+  msg+='3. Cambiá Notificaciones a "Permitir"\n';
+  msg+='4. Recargá la página y volvé a intentar';
+  alert(msg);
 }
 
 function updatePushToken(){
