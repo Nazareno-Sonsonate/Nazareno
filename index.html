@@ -570,11 +570,34 @@ let daySaca = [19, 17, 13, 16, 5];
 let daySacaManual = [true, true, false, false, true];
 
 function isDayPast(dayIdx){
-  // A procession day is "past" only after 3:30 AM of the NEXT day
   if(!dayDates[dayIdx]) return false;
-  var nextDay=new Date(dayDates[dayIdx]+'T03:30:00');
-  nextDay.setDate(nextDay.getDate()+1);
-  return new Date()>nextDay;
+  var now=new Date();
+  // Get departure time
+  var depH=15,depM=0;
+  if(dayHours[dayIdx]){
+    var parsed=parseTimeStr(dayHours[dayIdx]);
+    depH=parsed.h;depM=parsed.m;
+  }
+  // Calculate end time from route
+  var dayPtsArr=[LUN_PTS,MART_PTS,MIER_PTS,VIER_PTS,SE_PTS];
+  var pts=savedPositions[dayIdx]?savedPositions[dayIdx]:dayPtsArr[dayIdx];
+  var totalPts=Array.isArray(pts)?pts.length:44;
+  var mn=6; // default
+  if(dayIdx===currentDay&&$('cMn')) mn=+$('cMn').value||6;
+  // End = departure + (totalPts-1)*mn + 30 min buffer
+  var endMin=depH*60+depM+(totalPts-1)*mn+30;
+  
+  if(endMin<1440){ // ends before midnight (same day)
+    var endH=Math.floor(endMin/60);
+    var endM=Math.round(endMin%60);
+    var endDate=new Date(dayDates[dayIdx]+'T'+String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0')+':00');
+    return now>endDate;
+  } else {
+    // Goes past midnight — past after 3:30 AM next day
+    var nextDay=new Date(dayDates[dayIdx]+'T03:30:00');
+    nextDay.setDate(nextDay.getDate()+1);
+    return now>nextDay;
+  }
 }
 
 function detectToday(){
@@ -586,8 +609,18 @@ function detectToday(){
   var dd=String(checkDate.getDate()).padStart(2,'0');
   const today=y+'-'+m+'-'+dd;
   let todayIdx=-1;
-  for(var ii=0;ii<dayDates.length;ii++){
-    if(dayDates[ii]===today&&todayIdx===-1) todayIdx=ii;
+  // Find the LATEST active day that matches today (SE over Viernes)
+  for(var ii=dayDates.length-1;ii>=0;ii--){
+    if(dayDates[ii]===today&&!isDayPast(ii)){
+      todayIdx=ii;
+      break; // take the latest non-past match
+    }
+  }
+  // If no active day, find the latest matching date
+  if(todayIdx===-1){
+    for(var jj=dayDates.length-1;jj>=0;jj--){
+      if(dayDates[jj]===today){todayIdx=jj;break;}
+    }
   }
   // Mark labels in dropdown
   var ds=document.getElementById('daySelector');
@@ -595,11 +628,12 @@ function detectToday(){
   if(ds){
     for(var j=0;j<ds.options.length;j++){
       var idx=+ds.options[j].value;
-      ds.options[j].textContent=labels[idx]+(idx===todayIdx?' ← HOY':'');
+      var isToday=(dayDates[idx]===today&&!isDayPast(idx));
+      var isPast=(dayDates[idx]===today&&isDayPast(idx));
+      ds.options[j].textContent=labels[idx]+(isToday?' ← HOY':(isPast?' ✅':''));
     }
     if(todayIdx>=0) ds.value=todayIdx;
   }
-  // Mark tabs
   document.querySelectorAll('.day').forEach(function(btn,i){
     btn.classList.remove('today','past');
     if(dayDates[i]===today) btn.classList.add('today');
