@@ -2947,20 +2947,39 @@ function updatePushToken(){
   var saca=daySaca[currentDay]||19;
   var watchSel=document.getElementById('pushWatchGrp');
   var watchGrp=watchSel?(+watchSel.value||0):0;
-  // If watchGrp is 0, watch user's own grupo
   var actualWatch=watchGrp||grupo;
-  // Calculate which cambio this grupo appears at
   var grpCount=(tipo===27)?getMujCount():getHomCount();
-  var cambioForGrp=((actualWatch-saca+grpCount)%grpCount)+1;
   var alertBefore=+(document.getElementById('pushAlertBefore')?document.getElementById('pushAlertBefore').value:3);
-  var alertAtCambio=Math.max(1,cambioForGrp-alertBefore);
+  var tot=positions.length||44;
+  
+  // Find ALL cambios where this grupo carries
+  var misCambios=[];
+  for(var c=1;c<=tot;c++){
+    var grpAtC=((saca-1+c-1)%grpCount)+1;
+    if(grpAtC===actualWatch) misCambios.push(c);
+  }
+  
+  // Find the NEXT cambio that hasn't passed yet
+  var currentCambio=currentGrupoActual||0;
+  var nextCambio=0;
+  for(var j=0;j<misCambios.length;j++){
+    if(misCambios[j]>currentCambio){
+      nextCambio=misCambios[j];
+      break;
+    }
+  }
+  // If all passed, no alert needed
+  var alertAtCambio=nextCambio>0?Math.max(1,nextCambio-alertBefore):0;
+  
   db.ref('pushTokens/'+token.substring(0,20)).set({
     token:token,
     grupo:grupo,
     tipo:tipo,
     watchGrp:actualWatch,
     alertAtCambio:alertAtCambio,
+    alertCambio:nextCambio,
     alertBefore:alertBefore,
+    allCambios:misCambios,
     day:currentDay,
     t:Date.now()
   });
