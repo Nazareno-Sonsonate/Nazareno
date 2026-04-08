@@ -215,6 +215,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
 </div>
 <div class="pnl a" id="v1">
   <div id="bannersContainer" style="padding:0 10px;position:sticky;top:52px;z-index:2000;background:#1a0a1f"></div>
+  <div id="stickyInfo" style="position:sticky;top:120px;z-index:1999;background:#1a0a1f;padding:0 10px 4px"></div>
   <div id="livePanel" style="padding:10px"></div>
 </div>
 <div id="tbl" style="display:none"></div>
@@ -2440,21 +2441,7 @@ function renderLive(){
   // Banners always updated (updateBanners handles isPastDay styling)
   updateBanners();
 
-  // Admin grupo +/- (front panel, not popup)
-  if(!isShared&&!isPastDay){
-    var sacaDef=daySaca[currentDay]||16;
-    var adminGText='#'+sacaDef;
-    if(liveGrupoData&&liveGrupoData.cambio>0){
-      var adminTot=positions.length||changes.length;
-      if(liveGrupoData.cambio>=adminTot){adminGText='✅';}
-      else{adminGText='#'+(((sacaDef-1+liveGrupoData.cambio-1)%getHomCount())+1);}
-    }
-    h+='<div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;justify-content:center">';
-    h+='<button onclick="advanceGrupo(-1)" style="padding:8px 16px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#ccc;font-size:18px;font-weight:700;cursor:pointer">−</button>';
-    h+='<span onclick="setGrupoManual()" style="font-size:22px;font-weight:700;color:#c084fc;min-width:50px;text-align:center;cursor:pointer">'+adminGText+'</span>';
-    h+='<button onclick="advanceGrupo(1)" style="padding:8px 16px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.3);color:#c084fc;font-size:18px;font-weight:700;cursor:pointer">+</button>';
-    h+='</div>';
-  }
+  // Admin grupo +/- moved to stickyInfo
   // Chronometer (everyone sees, not past days)
   if(!isPastDay){
     h+='<div style="text-align:center;margin-bottom:8px"><span id="grupoCrono" style="font-size:18px;font-weight:700;color:#ff9800;font-family:monospace">⏱ 0:00</span><br><span id="grupoLastUpdate" style="font-size:10px;color:#888"></span></div>';
@@ -2571,6 +2558,38 @@ function renderLive(){
   h+='<div style="text-align:center;margin-top:12px"><button onclick="resetLive()" style="background:none;border:1px solid #914444;color:#e08080;padding:6px 14px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit">🗑️ Reiniciar cargadas</button></div>';
 
   $('livePanel').innerHTML=h;
+  // Populate sticky info panel
+  var si='';
+  // Grupo +/- for editor
+  if(!isShared&&!isPastDay){
+    var sacaDef2=daySaca[currentDay]||16;
+    var adminG2='#'+sacaDef2;
+    if(liveGrupoData&&liveGrupoData.cambio>0){
+      var at2=positions.length||changes.length;
+      if(liveGrupoData.cambio>=at2){adminG2='✅';}
+      else{adminG2='#'+(((sacaDef2-1+liveGrupoData.cambio-1)%getHomCount())+1);}
+    }
+    si+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
+    si+='<button onclick="advanceGrupo(-1)" style="padding:6px 14px;border:1px solid #666;border-radius:8px;background:rgba(255,255,255,.05);color:#ccc;font-size:16px;font-weight:700;cursor:pointer">−</button>';
+    si+='<span onclick="setGrupoManual()" style="font-size:20px;font-weight:700;color:#c084fc;min-width:45px;text-align:center;cursor:pointer">'+adminG2+'</span>';
+    si+='<button onclick="advanceGrupo(1)" style="padding:6px 14px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.3);color:#c084fc;font-size:16px;font-weight:700;cursor:pointer">+</button>';
+    si+='</div>';
+  }
+  // Compact próxima cargada
+  if(nextCarry&&!procComplete){
+    var ref2=nextCarry.n||nearWP(nextCarry);
+    var est2=getEstimate(nextCarry);
+    si+='<div onclick="zoomTo('+(nextCarry.ci-1)+')" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:6px 8px;background:rgba(192,132,252,.08);border:1px solid rgba(192,132,252,.2);border-radius:8px;margin-bottom:2px">';
+    si+='<span style="font-size:20px;font-weight:700;color:#c084fc">#'+nextCarry.ci+'</span>';
+    si+='<span style="font-size:12px;color:#ccc;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">📍 '+ref2+'</span>';
+    si+='<span style="font-size:14px;font-weight:700;color:#c084fc">~'+est2+'</span>';
+    si+='<span id="stickyCountdown" style="font-size:11px;color:#ff9800;min-width:40px;text-align:right"></span>';
+    si+='</div>';
+  } else if(procComplete){
+    si+='<div style="text-align:center;padding:4px;font-size:13px;color:#4CAF50;font-weight:700">✅ Procesión completada</div>';
+  }
+  var stickyEl=$('stickyInfo');
+  if(stickyEl) stickyEl.innerHTML=si;
   updateCountdown();
   if(typeof updateGrupoUI==='function') updateGrupoUI();
   if(typeof startCrono==='function') startCrono();
@@ -3756,15 +3775,21 @@ function updateBanners(){
   
   // Create banner HTML if not exists
   if(!document.getElementById('grupoActualBanner')){
-    var jLabel1=isSEMode?'Santo Entierro de Cristo':'Venerada Imagen de Jesús Nazareno';
+    var jLabel1=isSEMode?'Santo Entierro':'Jesús Nazareno';
     var vLabel=isSEMode?'Virgen Dolorosa':'María Santísima';
-    var jSize=isMuj?'13px':'20px';var jPad=isMuj?'4px':'6px';
-    var vSize=isMuj?'20px':'13px';var vPad=isMuj?'6px':'4px';
     var jImg=isSEMode?'se-entierro.jpg':'jesus.jpg';
     var vImg=isSEMode?'se-virgen.jpg':'maria.jpg';
-    var jHtml='<div id="grupoActualBanner" onclick="buscarAnda(\'jesus\')" style="cursor:pointer;display:flex;align-items:stretch;flex:1;border-radius:8px;overflow:hidden;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><img src="'+jImg+'" style="width:44px;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'"><div style="flex:1;padding:'+jPad+';text-align:center;display:flex;flex-direction:column;justify-content:center"><div id="grupoActualLabel1" style="font-size:'+(isMuj?'8px':'11px')+';color:#aaa">'+jLabel1+'</div><div id="grupoActualText" style="font-size:'+jSize+';font-weight:700;color:#c084fc;line-height:1.2"></div><div id="grupoActualProgress" style="font-size:'+(isMuj?'8px':'10px')+';color:#aaa"></div></div></div>';
-    var vHtml='<div id="grupoVirgenBanner" onclick="buscarAnda(\'virgen\')" style="cursor:pointer;display:flex;align-items:stretch;flex:1;border-radius:8px;overflow:hidden;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><img src="'+vImg+'" style="width:44px;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'"><div style="flex:1;padding:'+vPad+';text-align:center;display:flex;flex-direction:column;justify-content:center"><div id="grupoVirgenLabel1" style="font-size:'+(isMuj?'11px':'8px')+';color:#93c5fd">'+vLabel+'</div><div id="grupoVirgenText" style="font-size:'+vSize+';font-weight:700;color:#93c5fd;line-height:1.2"></div><div id="grupoVirgenProgress" style="font-size:'+(isMuj?'9px':'8px')+';color:#ff9800"></div></div></div>';
-    container.innerHTML='<div style="display:flex;gap:6px;padding:4px 0">'+(isMuj?(vHtml+jHtml):(jHtml+vHtml))+'</div>';
+    // Main banner = user's type (full with image)
+    // Secondary = other type (slim line)
+    var mainLabel=isMuj?vLabel:jLabel1;
+    var mainImg=isMuj?vImg:jImg;
+    var mainColor=isMuj?'59,130,246':'192,132,252';
+    var mainTextColor=isMuj?'#93c5fd':'#c084fc';
+    var secLabel=isMuj?jLabel1:vLabel;
+    var secColor=isMuj?'#c084fc':'#93c5fd';
+    var mainHtml='<div id="'+(isMuj?'grupoVirgenBanner':'grupoActualBanner')+'" onclick="buscarAnda(\''+(isMuj?'virgen':'jesus')+'\')" style="cursor:pointer;display:flex;align-items:stretch;border-radius:8px;overflow:hidden;background:rgba('+mainColor+',.12);border:1px solid rgba('+mainColor+',.3);margin-bottom:3px"><img src="'+mainImg+'" style="width:48px;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'"><div style="flex:1;padding:5px 8px;display:flex;flex-direction:column;justify-content:center"><div style="font-size:11px;color:#aaa">'+mainLabel+'</div><div id="'+(isMuj?'grupoVirgenText':'grupoActualText')+'" style="font-size:20px;font-weight:700;color:'+mainTextColor+';line-height:1.1"></div><div id="'+(isMuj?'grupoVirgenProgress':'grupoActualProgress')+'" style="font-size:10px;color:#aaa"></div></div></div>';
+    var secHtml='<div id="'+(isMuj?'grupoActualBanner':'grupoVirgenBanner')+'" onclick="buscarAnda(\''+(isMuj?'jesus':'virgen')+'\')" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)"><span style="font-size:11px;color:'+secColor+'">'+(isMuj?'✝️':'👑')+' '+secLabel+'</span><span id="'+(isMuj?'grupoActualText':'grupoVirgenText')+'" style="font-size:14px;font-weight:700;color:'+secColor+'"></span><span id="'+(isMuj?'grupoActualProgress':'grupoVirgenProgress')+'" style="font-size:9px;color:#888;flex:1;text-align:right"></span></div>';
+    container.innerHTML=mainHtml+secHtml;
   }
   
   // Jesus/SE banner
