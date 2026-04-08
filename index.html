@@ -98,7 +98,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
       <select id="daySelector" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:3px 5px;border-radius:5px;font-size:10px;font-weight:700;font-family:inherit">
         <option value="0">Lun</option><option value="1">Mar</option><option value="2">Mié</option><option value="3">Vie</option><option value="4" id="seOpt">SE</option>
       </select>
-      <button class="btn" onclick="var ap=document.getElementById('alertPanel');var ao=document.getElementById('alertOverlay');var vis=ap.style.display==='none';ap.style.display=vis?'block':'none';ao.style.display=vis?'block':'none';if(vis&&typeof populateAlertSelects==='function')populateAlertSelects()" style="padding:4px 7px;font-size:11px" id="btnAlert">🔔</button>
+      <button class="btn" onclick="var ap=document.getElementById('alertPanel');var ao=document.getElementById('alertOverlay');var vis=ap.style.display==='none';ap.style.display=vis?'block':'none';ao.style.display=vis?'block':'none';if(vis&&typeof populateAlertSelects==='function')populateAlertSelects();if(vis&&typeof updatePushUI==='function')updatePushUI()" style="padding:4px 7px;font-size:11px" id="btnAlert">🔔</button>
       <button class="btn" onclick="openCfg()" style="padding:4px 7px;font-size:11px" id="btnConfig">⚙️</button>
       <button class="btn" onclick="shareWhatsApp()" style="padding:4px 7px;font-size:11px">📤</button>
     </div>
@@ -146,10 +146,18 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
     <div style="font-size:13px;font-weight:700;color:#c084fc;margin-bottom:8px">🔧 Editor</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
       <div><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Grupo saca</label><input type="number" id="cS" value="19" min="1" max="50" onchange="daySacaManual[currentDay]=true;if(+$('cType').value===27){daySacaMuj[currentDay]=+this.value;if(liveGrupoData){liveGrupoData.sacaMuj=+this.value;db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}else{daySaca[currentDay]=+this.value;if(liveGrupoData&&liveGrupoData.cambio>0){liveGrupoData.grp=((+this.value-1+liveGrupoData.cambio-1)%getHomCount())+1;saveAll();db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}calc()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;text-align:center;font-size:18px"></div>
-      <div><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Min/cambio</label><input type="number" id="cMn" value="6" min="1" max="20" onchange="calc();if(typeof renderLive==='function')renderLive();if(typeof syncConfig==='function')syncConfig();if(typeof forceAndaPosition==='function')forceAndaPosition()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;text-align:center;font-size:18px"></div>
+      <div><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Min/cambio</label><input type="number" id="cMn" value="6" min="0.5" max="20" step="0.5" onchange="updateStartTime()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;text-align:center;font-size:18px"></div>
     </div>
     <div style="margin-bottom:8px"><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Fecha procesión</label><input type="date" id="cDate" onchange="changeDayDate(this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;font-size:16px"></div>
     <div style="margin-bottom:8px"><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Hora de salida</label><div style="display:flex;gap:6px"><select id="cHour" onchange="updateStartTime()" style="flex:1;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:16px;font-family:inherit"><option value="0">12 AM</option><option value="1">1 AM</option><option value="2">2 AM</option><option value="3">3 AM</option><option value="4">4 AM</option><option value="5">5 AM</option><option value="6">6 AM</option><option value="7">7 AM</option><option value="8">8 AM</option><option value="9">9 AM</option><option value="10">10 AM</option><option value="11">11 AM</option><option value="12">12 PM</option><option value="13">1 PM</option><option value="14">2 PM</option><option value="15">3 PM</option><option value="16">4 PM</option><option value="17">5 PM</option><option value="18">6 PM</option><option value="19">7 PM</option><option value="20">8 PM</option><option value="21">9 PM</option><option value="22">10 PM</option><option value="23">11 PM</option></select><select id="cMin" onchange="updateStartTime()" style="width:70px;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:16px;font-family:inherit"><option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option></select></div></div>
+    <div id="cortesiasConfig" style="display:none;margin-bottom:8px;padding:8px;background:rgba(255,152,0,.08);border-radius:6px;border:1px solid rgba(255,152,0,.2)">
+      <div style="font-size:12px;font-weight:700;color:#ff9800;margin-bottom:6px">✝️ Cortesías (solo Viernes)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        <div><label style="font-size:10px;color:#ccc;display:block">Cambio H</label><input type="number" id="cortCambioH" value="40" min="1" max="60" onchange="VIER_CORTESIAS_CHANGE=+this.value;calc();renderLive()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;text-align:center;font-size:16px"></div>
+        <div><label style="font-size:10px;color:#ccc;display:block">Cambio M</label><input type="number" id="cortCambioM" value="40" min="1" max="60" onchange="VIER_CORTESIAS_CHANGE_M=+this.value;calc();renderLive()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;text-align:center;font-size:16px"></div>
+        <div><label style="font-size:10px;color:#ccc;display:block">Pausa min</label><input type="number" id="cortMinutos" value="45" min="5" max="120" onchange="VIER_CORTESIAS_MIN=+this.value;calc();renderLive()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;text-align:center;font-size:16px"></div>
+      </div>
+    </div>
     <div id="adminLiveControls"></div>
   </div>
 </div>
@@ -161,9 +169,15 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
   </div>
   <div style="margin-bottom:10px"><label style="font-size:14px;color:#eee;display:block;margin-bottom:4px">🔔 Alerta mi cargada</label><select id="vibrateCfg" onchange="setVibrateN(+this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
   <div style="margin-bottom:10px"><label style="font-size:14px;color:#eee;display:block;margin-bottom:4px">👁️ Vigilar grupo</label><select id="watchGrpCfg" onchange="localStorage.setItem('watchGroup',this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
-  <div style="padding:8px;background:rgba(255,152,0,.08);border-radius:6px;font-size:12px;color:#ff9800">⚠️ Las alertas vibran con la app abierta. Push notifications próximamente.</div>
+  <div style="padding:8px;background:rgba(255,152,0,.08);border-radius:6px;font-size:12px;color:#ff9800">⚠️ Las alertas vibran con la app abierta.</div>
+  <div style="margin-top:10px;border-top:1px solid rgba(124,58,237,.2);padding-top:10px">
+    <div style="font-size:14px;font-weight:700;color:#c084fc;margin-bottom:8px">📲 Push Notifications</div>
+    <button id="pushSubBtn" onclick="subscribePush()" style="width:100%;padding:12px;border:2px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.15);color:#c084fc;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">🔔 Activar notificaciones push</button>
+    <div style="font-size:11px;color:#888;margin-top:6px;text-align:center">Recibí alertas aunque la app esté cerrada</div>
+  </div>
 </div>
 <div id="alertOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:4999" onclick="document.getElementById('alertPanel').style.display='none';this.style.display='none'"></div>
+<div id="pushNotiBanner" style="display:none;position:fixed;top:56px;left:8px;right:8px;z-index:5001;padding:12px;background:rgba(124,58,237,.95);border-radius:10px;color:#fff;font-size:14px;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,.5)" onclick="this.style.display='none'"></div>
 
 <div class="vtabs">
   <button class="vtab" onclick="showView(0)">🗺️ MAPA</button>
@@ -653,7 +667,7 @@ function saveAll() {
     const data = {
       sp: savedPositions, sr: savedRefs, spw: savedPositionsW,
       sc: daySaca, sh: dayHours, sm: daySacaManual, sd: dayDates, smj: daySacaMuj,
-      cfg: {g:+$('cG').value,t:+$('cType').value,mn:+$('cMn').value,color:+($('cColor')?$('cColor').value:0)},
+      cfg: {g:+$('cG').value,t:+$('cType').value,mn:+$('cMn').value,color:+($('cColor')?$('cColor').value:0),cortH:VIER_CORTESIAS_CHANGE,cortM:VIER_CORTESIAS_CHANGE_M,cortMin:VIER_CORTESIAS_MIN},
       cd: currentDay,
       ga: liveGrupoData ? {d:currentDay, data:liveGrupoData} : null
     };
@@ -690,7 +704,7 @@ function loadSaved() {
     if(d.sm) daySacaManual = d.sm;
     if(d.sd) dayDates = d.sd;
     if(d.smj) daySacaMuj = d.smj;
-    if(d.cfg){$('cG').value=d.cfg.g||5;$('cType').value=d.cfg.t||21;$('cMn').value=d.cfg.mn||6;if(d.cfg.color!==undefined)$('cColor').value=d.cfg.color;$('colorDiv').style.display=(+$('cType').value===27)?'block':'none';}
+    if(d.cfg){$('cG').value=d.cfg.g||5;$('cType').value=d.cfg.t||21;$('cMn').value=d.cfg.mn||6;if(d.cfg.color!==undefined)$('cColor').value=d.cfg.color;$('colorDiv').style.display=(+$('cType').value===27)?'block':'none';if(d.cfg.cortH)VIER_CORTESIAS_CHANGE=d.cfg.cortH;if(d.cfg.cortM)VIER_CORTESIAS_CHANGE_M=d.cfg.cortM;if(d.cfg.cortMin)VIER_CORTESIAS_MIN=d.cfg.cortMin;}
     // currentDay is now managed by lastViewedDay in localStorage, not saved data
     // Restore grupo actual
     if(d.ga&&d.ga.data&&d.ga.d===currentDay){
@@ -901,25 +915,53 @@ function updateStartTime(){
   var st=getStartTime();
   dayHours[currentDay]=String(st.h).padStart(2,'0')+':'+String(st.m).padStart(2,'0');
   calc();
-  if(typeof renderLive==='function') renderLive();
-  if(typeof syncConfig==='function') syncConfig();
-  // Recalculate Auto offset from scratch based on current grupo
-  if(window._autoTimeRunning&&currentGrupoActual>0){
+  
+  // Calculate how many cambios should have passed
+  if(positions.length>0&&!isShared){
     var mn=+$('cMn').value||6;
     var dateStr=dayDates[currentDay]||localDateStr(new Date());
-    var startTime=new Date(dateStr+'T'+String(st.h).padStart(2,'0')+':'+String(st.m).padStart(2,'0')+':00').getTime();
-    var shouldBe=startTime+(currentGrupoActual-1)*mn*60000;
-    window._autoTimeOffset=Math.round((shouldBe-Date.now())/60000);
-    syncAutoState();
-    autoTimeStep();
+    var departMs=new Date(dateStr+'T'+String(st.h).padStart(2,'0')+':'+String(st.m).padStart(2,'0')+':00').getTime();
+    var elapsed=Date.now()-departMs;
+    
+    if(elapsed>0){
+      // Procession should have started - auto-set grupo
+      var expectedCambio=Math.floor(elapsed/(mn*60000))+1;
+      expectedCambio=Math.min(expectedCambio,positions.length);
+      expectedCambio=Math.max(1,expectedCambio);
+      
+      if(expectedCambio!==currentGrupoActual){
+        currentGrupoActual=expectedCambio;
+        var sacaH=daySaca[currentDay]||16;
+        var grp=((sacaH-1+expectedCambio-1)%getHomCount())+1;
+        var nombre=(expectedCambio<=changes.length&&changes[expectedCambio-1])?changes[expectedCambio-1].n||'':'';
+        liveGrupoData={cambio:expectedCambio,grp:grp,nombre:nombre,tot:positions.length,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
+        try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+        saveAll();
+        db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+      }
+      // Reset auto-time offset to 0 (new hour = fresh start)
+      window._autoTimeOffset=0;
+      if(typeof syncAutoState==='function') syncAutoState();
+    } else {
+      // Departure is in the future - reset to 0
+      currentGrupoActual=0;
+      liveGrupoData={cambio:0,grp:0,nombre:'',tot:positions.length,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
+      db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+      window._autoTimeOffset=0;
+      if(typeof syncAutoState==='function') syncAutoState();
+    }
   }
+  
+  if(typeof renderLive==='function') renderLive();
+  if(typeof syncConfig==='function') syncConfig();
+  if(window._autoTimeRunning) autoTimeStep();
   forceAndaPosition();
 }
 function forceAndaPosition(){
   if(!positions.length) return;
   if(Date.now()-window._lastRealGPS<GPS_TIMEOUT) return;
   var _stF=getStartTime();
-  var mn=+$('cMn').value||6;
+  var mn=window._realRhythm||(+$('cMn').value)||6;
   var dateStr=dayDates[currentDay]||localDateStr(new Date());
   var startTime=new Date(dateStr+'T'+String(_stF.h).padStart(2,'0')+':'+String(_stF.m).padStart(2,'0')+':00').getTime();
   var now=Date.now()+(window._autoTimeOffset*60000);
@@ -1020,6 +1062,14 @@ function changeDayDate(val){
 function openCfg(){
   $('cfgP').style.display='block';
   $('cfgOverlay').style.display='block';
+  // Show cortesias config only for Viernes
+  var cc=document.getElementById('cortesiasConfig');
+  if(cc) cc.style.display=(currentDay===3)?'block':'none';
+  if(cc&&currentDay===3){
+    var ch=document.getElementById('cortCambioH');if(ch) ch.value=VIER_CORTESIAS_CHANGE;
+    var cm=document.getElementById('cortCambioM');if(cm) cm.value=VIER_CORTESIAS_CHANGE_M;
+    var cmin=document.getElementById('cortMinutos');if(cmin) cmin.value=VIER_CORTESIAS_MIN;
+  }
   updateAdminLiveControls();
 }
 function closeCfg(){
@@ -1060,6 +1110,10 @@ function updateAdminLiveControls(){
     h+='<button onclick="adjustAutoTime(5);updateAdminLiveControls()" style="padding:4px 10px;border:1px solid #f44336;border-radius:6px;background:rgba(244,67,54,.15);color:#f44336;font-size:14px;cursor:pointer">+5m</button>';
     h+='</div>';
   }
+  // Show real rhythm from GPS (info only)
+  if(window._realRhythm){
+    h+='<div style="text-align:center;margin-bottom:6px;padding:4px;background:rgba(76,175,80,.08);border-radius:6px;font-size:12px;color:#4CAF50">📡 Ritmo real GPS: <b>'+window._realRhythm+' min/cambio</b> (config: '+($('cMn').value||6)+' min)</div>';
+  }
   // Desfase Virgen
   h+='<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;justify-content:center">';
   h+='<span style="font-size:13px;color:#93c5fd">Desfase Virgen:</span>';
@@ -1085,7 +1139,37 @@ function updateAdminLiveControls(){
     h+='<span style="font-size:10px;color:#888">min</span>';
     h+='</div>';
   }
+  // Cortesías config (only Viernes)
+  if(currentDay===3){
+    var isMujC=(+$('cType').value===27);
+    var cortV=isMujC?VIER_CORTESIAS_CHANGE_M:VIER_CORTESIAS_CHANGE;
+    h+='<div style="border-top:1px solid rgba(255,152,0,.2);padding-top:6px;margin-top:6px">';
+    h+='<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;justify-content:center">';
+    h+='<span style="font-size:13px;color:#ff9800">✝️ Cortesías cambio:</span>';
+    h+='<button onclick="changeCortesias(-1);updateAdminLiveControls()" style="padding:5px 12px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:16px;cursor:pointer">−</button>';
+    h+='<span style="font-size:18px;font-weight:700;color:#ff9800;min-width:30px;text-align:center">'+cortV+'</span>';
+    h+='<button onclick="changeCortesias(1);updateAdminLiveControls()" style="padding:5px 12px;border:1px solid #ff9800;border-radius:6px;background:rgba(255,152,0,.2);color:#ff9800;font-size:16px;cursor:pointer">+</button>';
+    h+='</div>';
+    h+='<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center;justify-content:center">';
+    h+='<span style="font-size:13px;color:#ff9800">⏸️ Pausa:</span>';
+    h+='<button onclick="VIER_CORTESIAS_MIN=Math.max(5,VIER_CORTESIAS_MIN-5);calc();renderLive();updateAdminLiveControls()" style="padding:5px 12px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:16px;cursor:pointer">−</button>';
+    h+='<span style="font-size:18px;font-weight:700;color:#ff9800;min-width:40px;text-align:center">'+VIER_CORTESIAS_MIN+'</span>';
+    h+='<button onclick="VIER_CORTESIAS_MIN=Math.min(90,VIER_CORTESIAS_MIN+5);calc();renderLive();updateAdminLiveControls()" style="padding:5px 12px;border:1px solid #ff9800;border-radius:6px;background:rgba(255,152,0,.2);color:#ff9800;font-size:16px;cursor:pointer">+</button>';
+    h+='<span style="font-size:10px;color:#888">min</span>';
+    h+='</div>';
+    h+='</div>';
+  }
   el.innerHTML=h;
+}
+function changeCortesias(delta){
+  var isMujC=(+$('cType').value===27);
+  if(isMujC){
+    VIER_CORTESIAS_CHANGE_M=Math.max(1,Math.min(100,VIER_CORTESIAS_CHANGE_M+delta));
+  } else {
+    VIER_CORTESIAS_CHANGE=Math.max(1,Math.min(100,VIER_CORTESIAS_CHANGE+delta));
+  }
+  calc();
+  if(typeof renderLive==='function') renderLive();
 }
 function onTypeChange(){
   $('colorDiv').style.display=(+$('cType').value===27)?'block':'none';
@@ -1095,9 +1179,12 @@ function onTypeChange(){
 }
 function fmt(min) {
   let h=Math.floor(min/60), m=Math.round(min%60);
-  if(m===60){h++;m=0}
-  let h12=((h-1)%12)+1; if(h12<=0)h12+=12;
-  return h12+':'+String(m).padStart(2,'0')+' '+(h>=12&&h<24?'PM':'AM');
+  if(m===60){h++;m=0;}
+  // Normalize to 0-23 range (handles past midnight)
+  h=h%24;if(h<0)h+=24;
+  var ampm=h>=12?'PM':'AM';
+  var h12=h%12;if(h12===0)h12=12;
+  return h12+':'+String(m).padStart(2,'0')+' '+ampm;
 }
 function hd(a,b){const R=6371000,d1=(b.lat-a.lat)*Math.PI/180,d2=(b.lng-a.lng)*Math.PI/180;const x=Math.sin(d1/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(d2/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
 function placeAlong(path,intv){const r=[];if(path.length<2)return r;let a=0;for(let i=1;i<path.length;i++){const p=path[i-1],q=path[i],s=hd(p,q);if(s<.1)continue;let u=0;while(a+(s-u)>=intv){const ad=intv-a;u+=ad;const f=u/s;r.push({lat:p.lat+(q.lat-p.lat)*f,lng:p.lng+(q.lng-p.lng)*f});a=0;}a+=(s-u);}return r;}
@@ -1722,38 +1809,31 @@ function snapToRoute(p){
 
 // ========== CALCULATE ==========
 // Viernes special timing
-const VIER_CORTESIAS_CHANGE = 40; // cortesías at this change (Grupo #13 con saca #16)
-const VIER_CORTESIAS_MIN = 45;    // 45 min pause (11:30-12:15)
+var VIER_CORTESIAS_CHANGE = 40; // cortesías at this change (hombres)
+var VIER_CORTESIAS_CHANGE_M = 40; // cortesías for mujeres (different route)
+var VIER_CORTESIAS_MIN = 45;    // 45 min pause (11:30-12:15)
+
+function getCortesiasChange(){
+  var isMuj=(+$('cType').value===27);
+  return isMuj?VIER_CORTESIAS_CHANGE_M:VIER_CORTESIAS_CHANGE;
+}
 const VIER_LAST_EXTRA = 0.10;     // last change 10% longer
 
 function calcTime(num, tot, c) {
   var departMin=c.h * 60 + (c.hm||0);
   if(currentDay !== 3) {
-    // Cambio 1 = departure, each next = +mn
     return departMin + (num-1) * c.mn;
   }
-  // VIERNES: 6AM start, cortesías at 11:30 (change 40), asienta ~1:30PM
-  // Before cortesías: 330 min for 40 changes = 8.25 min/cambio
-  // Cortesías: 45 min break
-  // After cortesías: 75 min for 4 remaining changes = 18.75 min/cambio
-  var beforeCort = 330; // 6AM to 11:30AM
-  var mpcBefore = beforeCort / VIER_CORTESIAS_CHANGE; // 8.25
-  var afterCort = 75; // 12:15PM to 1:30PM
-  var remaining = tot - VIER_CORTESIAS_CHANGE;
-  var mpcAfter = remaining > 0 ? afterCort / remaining : mpcBefore;
-
-  let elapsed = 0;
-  for(let i = 2; i <= num; i++) {
-    if(i <= VIER_CORTESIAS_CHANGE) {
-      elapsed += mpcBefore;
-    } else {
-      elapsed += mpcAfter;
-    }
-    if(i === VIER_CORTESIAS_CHANGE) {
+  // VIERNES: uses c.mn rhythm but adds cortesías pause
+  var cortChange=getCortesiasChange();
+  var elapsed = 0;
+  for(var i = 2; i <= num; i++) {
+    elapsed += c.mn;
+    if(i === cortChange) {
       elapsed += VIER_CORTESIAS_MIN;
     }
   }
-  return c.h * 60 + (c.hm||0) + elapsed;
+  return departMin + elapsed;
 }
 
 function calc() {
@@ -1767,7 +1847,7 @@ function calc() {
     const grupoCnt=(c.t===27)?getMujCount():getHomCount();
     const grp=((c.s-1+i)%grupoCnt)+1;
     const timeMin=calcTime(num, tot, c);
-    const isCortesia=(currentDay===3 && num===VIER_CORTESIAS_CHANGE);
+    const isCortesia=(currentDay===3 && num===getCortesiasChange());
     return {num,grp,time:fmt(timeMin),lat:p.lat,lng:p.lng,n:p.n||'',mine:grp===c.g,cortesia:isCortesia};
   });
   myCarries=changes.filter(ch=>ch.mine);
@@ -1821,7 +1901,7 @@ function calc() {
   $('hTitle').textContent=titleIcon+' '+titleText;
   $('hTitle').style.color=isSEMode?'#d4af37':'#c084fc';
   var depTimeStr=fmt(c.h*60+(c.hm||0));
-  $('hSub').textContent=dateStr+' · Sale '+depTimeStr+' · #'+c.g+' · Saca #'+c.s+' → #'+lastGrp+extra;
+  $('hSub').textContent=dateStr+' · Sale '+depTimeStr+' · '+c.mn+'min · #'+c.g+' · Saca #'+c.s+' → #'+lastGrp+extra;
   const isMuj=c.t===27;
 
   renderTable();
@@ -2211,66 +2291,40 @@ function getRealAvg(){
 // Get last recorded time and project forward
 function getEstimate(mc){
   const now=Date.now();
+  var cc=cfg();
   
-  // BEST METHOD: Use grupo actual if available
-  if(window.liveGrupoData&&window.liveGrupoData.cambio>0&&window.liveGrupoData.t){
+  // If liveGrupoData is active and fresh, estimate from real rhythm
+  if(window.liveGrupoData&&window.liveGrupoData.cambio>1&&window.liveGrupoData.t){
     var gCambio=window.liveGrupoData.cambio;
     var gTime=window.liveGrupoData.t;
-    var cc=cfg();
-    var startDate=new Date();
-    startDate.setHours(cc.h,0,0,0);
-    if(now<startDate.getTime()) startDate.setDate(startDate.getDate()-1);
-    var startMs=startDate.getTime();
-    var elapsedG=(gTime-startMs)/60000;
-    if(elapsedG>0&&gCambio>0){
-      var realMpc=elapsedG/gCambio;
-      if(mc.num<=gCambio) return fmtClock(startMs+mc.num*realMpc*60000);
-      return fmtClock(gTime+(mc.num-gCambio)*realMpc*60000);
+    // Calculate departure time correctly (with minutes)
+    var dateStr=dayDates[currentDay]||localDateStr(new Date());
+    var departMs=new Date(dateStr+'T'+String(cc.h).padStart(2,'0')+':'+String(cc.hm||0).padStart(2,'0')+':00').getTime();
+    // Only use if departure is in the past and data is recent (<12h)
+    if(now>departMs&&(now-gTime)<43200000){
+      var elapsedFromDepart=(gTime-departMs)/60000;
+      if(elapsedFromDepart>0&&gCambio>1){
+        var realMpc=elapsedFromDepart/(gCambio-1); // cambio 1 = minute 0
+        if(realMpc>0.1&&realMpc<60){ // sanity check
+          var estMs=departMs+(mc.num-1)*realMpc*60000;
+          return fmtClock(estMs);
+        }
+      }
     }
   }
 
+  // Fallback: use recorded carries
   const recorded=myCarries.filter(x=>isDone(x.ci)).map(x=>({num:x.num,t:getEntry(x.ci).t})).sort((a,b)=>b.num-a.num);
   const avg=getRealAvg();
-  const minPer=avg||(+$('cMn').value||6);
   
-  if(recorded.length===0){
-    // No data yet — check if procession is running late
-    // Parse initial estimate to ms
-    const initMs=parseTimeToMs(mc.time);
-    if(!initMs) return mc.time;
-    // Find the first pending carry
-    const firstPending=myCarries.find(x=>!isDone(x.ci));
-    if(firstPending){
-      const firstMs=parseTimeToMs(firstPending.time);
-      if(firstMs && now>firstMs+60000){ // at least 1 min late
-        // Procession is late — project from now
-        const changesAhead=mc.num-firstPending.num;
-        const estMs=now+changesAhead*minPer*60000;
-        return fmtClock(estMs);
-      }
-    }
-    return mc.time;
+  if(recorded.length>0&&avg){
+    const last=recorded[0];
+    const estMs=last.t+(mc.num-last.num)*avg*60000;
+    return fmtClock(estMs);
   }
-  
-  const last=recorded[0];
-  const changesAhead=mc.num-last.num;
-  if(changesAhead<=0) return mc.time;
-  let estMs=last.t+changesAhead*minPer*60000;
-  
-  // If current time is past the projection, the procession is delayed
-  // Use current time as baseline for the next pending carry
-  const nextPending=myCarries.find(x=>!isDone(x.ci));
-  if(nextPending && mc.ci===nextPending.ci && now>estMs+60000){
-    estMs=now; // this carry should be happening now
-  } else if(nextPending && mc.ci>nextPending.ci && now>estMs){
-    // Future carry — project from current time relative to next pending
-    const changesFromNext=mc.num-nextPending.num;
-    const nextEstMs=last.t+(nextPending.num-last.num)*minPer*60000;
-    const baseTime=Math.max(nextEstMs,now);
-    estMs=baseTime+changesFromNext*minPer*60000;
-  }
-  
-  return fmtClock(estMs);
+
+  // Default: use calc() time (based on departure + mn)
+  return mc.time;
 }
 
 function parseTimeToMs(timeStr){
@@ -2380,16 +2434,16 @@ function renderLive(){
 
   // Cortesías banner for Viernes (only when NOT complete)
   if(currentDay===3&&!procComplete){
-    // Check if we're near cortesías
-    const cortChange=changes.find(ch=>ch.cortesia);
-    if(cortChange){
-      // Cortesías always shows hombres grupo (Nazareno)
+    var cortChangeNum=getCortesiasChange();
+    var cortChangeObj=changes.find(function(ch){return ch.num===cortChangeNum;});
+    if(cortChangeObj){
       var sacaCort=daySaca[currentDay]||17;
-      var cortGrp=((sacaCort-1+cortChange.num-1)%getHomCount())+1;
-      const cortDone=cortChange.num<=Math.max(...myCarries.filter(mc=>isDone(mc.ci)).map(mc=>mc.num),0);
-      const cortStatus=cortDone?'✅ Cortesías completadas':'✝️ Cortesías · Grupo #'+cortGrp+' (~11:30 AM)';
-      h+='<div style="text-align:center;padding:8px;margin-bottom:8px;border-radius:8px;background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.3)"><span style="font-size:13px;color:#ff9800;font-weight:700">'+cortStatus+'</span><br><span style="font-size:11px;color:#ccc">Encuentro de las imágenes y drama de crucifixión · ~45 min</span>';
-      if(isMuj) h+='<br><span style="font-size:10px;color:#f59e0b">⚠️ Cargadoras: las cortesías aplican al Nazareno. La Virgen puede llevar un recorrido diferente</span>';
+      var cortGrp=((sacaCort-1+cortChangeNum-1)%getHomCount())+1;
+      var cortDone=cortChangeNum<=Math.max.apply(null,myCarries.filter(function(mc2){return isDone(mc2.ci);}).map(function(mc2){return mc2.num;}).concat([0]));
+      var cortTime=cortChangeObj.time;
+      var cortStatus=cortDone?'✅ Cortesías completadas':'✝️ Cortesías · Grupo #'+cortGrp+' (~'+cortTime+')';
+      h+='<div style="text-align:center;padding:8px;margin-bottom:8px;border-radius:8px;background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.3)"><span style="font-size:13px;color:#ff9800;font-weight:700">'+cortStatus+'</span><br><span style="font-size:11px;color:#ccc">Encuentro de las imágenes · ~'+VIER_CORTESIAS_MIN+' min pausa</span>';
+      if(isMuj) h+='<br><span style="font-size:10px;color:#f59e0b">⚠️ Cargadoras: las cortesías aplican al Nazareno</span>';
       h+='</div>';
     }
   }
@@ -2460,7 +2514,7 @@ function renderLive(){
     // Insert cortesías separator between carries that span the cortesías change
     if(currentDay===3 && idx>0){
       const prevNum=myCarries[idx-1].num;
-      if(prevNum<=VIER_CORTESIAS_CHANGE && mc.num>VIER_CORTESIAS_CHANGE){
+      if(prevNum<=getCortesiasChange() && mc.num>getCortesiasChange()){
         h+='<div style="text-align:center;padding:8px;margin:4px 0;border-radius:6px;background:rgba(255,152,0,.1);border:1px dashed rgba(255,152,0,.4)"><span style="font-size:12px;color:#ff9800">✝️ — CORTESÍAS — ✝️</span></div>';
       }
     }
@@ -2723,6 +2777,7 @@ if('serviceWorker' in navigator){
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 <script>
 // ========== URNA GPS TRACKING ==========
 const firebaseConfig = {
@@ -2736,6 +2791,82 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+
+// ========== PUSH NOTIFICATIONS (FCM) ==========
+var fcmMessaging=null;
+var pushSubscribed=false;
+var VAPID_KEY='BCTlwjihU000PcnYjnMlRlbZFgG5bo88aTbk-P9gaYflY_xncobn9b85FiWV1RaEKgUxTUTgtF_vTzbjoP_gAMc';
+
+function initPush(){
+  try{
+    fcmMessaging=firebase.messaging();
+    // Foreground message handler
+    fcmMessaging.onMessage(function(payload){
+      var data=payload.data||{};
+      var title=data.title||'Procesión Sonsonate';
+      var body=data.body||'Grupo actualizado';
+      // Show in-app notification
+      var notDiv=document.getElementById('pushNotiBanner');
+      if(notDiv){
+        notDiv.innerHTML='<b>'+title+'</b><br>'+body;
+        notDiv.style.display='block';
+        setTimeout(function(){notDiv.style.display='none';},5000);
+      }
+      // Also vibrate
+      if(navigator.vibrate) navigator.vibrate([200,100,200]);
+    });
+  }catch(e){console.log('FCM init error',e);}
+}
+
+function subscribePush(){
+  if(!('Notification' in window)){alert('Tu navegador no soporta notificaciones');return;}
+  Notification.requestPermission().then(function(perm){
+    if(perm==='granted'){
+      return fcmMessaging.getToken({vapidKey:VAPID_KEY});
+    } else {
+      alert('Necesitás permitir las notificaciones para recibir alertas');
+      return null;
+    }
+  }).then(function(token){
+    if(!token) return;
+    pushSubscribed=true;
+    // Save token to Firebase with user's grupo info
+    var grupo=+document.getElementById('cG').value||5;
+    var tipo=+document.getElementById('cType').value||21;
+    db.ref('pushTokens/'+token.substring(0,20)).set({
+      token:token,
+      grupo:grupo,
+      tipo:tipo,
+      day:currentDay,
+      t:Date.now()
+    });
+    updatePushUI();
+    // Save to localStorage
+    try{localStorage.setItem('pushToken',token);}catch(e){}
+  }).catch(function(err){
+    console.log('Push subscribe error',err);
+    alert('Error al activar notificaciones: '+err.message);
+  });
+}
+
+function updatePushUI(){
+  var btn=document.getElementById('pushSubBtn');
+  if(!btn) return;
+  if(pushSubscribed||localStorage.getItem('pushToken')){
+    btn.textContent='🔔 Notificaciones activadas';
+    btn.style.background='rgba(76,175,80,.15)';
+    btn.style.borderColor='#4CAF50';
+    btn.style.color='#4CAF50';
+    pushSubscribed=true;
+  }
+}
+
+// Auto-init push
+setTimeout(function(){
+  initPush();
+  // Check if already subscribed
+  if(localStorage.getItem('pushToken')) pushSubscribed=true;
+},2000);
 
 // ========== LIVE BROADCAST (runs first for everyone) ==========
 db.ref('broadcast').on('value',function(snap){
@@ -2782,7 +2913,8 @@ function toggleUrna(tipo){
     if(urnaWatchIds[tipo]!==null){navigator.geolocation.clearWatch(urnaWatchIds[tipo]);urnaWatchIds[tipo]=null;}
     db.ref(tipo).remove();
     urnaActive[tipo]=false;
-    if(!urnaActive.jesus&&!urnaActive.virgen) releaseWakeLock();
+    saveUrnaState();
+    if(!urnaActive.jesus&&!urnaActive.virgen){releaseWakeLock();stopKeepAlive();}
     document.getElementById(btnId).style.background=bgOff;
     document.getElementById(btnId).textContent=label;
     return;
@@ -2792,30 +2924,137 @@ function toggleUrna(tipo){
   db.ref(tipo).once('value',function(snap){
     const d=snap.val();
     if(d&&d.t&&Date.now()-d.t<120000){
-      alert('⚠️ '+label+' ya está siendo rastreada por otro celular');
-      return;
+      if(!confirm('⚠️ '+label+' ya está siendo rastreada. ¿Tomar control?')) return;
     }
     urnaActive[tipo]=true;
+    saveUrnaState();
     requestWakeLock();
+    startKeepAlive();
     document.getElementById(btnId).style.background=bgOn;
     document.getElementById(btnId).textContent=activeLabel;
-    
-    var lastWrite={};
-    urnaWatchIds[tipo]=navigator.geolocation.watchPosition(function(pos){
-      var now=Date.now();
-      if(lastWrite[tipo]&&now-lastWrite[tipo]<8000) return;
-      lastWrite[tipo]=now;
-      if(tipo==='jesus') window._lastRealGPS=now;
-      db.ref(tipo).set({lat:pos.coords.latitude,lng:pos.coords.longitude,t:now});
-    },function(err){
-      console.log(tipo+' GPS error',err);
-    },{enableHighAccuracy:true, maximumAge:10000, timeout:15000});
+    startGPSWatch(tipo);
   });
 }
 
+function startGPSWatch(tipo){
+  if(urnaWatchIds[tipo]!==null){navigator.geolocation.clearWatch(urnaWatchIds[tipo]);}
+  var lastWrite={};
+  urnaWatchIds[tipo]=navigator.geolocation.watchPosition(function(pos){
+    var now=Date.now();
+    if(lastWrite[tipo]&&now-lastWrite[tipo]<8000) return;
+    lastWrite[tipo]=now;
+    if(tipo==='jesus') window._lastRealGPS=now;
+    db.ref(tipo).set({lat:pos.coords.latitude,lng:pos.coords.longitude,t:now});
+  },function(err){
+    console.log(tipo+' GPS error',err);
+    // Auto-retry on error
+    setTimeout(function(){
+      if(urnaActive[tipo]) startGPSWatch(tipo);
+    },5000);
+  },{enableHighAccuracy:true, maximumAge:10000, timeout:15000});
+}
+
+// Save/restore GPS tracking state
+function saveUrnaState(){
+  try{localStorage.setItem('urnaActive',JSON.stringify(urnaActive));}catch(e){}
+}
+
+function restoreUrnaState(){
+  try{
+    var saved=localStorage.getItem('urnaActive');
+    if(!saved) return;
+    var state=JSON.parse(saved);
+    if(state.jesus){
+      urnaActive.jesus=true;
+      requestWakeLock();
+      startKeepAlive();
+      startGPSWatch('jesus');
+      var btn=document.getElementById('bUrna');
+      if(btn){btn.style.background='rgba(220,38,38,1)';btn.textContent='✝️ Jesús ACTIVA';}
+    }
+    if(state.virgen){
+      urnaActive.virgen=true;
+      requestWakeLock();
+      startKeepAlive();
+      startGPSWatch('virgen');
+      var btn2=document.getElementById('bUrnaV');
+      if(btn2){btn2.style.background='rgba(59,130,246,1)';btn2.textContent='👑 Virgen ACTIVA';}
+    }
+  }catch(e){}
+}
+
+// Keep-alive: prevent browser from killing the tab when screen is off
+var _keepAliveTimer=null;
+function startKeepAlive(){
+  if(_keepAliveTimer) return;
+  // Ping Firebase every 30s to keep connection alive
+  _keepAliveTimer=setInterval(function(){
+    if(!urnaActive.jesus&&!urnaActive.virgen){stopKeepAlive();return;}
+    db.ref('online/gps_'+Date.now()%10000).set(Date.now());
+  },30000);
+  // Show persistent notification to keep service worker alive
+  if('Notification' in window&&Notification.permission==='granted'){
+    navigator.serviceWorker.ready.then(function(reg){
+      reg.showNotification('📡 Rastreando procesión',{
+        body:'GPS activo — no cierre la app',
+        icon:'./icon-192.png',
+        tag:'gps-active',
+        requireInteraction:true,
+        silent:true
+      });
+    }).catch(function(){});
+  }
+}
+  showBlackScreenBtn();
+function showBlackScreenBtn(){
+  if(document.getElementById('blackScreenBtn')) return;
+  var btn=document.createElement('div');
+  btn.id='blackScreenBtn';
+  btn.innerHTML='🌑 Pantalla negra';
+  btn.style.cssText='position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:3002;background:rgba(0,0,0,.9);color:#4CAF50;font-size:13px;font-weight:700;padding:10px 20px;border-radius:22px;border:2px solid #4CAF50;cursor:pointer';
+  btn.onclick=toggleBlackScreen;
+  document.body.appendChild(btn);
+}
+function removeBlackScreenBtn(){
+  var btn=document.getElementById('blackScreenBtn');if(btn)btn.remove();
+  var ov=document.getElementById('blackScreenOverlay');if(ov)ov.remove();
+}
+function toggleBlackScreen(){
+  var ov=document.getElementById('blackScreenOverlay');
+  if(ov){ov.remove();return;}
+  ov=document.createElement('div');
+  ov.id='blackScreenOverlay';
+  ov.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:99999;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent';
+  ov.innerHTML='<div style="text-align:center;color:#222;font-size:11px"><div style="font-size:20px;margin-bottom:6px">📡</div>GPS activo<br><span style="font-size:9px">Tocá para volver</span></div>';
+  ov.onclick=function(){ov.remove();};
+  document.body.appendChild(ov);
+}
+function stopKeepAlive(){
+  if(_keepAliveTimer){clearInterval(_keepAliveTimer);_keepAliveTimer=null;}
+  // Remove persistent notification
+  if(navigator.serviceWorker&&navigator.serviceWorker.ready){
+    navigator.serviceWorker.ready.then(function(reg){
+      reg.getNotifications({tag:'gps-active'}).then(function(notifs){
+        notifs.forEach(function(n){n.close();});
+      });
+    }).catch(function(){});
+  removeBlackScreenBtn();
+  }
+}
+
 document.addEventListener('visibilitychange',function(){
-  if(document.visibilityState==='visible'&&(urnaActive.jesus||urnaActive.virgen)) requestWakeLock();
+  if(document.visibilityState==='visible'){
+    if(urnaActive.jesus||urnaActive.virgen){
+      requestWakeLock();
+      // Re-check GPS watches are alive
+      if(urnaActive.jesus&&urnaWatchIds.jesus===null) startGPSWatch('jesus');
+      if(urnaActive.virgen&&urnaWatchIds.virgen===null) startGPSWatch('virgen');
+    }
+  }
 });
+
+// Auto-restore GPS on page load
+setTimeout(function(){if(typeof restoreUrnaState==='function')restoreUrnaState();},3000);
 
 function buscarAnda(tipo){
   const m=urnaMarkers[tipo];
@@ -2956,7 +3195,7 @@ function listenAnda(tipo,imgUrl,color,zIdx){
       window._lastRealGPS=Date.now();
       var nearCambio=findNearestCambio(ll.lat,ll.lng);
       if(nearCambio>0&&nearCambio>currentGrupoActual){
-        // Track real rhythm
+        // Track real rhythm (for display only, doesn't overwrite cMn)
         if(!window._grupoTimestamps) window._grupoTimestamps=[];
         window._grupoTimestamps.push({cambio:nearCambio,t:Date.now()});
         if(window._grupoTimestamps.length>=3){
@@ -2964,12 +3203,7 @@ function listenAnda(tipo,imgUrl,color,zIdx){
           var totalTime=ts[ts.length-1].t-ts[0].t;
           var totalCambios=ts[ts.length-1].cambio-ts[0].cambio;
           if(totalCambios>0){
-            var realMn=Math.round(totalTime/(totalCambios*60000));
-            if(realMn>=1&&realMn<=20&&realMn!==(+$('cMn').value)){
-              $('cMn').value=realMn;
-              calc();if(typeof renderLive==='function')renderLive();
-              if(typeof syncConfig==='function')syncConfig();
-            }
+            window._realRhythm=Math.round((totalTime/(totalCambios*60000))*10)/10;
           }
           if(window._grupoTimestamps.length>10) window._grupoTimestamps=window._grupoTimestamps.slice(-5);
         }
@@ -3610,7 +3844,7 @@ function closeStreetView(){
 function syncConfig(){
   if(isShared) return;
   var st=getStartTime();
-  db.ref('config/day'+currentDay).set({
+  var cfgData={
     s:+document.getElementById('cS').value,
     h:st.h,
     hm:st.m,
@@ -3619,8 +3853,13 @@ function syncConfig(){
     autoOffset:window._autoTimeOffset||0,
     mapLock:mapLocked[currentDay]?mapSavedView[currentDay]:null,
     t:Date.now()
-  });
-  // Sync all dates
+  };
+  if(currentDay===3){
+    cfgData.cortH=VIER_CORTESIAS_CHANGE;
+    cfgData.cortM=VIER_CORTESIAS_CHANGE_M;
+    cfgData.cortMin=VIER_CORTESIAS_MIN;
+  }
+  db.ref('config/day'+currentDay).set(cfgData);
   db.ref('config/dates').set(dayDates);
 }
 
@@ -3756,6 +3995,9 @@ function startDayListeners(){
       mapSavedView[currentDay]=null;
       restoreMapView();
     }
+    if(d.cortH) VIER_CORTESIAS_CHANGE=d.cortH;
+    if(d.cortM) VIER_CORTESIAS_CHANGE_M=d.cortM;
+    if(d.cortMin) VIER_CORTESIAS_MIN=d.cortMin;
     if(changed) calc();
   });
   // Listen for dates sync
@@ -3908,7 +4150,7 @@ function autoTimeStep(){
   var gpsActive=(Date.now()-window._lastRealGPS<GPS_TIMEOUT);
 
   var _stC=getStartTime();
-  var mn=+$('cMn').value||6;
+  var mn=window._realRhythm||(+$('cMn').value)||6; // prefer real GPS rhythm
   var dateStr=dayDates[currentDay]||localDateStr(new Date());
   var startTime=new Date(dateStr+'T'+String(_stC.h).padStart(2,'0')+':'+String(_stC.m).padStart(2,'0')+':00').getTime();
   var now=Date.now()+(window._autoTimeOffset*60000);
