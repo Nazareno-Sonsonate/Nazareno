@@ -162,18 +162,21 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
   </div>
 </div>
 <div id="cfgOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:4999" onclick="closeCfg()"></div>
-<div class="cfg" id="alertPanel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5000;width:85%;max-width:320px;background:#1a1a2e;border:2px solid #ff9800;border-radius:14px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.8)">
+<div id="alertPanel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5000;width:85%;max-width:320px;background:#1a1a2e;border:2px solid #ff9800;border-radius:14px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.8);max-height:80vh;overflow-y:auto">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <span style="font-size:16px;font-weight:700;color:#ff9800">🔔 Alertas</span>
+    <span style="font-size:16px;font-weight:700;color:#ff9800">🔔 Alertas y Push</span>
     <button onclick="document.getElementById('alertPanel').style.display='none';document.getElementById('alertOverlay').style.display='none'" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer">✕</button>
   </div>
-  <div style="margin-bottom:10px"><label style="font-size:14px;color:#eee;display:block;margin-bottom:4px">🔔 Alerta mi cargada</label><select id="vibrateCfg" onchange="setVibrateN(+this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
-  <div style="margin-bottom:10px"><label style="font-size:14px;color:#eee;display:block;margin-bottom:4px">👁️ Vigilar grupo</label><select id="watchGrpCfg" onchange="localStorage.setItem('watchGroup',this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
-  <div style="padding:8px;background:rgba(255,152,0,.08);border-radius:6px;font-size:12px;color:#ff9800">⚠️ Las alertas vibran con la app abierta.</div>
-  <div style="margin-top:10px;border-top:1px solid rgba(124,58,237,.2);padding-top:10px">
-    <div style="font-size:14px;font-weight:700;color:#c084fc;margin-bottom:8px">📲 Push Notifications</div>
-    <button id="pushSubBtn" onclick="subscribePush()" style="width:100%;padding:12px;border:2px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.15);color:#c084fc;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">🔔 Activar notificaciones push</button>
-    <div style="font-size:11px;color:#888;margin-top:6px;text-align:center">Recibí alertas aunque la app esté cerrada</div>
+  <div style="margin-bottom:10px"><label style="font-size:14px;color:#eee;display:block;margin-bottom:4px">🔔 Alerta mi cargada (app abierta)</label><select id="vibrateCfg" onchange="setVibrateN(+this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
+  <div style="margin-bottom:12px;border-top:1px solid rgba(124,58,237,.2);padding-top:10px">
+    <div style="font-size:14px;font-weight:700;color:#c084fc;margin-bottom:8px">📲 Push (app cerrada)</div>
+    <button id="pushSubBtn" onclick="subscribePush()" style="width:100%;padding:12px;border:2px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.15);color:#c084fc;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px">🔔 Activar notificaciones push</button>
+    <div id="pushSettings" style="display:none">
+      <div style="margin-bottom:8px"><label style="font-size:13px;color:#eee;display:block;margin-bottom:4px">👁️ Vigilar grupo</label><select id="pushWatchGrp" onchange="updatePushToken()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="0">Mi grupo</option></select></div>
+      <div style="margin-bottom:8px"><label style="font-size:13px;color:#eee;display:block;margin-bottom:4px">⏰ Avisar con anticipación</label><select id="pushAlertBefore" onchange="updatePushToken()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="1">1 cambio antes</option><option value="2">2 cambios antes</option><option value="3" selected>3 cambios antes</option><option value="5">5 cambios antes</option></select></div>
+      <div style="padding:6px;background:rgba(76,175,80,.08);border-radius:6px;font-size:12px;color:#4CAF50">✅ Push activo · Recibirás alerta cuando tu grupo se acerque</div>
+    </div>
+    <div style="font-size:11px;color:#888;margin-top:4px;text-align:center">Recibí alertas aunque la app esté cerrada</div>
   </div>
 </div>
 <div id="alertOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:4999" onclick="document.getElementById('alertPanel').style.display='none';this.style.display='none'"></div>
@@ -2884,23 +2887,41 @@ function subscribePush(){
   }).then(function(token){
     if(!token) return;
     pushSubscribed=true;
-    // Save token to Firebase with user's grupo info
-    var grupo=+document.getElementById('cG').value||5;
-    var tipo=+document.getElementById('cType').value||21;
-    db.ref('pushTokens/'+token.substring(0,20)).set({
-      token:token,
-      grupo:grupo,
-      tipo:tipo,
-      day:currentDay,
-      t:Date.now()
-    });
-    updatePushUI();
-    // Save to localStorage
     try{localStorage.setItem('pushToken',token);}catch(e){}
+    updatePushToken();
+    updatePushUI();
   }).catch(function(err){
     console.log('Push subscribe error',err);
     alert('Error al activar notificaciones: '+err.message);
   });
+}
+
+function updatePushToken(){
+  var token;try{token=localStorage.getItem('pushToken');}catch(e){}
+  if(!token) return;
+  var grupo=+document.getElementById('cG').value||5;
+  var tipo=+document.getElementById('cType').value||21;
+  var saca=daySaca[currentDay]||19;
+  var watchSel=document.getElementById('pushWatchGrp');
+  var watchGrp=watchSel?(+watchSel.value||0):0;
+  // If watchGrp is 0, watch user's own grupo
+  var actualWatch=watchGrp||grupo;
+  // Calculate which cambio this grupo appears at
+  var grpCount=(tipo===27)?getMujCount():getHomCount();
+  var cambioForGrp=((actualWatch-saca+grpCount)%grpCount)+1;
+  var alertBefore=+(document.getElementById('pushAlertBefore')?document.getElementById('pushAlertBefore').value:3);
+  var alertAtCambio=Math.max(1,cambioForGrp-alertBefore);
+  db.ref('pushTokens/'+token.substring(0,20)).set({
+    token:token,
+    grupo:grupo,
+    tipo:tipo,
+    watchGrp:actualWatch,
+    alertAtCambio:alertAtCambio,
+    alertBefore:alertBefore,
+    day:currentDay,
+    t:Date.now()
+  });
+  try{localStorage.setItem('pushWatchGrp',watchGrp);localStorage.setItem('pushAlertBefore',alertBefore);}catch(e){}
 }
 
 function updatePushUI(){
@@ -2912,8 +2933,28 @@ function updatePushUI(){
     btn.style.borderColor='#4CAF50';
     btn.style.color='#4CAF50';
     pushSubscribed=true;
+    // Show settings
+    var ps=document.getElementById('pushSettings');
+    if(ps) ps.style.display='block';
+    // Populate watch group selector
+    var sel=document.getElementById('pushWatchGrp');
+    if(sel&&sel.options.length<=1){
+      var grpCount=(+document.getElementById('cType').value===27)?getMujCount():getHomCount();
+      for(var g=1;g<=grpCount;g++){
+        var opt=document.createElement('option');
+        opt.value=g;opt.textContent='Grupo #'+g;
+        sel.appendChild(opt);
+      }
+      var saved=localStorage.getItem('pushWatchGrp');
+      if(saved) sel.value=saved;
+    }
+    var abSel=document.getElementById('pushAlertBefore');
+    var savedAb=localStorage.getItem('pushAlertBefore');
+    if(abSel&&savedAb) abSel.value=savedAb;
   }
 }
+
+function syncPushPrefs(){updatePushToken();}
 
 // Auto-init push
 setTimeout(function(){
