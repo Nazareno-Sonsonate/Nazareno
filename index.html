@@ -214,8 +214,10 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
   </div>
 </div>
 <div class="pnl a" id="v1">
-  <div id="bannersContainer" style="padding:0 10px;position:sticky;top:52px;z-index:2000;background:#1a0a1f"></div>
-  <div id="stickyInfo" style="position:sticky;top:120px;z-index:1999;background:#1a0a1f;padding:0 10px 4px"></div>
+  <div style="position:sticky;top:52px;z-index:2000;background:#1a0a1f;padding:0 10px;border-bottom:1px solid rgba(255,255,255,.06)">
+    <div id="bannersContainer"></div>
+    <div id="stickyInfo"></div>
+  </div>
   <div id="livePanel" style="padding:10px"></div>
 </div>
 <div id="tbl" style="display:none"></div>
@@ -2419,21 +2421,12 @@ function renderLive(){
 
   let h='';
 
-  // Compact stats row
   const lastGrpLive=changes.length>0?changes[changes.length-1].grp:'?';
   const cc=cfg();const isMuj=cc.t===27;
   const coloresH=['🟡','🔴','🔵'];
   const grupoInfo='#'+cc.g+(isMuj?' '+coloresH[cc.color]:'');
   const cargaInfo=isMuj?total+'×2':total;
   const cargaLabel=isMuj?'Cambios':'Cargadas';
-  h+='<div style="display:flex;justify-content:space-around;margin-bottom:6px;padding:6px;background:rgba(124,58,237,.06);border-radius:8px">';
-  h+='<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:#c084fc">'+grupoInfo+'</div><div style="font-size:11px;color:#888">Mi grupo</div></div>';
-  h+='<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:#fff">'+cargaInfo+'</div><div style="font-size:11px;color:#888">'+cargaLabel+'</div></div>';
-  h+='<div style="text-align:center"><div style="font-size:17px;font-weight:700;color:#fff">#'+lastGrpLive+'</div><div style="font-size:11px;color:#888">Asienta</div></div>';
-  h+='<div style="text-align:center"><div style="font-size:17px;font-weight:700;color:'+(done>=total?'#4CAF50':'#ff9800')+'">'+done+'/'+total+'</div><div style="font-size:11px;color:#888">Avance</div></div>';
-  h+='</div>';
-  h+='<div style="text-align:center;margin-bottom:4px;font-size:11px;color:#666">Tocá los banners para buscar en el mapa</div>';
-  h+='<div style="text-align:center;margin-bottom:6px;font-size:12px;color:#e08080">⚠️ Las horas son aproximadas y se ajustan en tiempo real</div>';
 
   // Procession complete only when ALL cambios are done or past day
   var procComplete=(done>=total&&total>0)||isPastDay;
@@ -2560,6 +2553,13 @@ function renderLive(){
   $('livePanel').innerHTML=h;
   // Populate sticky info panel
   var si='';
+  // Stats row
+  si+='<div style="display:flex;justify-content:space-around;padding:4px 0;margin-bottom:3px;border-bottom:1px solid rgba(255,255,255,.06)">';
+  si+='<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#c084fc">'+grupoInfo+'</div><div style="font-size:10px;color:#888">Mi grupo</div></div>';
+  si+='<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#fff">'+cargaInfo+'</div><div style="font-size:10px;color:#888">'+cargaLabel+'</div></div>';
+  si+='<div style="text-align:center"><div style="font-size:16px;font-weight:700;color:#fff">#'+lastGrpLive+'</div><div style="font-size:10px;color:#888">Asienta</div></div>';
+  si+='<div style="text-align:center"><div style="font-size:16px;font-weight:700;color:'+(done>=total?'#4CAF50':'#ff9800')+'">'+done+'/'+total+'</div><div style="font-size:10px;color:#888">Avance</div></div>';
+  si+='</div>';
   // Grupo +/- for editor
   if(!isShared&&!isPastDay){
     var sacaDef2=daySaca[currentDay]||16;
@@ -3773,8 +3773,13 @@ function updateBanners(){
   var isPast=isDayPast(currentDay);
   var procDone=(cambio>=tot&&tot>0)||isPast;
   
-  // Create banner HTML if not exists
-  if(!document.getElementById('grupoActualBanner')){
+  // Create banner HTML if not exists or mode changed
+  var existingBanner=document.getElementById('grupoActualBanner');
+  if(existingBanner&&window._bannerSEMode!==isSEMode){
+    container.innerHTML='';existingBanner=null;
+  }
+  if(!existingBanner){
+    window._bannerSEMode=isSEMode;
     var jLabel1=isSEMode?'Santo Entierro':'Jesús Nazareno';
     var vLabel=isSEMode?'Virgen Dolorosa':'María Santísima';
     var jImg=isSEMode?'se-entierro.jpg':'jesus.jpg';
@@ -3785,17 +3790,31 @@ function updateBanners(){
     var mainImg=isMuj?vImg:jImg;
     var mainColor=isMuj?'59,130,246':'192,132,252';
     var mainTextColor=isMuj?'#93c5fd':'#c084fc';
+    var mainId=isMuj?'Virgen':'Actual';
+    var secId=isMuj?'Actual':'Virgen';
     var secLabel=isMuj?jLabel1:vLabel;
+    var secIcon=isMuj?'\u271d\ufe0f':'\ud83d\udc51';
     var secColor=isMuj?'#c084fc':'#93c5fd';
-    var mainHtml='<div id="'+(isMuj?'grupoVirgenBanner':'grupoActualBanner')+'" onclick="buscarAnda(\''+(isMuj?'virgen':'jesus')+'\')" style="cursor:pointer;display:flex;align-items:stretch;border-radius:8px;overflow:hidden;background:rgba('+mainColor+',.12);border:1px solid rgba('+mainColor+',.3);margin-bottom:3px"><img src="'+mainImg+'" style="width:48px;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'"><div style="flex:1;padding:5px 8px;display:flex;flex-direction:column;justify-content:center"><div style="font-size:11px;color:#aaa">'+mainLabel+'</div><div id="'+(isMuj?'grupoVirgenText':'grupoActualText')+'" style="font-size:20px;font-weight:700;color:'+mainTextColor+';line-height:1.1"></div><div id="'+(isMuj?'grupoVirgenProgress':'grupoActualProgress')+'" style="font-size:10px;color:#aaa"></div></div></div>';
-    var secHtml='<div id="'+(isMuj?'grupoActualBanner':'grupoVirgenBanner')+'" onclick="buscarAnda(\''+(isMuj?'jesus':'virgen')+'\')" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)"><span style="font-size:11px;color:'+secColor+'">'+(isMuj?'✝️':'👑')+' '+secLabel+'</span><span id="'+(isMuj?'grupoActualText':'grupoVirgenText')+'" style="font-size:14px;font-weight:700;color:'+secColor+'"></span><span id="'+(isMuj?'grupoActualProgress':'grupoVirgenProgress')+'" style="font-size:9px;color:#888;flex:1;text-align:right"></span></div>';
+    var mainHtml='<div id="grupo'+mainId+'Banner" onclick="buscarAnda(\''+(isMuj?'virgen':'jesus')+'\'" style="cursor:pointer;display:flex;align-items:stretch;border-radius:8px;overflow:hidden;background:rgba('+mainColor+',.12);border:1px solid rgba('+mainColor+',.3);margin-bottom:3px">'
+      +'<img src="'+mainImg+'" style="width:50px;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'">'
+      +'<div style="flex:1;padding:4px 8px;display:flex;flex-direction:column;justify-content:center">'
+      +'<div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:#aaa">'+mainLabel+'</span></div>'
+      +'<div style="display:flex;align-items:baseline;gap:4px"><div id="grupo'+mainId+'Text" style="font-size:22px;font-weight:700;color:'+mainTextColor+';line-height:1.1"></div><span id="grupo'+mainId+'Status" style="font-size:10px;color:#aaa"></span></div>'
+      +'<div id="grupo'+mainId+'Progress" style="font-size:10px;color:#aaa"></div>'
+      +'</div></div>';
+    var secHtml='<div id="grupo'+secId+'Banner" onclick="buscarAnda(\''+(isMuj?'jesus':'virgen')+'\'" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)">'
+      +'<span style="font-size:11px;color:'+secColor+'">'+secIcon+' '+secLabel+'</span>'
+      +'<span id="grupo'+secId+'Status" style="font-size:10px;color:#888"></span>'
+      +'<span id="grupo'+secId+'Text" style="font-size:15px;font-weight:700;color:'+secColor+'"></span>'
+      +'<span id="grupo'+secId+'Progress" style="font-size:9px;color:#666;flex:1;text-align:right"></span>'
+      +'</div>';
     container.innerHTML=mainHtml+secHtml;
   }
   
   // Jesus/SE banner
   var jEl=document.getElementById('grupoActualText');
   var jProg=document.getElementById('grupoActualProgress');
-  var jLabel2=document.getElementById('grupoActualLabel2');
+  var jLabel2=document.getElementById('grupoActualStatus');
   var jBanner=document.getElementById('grupoActualBanner');
   if(jEl){
     var sacaJ=daySaca[currentDay]||16;
@@ -3803,17 +3822,17 @@ function updateBanners(){
       var lastJ=((sacaJ-1+Math.min(cambio,tot)-1)%getHomCount()+1);
       jEl.textContent='✅ Asentó Grupo #'+lastJ;
       if(jProg) jProg.textContent=(currentDay>=3)?((isSEMode)?'Hasta el próximo año, Santo Entierro de Cristo':'Hasta el próximo año, Jesús Nazareno'):'Procesión completada';
-      if(jLabel2) jLabel2.textContent=(currentDay>=3)?'Hasta el próximo año':'Asentada en el Templo';
+      if(jLabel2) jLabel2.textContent='✅ Asentó';
       if(jBanner){jBanner.style.background='rgba(76,175,80,.12)';jBanner.style.borderColor='rgba(76,175,80,.4)';}
     } else if(cambio>0){
       jEl.textContent='Grupo #'+((sacaJ-1+cambio-1)%getHomCount()+1);
       if(jProg) jProg.textContent=(liveGrupoData&&liveGrupoData.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
-      if(jLabel2) jLabel2.textContent='En este momento carga';
+      if(jLabel2) jLabel2.textContent='· carga ahora';
       if(jBanner){jBanner.style.background='rgba(192,132,252,.12)';jBanner.style.borderColor='rgba(192,132,252,.3)';}
     } else {
       jEl.textContent='Grupo #'+sacaJ;
       if(jProg) jProg.textContent='Esperando inicio';
-      if(jLabel2) jLabel2.textContent='Saca';
+      if(jLabel2) jLabel2.textContent='· saca';
       if(jBanner){jBanner.style.background='rgba(192,132,252,.12)';jBanner.style.borderColor='rgba(192,132,252,.3)';}
     }
   }
@@ -3821,7 +3840,7 @@ function updateBanners(){
   var vEl=document.getElementById('grupoVirgenText');
   var vProg2=document.getElementById('grupoVirgenProgress');
   var vBanner=document.getElementById('grupoVirgenBanner');
-  var vLabel2=document.getElementById('grupoVirgenLabel2');
+  var vLabel2=document.getElementById('grupoVirgenStatus');
   if(vEl){
     if(procDone){
       var sacaM2=liveGrupoData?liveGrupoData.sacaMuj||daySacaMuj[currentDay]:daySacaMuj[currentDay]||22;
@@ -3829,7 +3848,7 @@ function updateBanners(){
       var lastM2=(((sacaM2-1+Math.min(cambio,tot)-1-mov2)%getMujCount())+getMujCount())%getMujCount()+1;
       vEl.textContent='✅ Asentó Grupo #'+lastM2;
       if(vProg2) vProg2.textContent=(currentDay>=3)?'Hasta el próximo año':'Procesión completada';
-      if(vLabel2) vLabel2.textContent=(currentDay>=3)?'Hasta el próximo año':'Asentada en el Templo';
+      if(vLabel2) vLabel2.textContent='✅';
       if(vBanner){vBanner.style.background='rgba(76,175,80,.12)';vBanner.style.borderColor='rgba(76,175,80,.4)';}
     } else if(cambio>0&&liveGrupoData){
       var desf=liveGrupoData.desfase||0;
@@ -3841,13 +3860,13 @@ function updateBanners(){
         var lastM=(((sacaM-1+tot-1-mov)%getMujCount())+getMujCount())%getMujCount()+1;
         vEl.textContent='✅ Asentó Grupo #'+lastM;
         if(vProg2) vProg2.textContent=(currentDay>=3)?'Hasta el próximo año':'Procesión completada';
-        if(vLabel2) vLabel2.textContent=(currentDay>=3)?'Hasta el próximo año':'Asentada en el Templo';
+        if(vLabel2) vLabel2.textContent='✅';
         if(vBanner){vBanner.style.background='rgba(76,175,80,.12)';vBanner.style.borderColor='rgba(76,175,80,.4)';}
       } else {
         var grpM=(((sacaM-1+vCambioGrp-1)%getMujCount())+getMujCount())%getMujCount()+1;
         vEl.textContent='Grupo #'+grpM;
         if(vProg2) vProg2.textContent='⚠️ Estimado';
-        if(vLabel2) vLabel2.textContent='Aproximadamente carga';
+        if(vLabel2) vLabel2.textContent='·';
         if(vBanner){vBanner.style.background='rgba(59,130,246,.08)';vBanner.style.borderColor='rgba(59,130,246,.3)';}
       }
     } else {
