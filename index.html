@@ -2821,12 +2821,9 @@ setTimeout(function(){
 
 // ========== SERVICE WORKER - DISABLED FOR SYNC RELIABILITY ==========
 if('serviceWorker' in navigator){
-  // Unregister ALL service workers to prevent caching issues
-  navigator.serviceWorker.getRegistrations().then(function(regs){
-    regs.forEach(function(r){r.unregister();});
-  });
-  // Clear ALL caches
-  if(window.caches) caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});
+  navigator.serviceWorker.register('./firebase-messaging-sw.js').then(function(reg){
+    console.log('SW registered',reg.scope);
+  }).catch(function(err){console.log('SW error',err);});
 }
 </script>
 <!-- Firebase SDK -->
@@ -2877,7 +2874,9 @@ function subscribePush(){
   if(!('Notification' in window)){alert('Tu navegador no soporta notificaciones');return;}
   Notification.requestPermission().then(function(perm){
     if(perm==='granted'){
-      return fcmMessaging.getToken({vapidKey:VAPID_KEY});
+      return navigator.serviceWorker.ready.then(function(reg){
+        return fcmMessaging.getToken({vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
+      });
     } else {
       alert('Necesitás permitir las notificaciones para recibir alertas');
       return null;
