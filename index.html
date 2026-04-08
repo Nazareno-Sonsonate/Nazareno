@@ -93,7 +93,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
 
 <div class="hdr">
   <div style="display:flex;align-items:center;justify-content:space-between">
-    <h1 id="hTitle" style="font-size:15px;margin:0;white-space:nowrap">✝️ Lunes Santo</h1>
+    <h1 id="hTitle" style="font-size:15px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">✝️ Lunes Santo</h1>
     <div style="display:flex;gap:3px;align-items:center;flex-shrink:0">
       <select id="daySelector" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:3px 5px;border-radius:5px;font-size:10px;font-weight:700;font-family:inherit">
         <option value="0">Lun</option><option value="1">Mar</option><option value="2">Mié</option><option value="3">Vie</option><option value="4" id="seOpt">SE</option>
@@ -146,7 +146,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
     <div style="font-size:13px;font-weight:700;color:#c084fc;margin-bottom:8px">🔧 Editor</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
       <div><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Grupo saca</label><input type="number" id="cS" value="19" min="1" max="50" onchange="daySacaManual[currentDay]=true;if(+$('cType').value===27){daySacaMuj[currentDay]=+this.value;if(liveGrupoData){liveGrupoData.sacaMuj=+this.value;db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}else{daySaca[currentDay]=+this.value;if(liveGrupoData&&liveGrupoData.cambio>0){liveGrupoData.grp=((+this.value-1+liveGrupoData.cambio-1)%getHomCount())+1;saveAll();db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}calc()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;text-align:center;font-size:18px"></div>
-      <div><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Min/cambio</label><input type="number" id="cMn" value="6" min="0.5" max="20" step="0.5" onchange="updateStartTime()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;text-align:center;font-size:18px"></div>
+      <div><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Min/cambio</label><input type="number" id="cMn" value="6" min="0.5" max="20" step="0.5" onchange="updateRhythm()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;text-align:center;font-size:18px"></div>
     </div>
     <div style="margin-bottom:8px"><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Fecha procesión</label><input type="date" id="cDate" onchange="changeDayDate(this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;font-size:16px"></div>
     <div style="margin-bottom:8px"><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Hora de salida</label><div style="display:flex;gap:6px"><select id="cHour" onchange="updateStartTime()" style="flex:1;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:16px;font-family:inherit"><option value="0">12 AM</option><option value="1">1 AM</option><option value="2">2 AM</option><option value="3">3 AM</option><option value="4">4 AM</option><option value="5">5 AM</option><option value="6">6 AM</option><option value="7">7 AM</option><option value="8">8 AM</option><option value="9">9 AM</option><option value="10">10 AM</option><option value="11">11 AM</option><option value="12">12 PM</option><option value="13">1 PM</option><option value="14">2 PM</option><option value="15">3 PM</option><option value="16">4 PM</option><option value="17">5 PM</option><option value="18">6 PM</option><option value="19">7 PM</option><option value="20">8 PM</option><option value="21">9 PM</option><option value="22">10 PM</option><option value="23">11 PM</option></select><select id="cMin" onchange="updateStartTime()" style="width:70px;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:16px;font-family:inherit"><option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option></select></div></div>
@@ -214,7 +214,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
   </div>
 </div>
 <div class="pnl a" id="v1">
-  <div id="bannersContainer" style="padding:0 10px"></div>
+  <div id="bannersContainer" style="padding:0 10px;position:sticky;top:52px;z-index:2000;background:#1a0a1f"></div>
   <div id="livePanel" style="padding:10px"></div>
 </div>
 <div id="tbl" style="display:none"></div>
@@ -819,7 +819,7 @@ function readParams(){
   }
   // Apply SE theme if day 4
   if(isSEMode){
-    $('hTitle').textContent='⚰️ SANTO ENTIERRO DE CRISTO';
+    $('hTitle').textContent='⚰️ Santo Entierro';
     $('hTitle').style.color='#d4af37';
     var seStyleEl=document.getElementById('seThemeStyle');
     if(!seStyleEl){
@@ -950,15 +950,19 @@ function updateStartTime(){
   dayHours[currentDay]=String(st.h).padStart(2,'0')+':'+String(st.m).padStart(2,'0');
   calc();
   
-  // Calculate how many cambios should have passed
-  if(positions.length>0&&!isShared){
+  // Only auto-position if this day is TODAY
+  var now=new Date();
+  var checkDate=new Date(now);
+  if(now.getHours()<5) checkDate.setDate(checkDate.getDate()-1);
+  var todayStr=localDateStr(checkDate);
+  var isToday=(dayDates[currentDay]===todayStr);
+  
+  if(positions.length>0&&!isShared&&isToday){
     var mn=+$('cMn').value||6;
-    var dateStr=dayDates[currentDay]||localDateStr(new Date());
-    var departMs=new Date(dateStr+'T'+String(st.h).padStart(2,'0')+':'+String(st.m).padStart(2,'0')+':00').getTime();
+    var departMs=new Date(dayDates[currentDay]+'T'+String(st.h).padStart(2,'0')+':'+String(st.m).padStart(2,'0')+':00').getTime();
     var elapsed=Date.now()-departMs;
     
     if(elapsed>0){
-      // Procession should have started - auto-set grupo
       var expectedCambio=Math.floor(elapsed/(mn*60000))+1;
       expectedCambio=Math.min(expectedCambio,positions.length);
       expectedCambio=Math.max(1,expectedCambio);
@@ -968,16 +972,16 @@ function updateStartTime(){
         var sacaH=daySaca[currentDay]||16;
         var grp=((sacaH-1+expectedCambio-1)%getHomCount())+1;
         var nombre=(expectedCambio<=changes.length&&changes[expectedCambio-1])?changes[expectedCambio-1].n||'':'';
-        liveGrupoData={cambio:expectedCambio,grp:grp,nombre:nombre,tot:positions.length,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
+        // Set timestamp to the calculated time for this cambio (not Date.now)
+        var correctTs=departMs+(expectedCambio-1)*mn*60000;
+        liveGrupoData={cambio:expectedCambio,grp:grp,nombre:nombre,tot:positions.length,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:correctTs,autoSet:true};
         try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
         saveAll();
         db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
       }
-      // Reset auto-time offset to 0 (new hour = fresh start)
       window._autoTimeOffset=0;
       if(typeof syncAutoState==='function') syncAutoState();
     } else {
-      // Departure is in the future - reset to 0
       currentGrupoActual=0;
       liveGrupoData={cambio:0,grp:0,nombre:'',tot:positions.length,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
       db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
@@ -986,6 +990,13 @@ function updateStartTime(){
     }
   }
   
+  if(typeof renderLive==='function') renderLive();
+  if(typeof syncConfig==='function') syncConfig();
+  if(window._autoTimeRunning) autoTimeStep();
+  forceAndaPosition();
+}
+function updateRhythm(){
+  calc();
   if(typeof renderLive==='function') renderLive();
   if(typeof syncConfig==='function') syncConfig();
   if(window._autoTimeRunning) autoTimeStep();
@@ -1273,7 +1284,7 @@ function initMap() {
   // Apply SE theme if needed
   if(currentDay===4){
     isSEMode=true;
-    $('hTitle').textContent='⚰️ SANTO ENTIERRO DE CRISTO';
+    $('hTitle').textContent='⚰️ Santo Entierro';
     $('hTitle').style.color='#d4af37';
     var seStyleInit=document.getElementById('seThemeStyle');
     if(!seStyleInit){
@@ -1378,7 +1389,7 @@ function switchDay(d) {
   // Apply/remove SE theme
   var seStyleEl=document.getElementById('seThemeStyle');
   if(isSEMode){
-    $('hTitle').textContent='⚰️ SANTO ENTIERRO DE CRISTO';
+    $('hTitle').textContent='⚰️ Santo Entierro';
     $('hTitle').style.color='#d4af37';
     if(!seStyleEl){
       seStyleEl=document.createElement('style');seStyleEl.id='seThemeStyle';
@@ -2324,40 +2335,26 @@ function getRealAvg(){
 
 // Get last recorded time and project forward
 function getEstimate(mc){
-  const now=Date.now();
-  var cc=cfg();
-  
-  // If liveGrupoData is active and fresh, estimate from real rhythm
-  if(window.liveGrupoData&&window.liveGrupoData.cambio>1&&window.liveGrupoData.t){
-    var gCambio=window.liveGrupoData.cambio;
-    var gTime=window.liveGrupoData.t;
-    // Calculate departure time correctly (with minutes)
+  // 1. If we have registered carries, project from last one
+  const recorded=myCarries.filter(x=>isDone(x.ci)).map(x=>({num:x.num,t:getEntry(x.ci).t})).sort((a,b)=>b.num-a.num);
+  const avg=getRealAvg();
+  if(recorded.length>0&&avg){
+    const last=recorded[0];
+    if(mc.num<=last.num) return fmtClock(last.t); // already passed
+    return fmtClock(last.t+(mc.num-last.num)*avg*60000);
+  }
+
+  // 2. If GPS is actively tracking, use real rhythm
+  if(window._lastRealGPS&&(Date.now()-window._lastRealGPS<GPS_TIMEOUT)&&window._realRhythm>0){
+    var cc=cfg();
     var dateStr=dayDates[currentDay]||localDateStr(new Date());
     var departMs=new Date(dateStr+'T'+String(cc.h).padStart(2,'0')+':'+String(cc.hm||0).padStart(2,'0')+':00').getTime();
-    // Only use if departure is in the past and data is recent (<12h)
-    if(now>departMs&&(now-gTime)<43200000){
-      var elapsedFromDepart=(gTime-departMs)/60000;
-      if(elapsedFromDepart>0&&gCambio>1){
-        var realMpc=elapsedFromDepart/(gCambio-1); // cambio 1 = minute 0
-        if(realMpc>0.1&&realMpc<60){ // sanity check
-          var estMs=departMs+(mc.num-1)*realMpc*60000;
-          return fmtClock(estMs);
-        }
-      }
+    if(Date.now()>departMs){
+      return fmtClock(departMs+(mc.num-1)*window._realRhythm*60000);
     }
   }
 
-  // Fallback: use recorded carries
-  const recorded=myCarries.filter(x=>isDone(x.ci)).map(x=>({num:x.num,t:getEntry(x.ci).t})).sort((a,b)=>b.num-a.num);
-  const avg=getRealAvg();
-  
-  if(recorded.length>0&&avg){
-    const last=recorded[0];
-    const estMs=last.t+(mc.num-last.num)*avg*60000;
-    return fmtClock(estMs);
-  }
-
-  // Default: use calc() time (based on departure + mn)
+  // 3. Default: use calc() time (departure + n × mn)
   return mc.time;
 }
 
@@ -3761,13 +3758,13 @@ function updateBanners(){
   if(!document.getElementById('grupoActualBanner')){
     var jLabel1=isSEMode?'Santo Entierro de Cristo':'Venerada Imagen de Jesús Nazareno';
     var vLabel=isSEMode?'Virgen Dolorosa':'María Santísima';
-    var jSize=isMuj?'14px':'22px';var jPad=isMuj?'6px':'10px';
-    var vSize=isMuj?'22px':'14px';var vPad=isMuj?'10px':'6px';
+    var jSize=isMuj?'13px':'20px';var jPad=isMuj?'4px':'6px';
+    var vSize=isMuj?'20px':'13px';var vPad=isMuj?'6px':'4px';
     var jImg=isSEMode?'se-entierro.jpg':'jesus.jpg';
     var vImg=isSEMode?'se-virgen.jpg':'maria.jpg';
-    var jHtml='<div id="grupoActualBanner" onclick="buscarAnda(\'jesus\')" style="cursor:pointer;display:flex;align-items:stretch;margin-bottom:6px;border-radius:10px;overflow:hidden;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><img src="'+jImg+'" style="width:60px;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'"><div style="flex:1;padding:'+jPad+';text-align:center;display:flex;flex-direction:column;justify-content:center"><div id="grupoActualLabel1" style="font-size:'+(isMuj?'9px':'12px')+';color:#aaa">'+jLabel1+'</div><div id="grupoActualLabel2" style="font-size:'+(isMuj?'9px':'12px')+';color:#ccc">Saca</div><div id="grupoActualText" style="font-size:'+jSize+';font-weight:700;color:#c084fc"></div><div id="grupoActualProgress" style="font-size:'+(isMuj?'9px':'11px')+';color:#aaa"></div></div></div>';
-    var vHtml='<div id="grupoVirgenBanner" onclick="buscarAnda(\'virgen\')" style="cursor:pointer;display:flex;align-items:stretch;margin-bottom:6px;border-radius:10px;overflow:hidden;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><img src="'+vImg+'" style="width:60px;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'"><div style="flex:1;padding:'+vPad+';text-align:center;display:flex;flex-direction:column;justify-content:center"><div id="grupoVirgenLabel1" style="font-size:'+(isMuj?'12px':'9px')+';color:#93c5fd">'+vLabel+'</div><div id="grupoVirgenLabel2" style="font-size:'+(isMuj?'12px':'9px')+';color:#ccc">Aproximadamente carga</div><div id="grupoVirgenText" style="font-size:'+vSize+';font-weight:700;color:#93c5fd"></div><div id="grupoVirgenProgress" style="font-size:'+(isMuj?'10px':'9px')+';color:#ff9800"></div></div></div>';
-    container.innerHTML=isMuj?(vHtml+jHtml):(jHtml+vHtml);
+    var jHtml='<div id="grupoActualBanner" onclick="buscarAnda(\'jesus\')" style="cursor:pointer;display:flex;align-items:stretch;flex:1;border-radius:8px;overflow:hidden;background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.3)"><img src="'+jImg+'" style="width:44px;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'"><div style="flex:1;padding:'+jPad+';text-align:center;display:flex;flex-direction:column;justify-content:center"><div id="grupoActualLabel1" style="font-size:'+(isMuj?'8px':'11px')+';color:#aaa">'+jLabel1+'</div><div id="grupoActualText" style="font-size:'+jSize+';font-weight:700;color:#c084fc;line-height:1.2"></div><div id="grupoActualProgress" style="font-size:'+(isMuj?'8px':'10px')+';color:#aaa"></div></div></div>';
+    var vHtml='<div id="grupoVirgenBanner" onclick="buscarAnda(\'virgen\')" style="cursor:pointer;display:flex;align-items:stretch;flex:1;border-radius:8px;overflow:hidden;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3)"><img src="'+vImg+'" style="width:44px;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'"><div style="flex:1;padding:'+vPad+';text-align:center;display:flex;flex-direction:column;justify-content:center"><div id="grupoVirgenLabel1" style="font-size:'+(isMuj?'11px':'8px')+';color:#93c5fd">'+vLabel+'</div><div id="grupoVirgenText" style="font-size:'+vSize+';font-weight:700;color:#93c5fd;line-height:1.2"></div><div id="grupoVirgenProgress" style="font-size:'+(isMuj?'9px':'8px')+';color:#ff9800"></div></div></div>';
+    container.innerHTML='<div style="display:flex;gap:6px;padding:4px 0">'+(isMuj?(vHtml+jHtml):(jHtml+vHtml))+'</div>';
   }
   
   // Jesus/SE banner
