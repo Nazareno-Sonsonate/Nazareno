@@ -1148,7 +1148,8 @@ function updateAdminLiveControls(){
   // GPS + Auto toggles
   h+='<div style="display:flex;gap:6px;margin-bottom:8px;justify-content:center">';
   h+='<button onclick="autoAdvanceGPS=!autoAdvanceGPS;updateAdminLiveControls();if(typeof renderLive===\'function\')renderLive();" style="flex:1;padding:8px;border:1px solid '+(autoAdvanceGPS?'#4CAF50':'#666')+';border-radius:8px;background:'+(autoAdvanceGPS?'rgba(76,175,80,.15)':'rgba(255,255,255,.05)')+';color:'+(autoAdvanceGPS?'#4CAF50':'#888')+';font-size:13px;cursor:pointer;font-family:inherit">'+(autoAdvanceGPS?'📡 GPS: ON':'📡 GPS: OFF')+'</button>';
-  h+='<button onclick="toggleAutoTime();updateAdminLiveControls();" style="flex:1;padding:8px;border:1px solid '+(window._autoTimeRunning?'#f44336':'#666')+';border-radius:8px;background:'+(window._autoTimeRunning?'rgba(244,67,54,.15)':'rgba(255,255,255,.05)')+';color:'+(window._autoTimeRunning?'#f44336':'#888')+';font-size:13px;cursor:pointer;font-family:inherit">'+(window._autoTimeRunning?'⏱ Auto: ON':'⏱ Auto: OFF')+'</button>';
+  var autoLabel=window._autoTimeRunning?(window._autoRemote?'⏱ Auto: ON 📡':'⏱ Auto: ON'):'⏱ Auto: OFF';
+  h+='<button onclick="toggleAutoTime();updateAdminLiveControls();" style="flex:1;padding:8px;border:1px solid '+(window._autoTimeRunning?'#f44336':'#666')+';border-radius:8px;background:'+(window._autoTimeRunning?'rgba(244,67,54,.15)':'rgba(255,255,255,.05)')+';color:'+(window._autoTimeRunning?'#f44336':'#888')+';font-size:13px;cursor:pointer;font-family:inherit">'+autoLabel+'</button>';
   h+='</div>';
   // Ritmo offset
   if(window._autoTimeRunning){
@@ -2436,7 +2437,7 @@ function renderLive(){
   const cargaLabel=isMuj?'Cambios':'Cargadas';
 
   // Procession complete only when ALL cambios are done or past day
-  var procComplete=(done>=total&&total>0)||isPastDay;
+  var procComplete=(done>=total&&total>0)||isPastDay||(liveGrupoData&&liveGrupoData.cambio>=total&&total>0);
 
   // Banners always updated (updateBanners handles isPastDay styling)
   updateBanners();
@@ -2990,12 +2991,12 @@ function updatePushUI(){
   var btn=document.getElementById('pushSubBtn');
   if(!btn) return;
   if(pushSubscribed||localStorage.getItem('pushToken')){
-    btn.textContent='🔔 Notificaciones activadas';
-    btn.style.background='rgba(76,175,80,.15)';
-    btn.style.borderColor='#4CAF50';
-    btn.style.color='#4CAF50';
+    btn.textContent='🔕 Desactivar notificaciones';
+    btn.style.background='rgba(244,67,54,.15)';
+    btn.style.borderColor='#f44336';
+    btn.style.color='#f44336';
+    btn.onclick=unsubscribePush;
     pushSubscribed=true;
-    // Show settings
     var ps=document.getElementById('pushSettings');
     if(ps) ps.style.display='block';
     // Populate watch group selector
@@ -3013,7 +3014,30 @@ function updatePushUI(){
     var abSel=document.getElementById('pushAlertBefore');
     var savedAb=localStorage.getItem('pushAlertBefore');
     if(abSel&&savedAb) abSel.value=savedAb;
+  } else {
+    btn.textContent='🔔 Activar notificaciones push';
+    btn.style.background='rgba(124,58,237,.15)';
+    btn.style.borderColor='#7c3aed';
+    btn.style.color='#c084fc';
+    btn.onclick=subscribePush;
+    var ps2=document.getElementById('pushSettings');
+    if(ps2) ps2.style.display='none';
   }
+}
+
+function unsubscribePush(){
+  var token;try{token=localStorage.getItem('pushToken');}catch(e){}
+  if(token){
+    db.ref('pushTokens/'+token.substring(0,20)).remove();
+  }
+  try{
+    localStorage.removeItem('pushToken');
+    localStorage.removeItem('pushWatchGrp');
+    localStorage.removeItem('pushAlertBefore');
+  }catch(e){}
+  pushSubscribed=false;
+  updatePushUI();
+  alert('✅ Notificaciones desactivadas');
 }
 
 function syncPushPrefs(){updatePushToken();}
@@ -3296,6 +3320,34 @@ function findNearestCambio(lat,lng){
 }
 
 var rawGpsDots={};
+var _smoothTimers={};
+function smoothMove(tipo,target){
+  var marker=urnaMarkers[tipo];
+  if(!marker) return;
+  if(_smoothTimers[tipo]) cancelAnimationFrame(_smoothTimers[tipo]);
+  var start=marker.getPosition();
+  if(!start) return;
+  var sLat=start.lat(),sLng=start.lng();
+  var tLat=target.lat,tLng=target.lng;
+  var dist=Math.abs(tLat-sLat)+Math.abs(tLng-sLng);
+  if(dist<0.000001) return;
+  // If jump is too big (>500m), skip animation
+  if(dist>0.005){marker.setPosition(target);if(marker._ring)marker._ring.setCenter(target);return;}
+  var duration=800;
+  var startTime=performance.now();
+  function step(now){
+    if(!urnaMarkers[tipo]){_smoothTimers[tipo]=null;return;}
+    var t=Math.min((now-startTime)/duration,1);
+    t=1-Math.pow(1-t,2);
+    var lat=sLat+(tLat-sLat)*t;
+    var lng=sLng+(tLng-sLng)*t;
+    urnaMarkers[tipo].setPosition({lat:lat,lng:lng});
+    if(urnaMarkers[tipo]._ring) urnaMarkers[tipo]._ring.setCenter({lat:lat,lng:lng});
+    if(t<1) _smoothTimers[tipo]=requestAnimationFrame(step);
+    else _smoothTimers[tipo]=null;
+  }
+  _smoothTimers[tipo]=requestAnimationFrame(step);
+}
 function getAndaIcon(tipo){
   if(tipo==='jesus') return isSEMode?'se-entierro-marker.png':'jesus-marker.png';
   return isSEMode?'se-virgen-marker.png':'maria-marker.png';
@@ -3338,8 +3390,7 @@ function listenAnda(tipo,imgUrl,color,zIdx){
         zIndex:zIdx-1
       });
     } else if(urnaMarkers[tipo]){
-      urnaMarkers[tipo].setPosition(ll);
-      if(urnaMarkers[tipo]._ring) urnaMarkers[tipo]._ring.setCenter(ll);
+      smoothMove(tipo,ll);
       // Update icon if SE mode changed
       if(urnaMarkers[tipo]._iconUrl!==curIcon){
         urnaMarkers[tipo].setIcon({url:curIcon,scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)});
@@ -4248,7 +4299,7 @@ function startDayListeners(){
 }
 
 </script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_lMqEQiLroj-jhx-a9d_o-6uWFfOCbg0&libraries=geometry&callback=initMap" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxQxXH4qihmmjiGTVdWC7QnBfdbklfcU8&libraries=geometry&callback=initMap" async defer></script>
 
 
 <script>
@@ -4281,8 +4332,8 @@ function startAutoIfNeeded(){
 
 function toggleAutoTime(){
   window._autoTimeRunning=!window._autoTimeRunning;
+  window._autoRemote=false;
   if(window._autoTimeRunning){
-    // Sync offset to current grupo position if needed
     if(currentGrupoActual>0){
       var _stI=getStartTime();
       var mnI=+$('cMn').value||6;
@@ -4293,11 +4344,12 @@ function toggleAutoTime(){
     }
     autoTimeStep();
     window._autoTimeTimer=setInterval(autoTimeStep,3000);
+    startHeartbeat();
   } else {
     if(window._autoTimeTimer) clearInterval(window._autoTimeTimer);
     window._autoTimeTimer=null;
+    stopHeartbeat();
   }
-  // Save state to Firebase
   syncAutoState();
   if(typeof renderLive==='function') renderLive();
 }
@@ -4307,36 +4359,67 @@ function syncAutoState(){
   db.ref('config/auto/day'+currentDay).set({
     running:window._autoTimeRunning,
     offset:window._autoTimeOffset,
+    owner:window._autoTimeRunning?window._deviceId:'',
+    heartbeat:Date.now(),
     t:Date.now()
   });
 }
 
-function loadAutoState(){
-  db.ref('config/auto/day'+currentDay).once('value',function(snap){
-    var d=snap.val();
-    if(!d) return;
-    if(d.offset!==undefined) window._autoTimeOffset=d.offset;
-    if(d.running&&!window._autoTimeRunning){
-      window._autoTimeRunning=true;
-      autoTimeStep();
-      window._autoTimeTimer=setInterval(autoTimeStep,3000);
-      if(typeof renderLive==='function') renderLive();
+// Unique device ID
+window._deviceId=localStorage.getItem('deviceId');
+if(!window._deviceId){window._deviceId='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);localStorage.setItem('deviceId',window._deviceId);}
+
+// Heartbeat: owner pings every 30s
+var _heartbeatTimer=null;
+function startHeartbeat(){
+  if(_heartbeatTimer) return;
+  _heartbeatTimer=setInterval(function(){
+    if(window._autoTimeRunning&&!window._autoRemote&&!isShared){
+      db.ref('config/auto/day'+currentDay+'/heartbeat').set(Date.now());
     }
-  });
-  // Keep listening for changes from editor
+  },15000);
+}
+function stopHeartbeat(){
+  if(_heartbeatTimer){clearInterval(_heartbeatTimer);_heartbeatTimer=null;}
+}
+
+function loadAutoState(){
   db.ref('config/auto/day'+currentDay).on('value',function(snap){
     var d=snap.val();
     if(!d) return;
     if(d.offset!==undefined) window._autoTimeOffset=d.offset;
-    if(d.running&&!window._autoTimeRunning){
-      window._autoTimeRunning=true;
-      autoTimeStep();
-      window._autoTimeTimer=setInterval(autoTimeStep,3000);
+    
+    if(d.running){
+      var isMyOwn=(!d.owner||d.owner===window._deviceId);
+      var ownerDead=(d.heartbeat&&(Date.now()-d.heartbeat>30000));
+      
+      if(isMyOwn||ownerDead){
+        // This device runs Auto (owns it or owner died)
+        if(ownerDead&&!isMyOwn){
+          console.log('Auto owner died, taking over');
+          window._deviceId=window._deviceId; // keep own ID
+          if(!isShared) db.ref('config/auto/day'+currentDay+'/owner').set(window._deviceId);
+        }
+        window._autoRemote=false;
+        if(!window._autoTimeRunning||!window._autoTimeTimer){
+          window._autoTimeRunning=true;
+          autoTimeStep();
+          window._autoTimeTimer=setInterval(autoTimeStep,3000);
+          startHeartbeat();
+        }
+      } else {
+        // Another device owns it and is alive
+        window._autoTimeRunning=true;
+        window._autoRemote=true;
+        if(window._autoTimeTimer){clearInterval(window._autoTimeTimer);window._autoTimeTimer=null;}
+        stopHeartbeat();
+      }
       if(typeof renderLive==='function') renderLive();
     } else if(!d.running&&window._autoTimeRunning){
       window._autoTimeRunning=false;
-      if(window._autoTimeTimer) clearInterval(window._autoTimeTimer);
-      window._autoTimeTimer=null;
+      window._autoRemote=false;
+      if(window._autoTimeTimer){clearInterval(window._autoTimeTimer);window._autoTimeTimer=null;}
+      stopHeartbeat();
       if(typeof renderLive==='function') renderLive();
     }
   });
@@ -4375,7 +4458,18 @@ function autoTimeStep(){
 
   // Auto-stop when procession is done
   if(procFinished&&window._autoTimeRunning){
-    // Keep running 2 more min for virgen to finish, then stop
+    // Ensure final cambio is written
+    if(currentGrupoActual<tot){
+      currentGrupoActual=tot;
+      var sacaF=daySaca[currentDay]||16;
+      var grpF=((sacaF-1+tot-1)%getHomCount())+1;
+      var nombreF=(tot<=changes.length&&changes[tot-1])?changes[tot-1].n||'':'';
+      liveGrupoData={cambio:tot,grp:grpF,nombre:nombreF,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
+      try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+      saveAll();
+      db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+    }
+    // Wait for virgen to finish too
     var vRoute2=(positionsW.length>=2)?positionsW:positions;
     var vExact2=Math.max(0,exactPos-virgenDesfase);
     if(vExact2>=vRoute2.length){
