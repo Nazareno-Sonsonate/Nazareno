@@ -101,7 +101,7 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
       <button class="btn" onclick="var ap=document.getElementById('alertPanel');var ao=document.getElementById('alertOverlay');var vis=ap.style.display==='none';ap.style.display=vis?'block':'none';ao.style.display=vis?'block':'none';if(vis&&typeof populateAlertSelects==='function')populateAlertSelects();if(vis&&typeof updatePushUI==='function')updatePushUI()" style="padding:4px 7px;font-size:11px" id="btnAlert">🔔</button>
       <button class="btn" onclick="openCfg()" style="padding:4px 7px;font-size:11px" id="btnConfig">⚙️</button>
       <button class="btn" onclick="shareWhatsApp()" style="padding:4px 7px;font-size:11px">📤</button>
-      <button class="btn" onclick="loginAsAdmin()" style="padding:4px 7px;font-size:11px;display:none" id="btnAdminLogin" title="Acceso administrador">🔑</button>
+      <button class="btn" onclick="loginAsAdmin()" style="padding:4px 7px;font-size:11px" id="btnAdminLogin" title="Acceso administrador">🔑</button>
       <button class="btn adminOnly" onclick="logoutAdmin()" style="padding:4px 7px;font-size:11px;display:none" id="btnAdminLogout" title="Cerrar sesión administrador">🚪</button>
     </div>
   </div>
@@ -2852,7 +2852,6 @@ let authResolved = false;
 
 auth.onAuthStateChanged(function(user){
   authResolved = true;
-  const wasAdmin = isAdmin;
   if(user && user.email === ADMIN_EMAIL){
     isAdmin = true;
     isShared = false;
@@ -2873,9 +2872,7 @@ auth.onAuthStateChanged(function(user){
       try{ alert('Esta cuenta de Google no está autorizada para editar.'); }catch(e){}
     }
   }
-  if(wasAdmin !== isAdmin){
-    applyAuthMode();
-  }
+  applyAuthMode();
 });
 
 function loginAsAdmin(){
