@@ -101,6 +101,8 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
       <button class="btn" onclick="var ap=document.getElementById('alertPanel');var ao=document.getElementById('alertOverlay');var vis=ap.style.display==='none';ap.style.display=vis?'block':'none';ao.style.display=vis?'block':'none';if(vis&&typeof populateAlertSelects==='function')populateAlertSelects();if(vis&&typeof updatePushUI==='function')updatePushUI()" style="padding:4px 7px;font-size:11px" id="btnAlert">🔔</button>
       <button class="btn" onclick="openCfg()" style="padding:4px 7px;font-size:11px" id="btnConfig">⚙️</button>
       <button class="btn" onclick="shareWhatsApp()" style="padding:4px 7px;font-size:11px">📤</button>
+      <button class="btn" onclick="loginAsAdmin()" style="padding:4px 7px;font-size:11px;display:none" id="btnAdminLogin" title="Acceso administrador">🔑</button>
+      <button class="btn adminOnly" onclick="logoutAdmin()" style="padding:4px 7px;font-size:11px;display:none" id="btnAdminLogout" title="Cerrar sesión administrador">🚪</button>
     </div>
   </div>
   <div id="hSub" style="font-size:11px;color:#aaa;overflow-x:auto;white-space:nowrap;padding:1px 0"></div>
@@ -779,24 +781,26 @@ document.addEventListener('touchstart', e => { if(e.touches.length>1) lastMulti=
 function isZoom() { return Date.now()-lastMulti<500; }
 
 // ========== URL PARAMS & SHARING ==========
-let isShared = false;
+// Default to PUBLIC (shared) — admin status comes from Firebase Auth
+let isShared = true;
 let isSEMode = false;
+let explicitDay = false;
 function readParams(){
   const p = new URLSearchParams(window.location.search);
-  // Backwards compat: ?se=1 → same as dia=4
+  // Legacy: ?se=1 → day 4 + SE theme
   if(p.has('se')){
-    currentDay=4;isSEMode=true;
-    isShared=!p.has('edit');
+    currentDay=4;isSEMode=true;explicitDay=true;
   }
-  // Shared mode: ?saca=X&dia=Y or ?se=1
-  if(p.has('saca')||p.has('dia')||isShared){
-    isShared=true;
-    if(p.has('saca')) $('cS').value=p.get('saca');
-    if(p.has('dia')){
-      const d=parseInt(p.get('dia'));
-      if(d>=0&&d<=4) currentDay=d;
-      if(d===4) isSEMode=true;
-    }
+  // Legacy: ?dia=N
+  if(p.has('dia')){
+    const d=parseInt(p.get('dia'));
+    if(d>=0&&d<=4){currentDay=d;explicitDay=true;}
+    if(d===4) isSEMode=true;
+  }
+  // Legacy: ?saca=N sets default group
+  if(p.has('saca')) $('cS').value=p.get('saca');
+  // Public group picker: shown for everyone except admins (auth flips this later)
+  if(isShared){
     var storageKey=isSEMode?'sharedUserSE':'sharedUser';
     const saved=localStorage.getItem(storageKey);
     if(saved){
@@ -901,32 +905,28 @@ function reopenGroupSelector(){
 }
 
 function shareWhatsApp(){
-  const c=cfg();
-  const base=window.location.origin+window.location.pathname;
-  // Santo Entierro share
-  if(currentDay===4){
-    const link=base+'?se=1';
-    const msg='⚰️ *Santo Entierro de Cristo · Sonsonate*\n\n'
-      +'Rastreo en vivo del Santo Entierro\n'
-      +'Abrí el link y elegí tu grupo:\n'+link;
-    if(navigator.share){
-      navigator.share({title:'Santo Entierro · Sonsonate',text:msg,url:link}).catch(()=>{});
-    } else {
-      window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
-    }
-    return;
-  }
-  // Single link for all days - Firebase auto-detects today
-  const link=base+'?saca=1';
-  const msg='✝️ *Procesión de Semana Santa · Sonsonate*\n\n'
+  // Single public link — auto-detects today's day (incl. Santo Entierro)
+  const link=window.location.origin+window.location.pathname;
+  const isSE=(currentDay===4);
+  const msg=(isSE?'⚰️ *Santo Entierro de Cristo · Sonsonate*\n\n':'✝️ *Procesión de Semana Santa · Sonsonate*\n\n')
     +'Rastreo en vivo de la procesión\n'
     +'Abrí el link, elegí tu grupo y mirá tus cargadas:\n'+link;
-  
   if(navigator.share){
-    navigator.share({title:'Procesión Semana Santa · Sonsonate',text:msg,url:link}).catch(()=>{});
+    navigator.share({title:isSE?'Santo Entierro · Sonsonate':'Procesión Semana Santa · Sonsonate',text:msg,url:link}).catch(function(){});
   } else {
     window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
   }
+}
+
+function showOffSeasonBanner(){
+  if(document.getElementById('offSeasonBanner')) return;
+  var b=document.createElement('div');
+  b.id='offSeasonBanner';
+  b.style.cssText='padding:8px 12px;background:rgba(124,58,237,.15);border-bottom:1px solid rgba(124,58,237,.3);text-align:center;font-size:11px;color:#c084fc;line-height:1.4';
+  b.innerHTML='📜 Semana Santa terminó. Estás viendo el resultado del último día. Volvé el próximo año.';
+  var hdr=document.querySelector('.hdr');
+  if(hdr&&hdr.nextSibling) hdr.parentNode.insertBefore(b,hdr.nextSibling);
+  else document.body.insertBefore(b,document.body.firstChild);
 }
 
 const $ = id => document.getElementById(id);
@@ -1263,27 +1263,22 @@ function initMap() {
   });
   const hasSaved = loadSaved();
   readParams();
-  // Auto-detect today's day (skip if SE mode already set day)
-  if(!isSEMode&&!isShared){
+  // Auto-detect today's day for everyone (skipped only if URL forced a day)
+  if(!explicitDay){
     const todayIdx = detectToday();
     if(todayIdx>=0){
       currentDay = todayIdx;
+      if(currentDay===4) isSEMode=true;
     } else {
-      // No day is today — restore last viewed day
+      // Off-season — fall back to last viewed day and show a banner
       var lastDay=+(localStorage.getItem('lastViewedDay')||0);
       if(lastDay>=0&&lastDay<=4) currentDay=lastDay;
       if(currentDay===4) isSEMode=true;
+      try{ showOffSeasonBanner(); }catch(e){}
     }
   }
-  // Hide edit tools and admin config for shared users
-  if(isShared){
-    const eb=document.getElementById('mapEditBar');
-    if(eb) eb.style.display='none';
-    document.querySelectorAll('.adminOnly').forEach(el=>el.style.display='none');
-    // Change ⚙️ to open group selector instead of config
-    var cfgBtn=document.getElementById('btnConfig');
-    if(cfgBtn) cfgBtn.onclick=function(){reopenGroupSelector();};
-  }
+  // Apply admin/public UI based on current auth state
+  applyAuthMode();
   // Restore day tabs and dropdown
   document.querySelectorAll('.day').forEach((b,i)=>b.classList.toggle('a',i===currentDay));
   var dsInit=document.getElementById('daySelector');
@@ -2834,6 +2829,7 @@ if('serviceWorker' in navigator){
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
 // ========== URNA GPS TRACKING ==========
 const firebaseConfig = {
@@ -2847,6 +2843,95 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+
+// ========== ADMIN AUTH (Google Sign-In) ==========
+const ADMIN_EMAIL = 'njrmancia@gmail.com';
+const auth = firebase.auth();
+let isAdmin = false;
+let authResolved = false;
+
+auth.onAuthStateChanged(function(user){
+  authResolved = true;
+  const wasAdmin = isAdmin;
+  if(user && user.email === ADMIN_EMAIL){
+    isAdmin = true;
+    isShared = false;
+    // Clean ?edit=1 from URL once authenticated
+    try{
+      var u=new URL(window.location.href);
+      if(u.searchParams.has('edit')){
+        u.searchParams.delete('edit');
+        window.history.replaceState({}, '', u.pathname + (u.search?u.search:'') + u.hash);
+      }
+    }catch(e){}
+  } else {
+    isAdmin = false;
+    isShared = true;
+    if(user){
+      // Logged in but not the admin email — sign out
+      auth.signOut();
+      try{ alert('Esta cuenta de Google no está autorizada para editar.'); }catch(e){}
+    }
+  }
+  if(wasAdmin !== isAdmin){
+    applyAuthMode();
+  }
+});
+
+function loginAsAdmin(){
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({prompt:'select_account'});
+  auth.signInWithPopup(provider).then(function(result){
+    if(result&&result.user&&result.user.email===ADMIN_EMAIL){
+      // Reload to clean URL so admin-only init runs from a fresh state
+      window.location.href = window.location.pathname;
+    }
+    // Wrong account is handled by onAuthStateChanged (signs out + alert)
+  }).catch(function(err){
+    console.error('Login error:', err);
+    try{ alert('Error al iniciar sesión: '+(err.message||err.code||'desconocido')); }catch(e){}
+  });
+}
+
+function logoutAdmin(){
+  auth.signOut().then(function(){
+    // Redirect to clean public URL
+    window.location.href = window.location.pathname;
+  });
+}
+
+function applyAuthMode(){
+  // Toggle UI between admin (editor) and public (shared) mode
+  var eb = document.getElementById('mapEditBar');
+  var cfgBtn = document.getElementById('btnConfig');
+  var modal = document.getElementById('sharedModal');
+  var loginBtn = document.getElementById('btnAdminLogin');
+  var logoutBtn = document.getElementById('btnAdminLogout');
+  if(isAdmin){
+    if(eb) eb.style.display='flex';
+    document.querySelectorAll('.adminOnly').forEach(function(el){el.style.display='';});
+    if(cfgBtn) cfgBtn.onclick = function(){openCfg();};
+    if(modal) modal.style.display='none';
+    if(loginBtn) loginBtn.style.display='none';
+    if(logoutBtn) logoutBtn.style.display='';
+  } else {
+    if(eb) eb.style.display='none';
+    document.querySelectorAll('.adminOnly').forEach(function(el){el.style.display='none';});
+    if(cfgBtn) cfgBtn.onclick = function(){reopenGroupSelector();};
+    if(loginBtn) loginBtn.style.display='';
+    if(logoutBtn) logoutBtn.style.display='none';
+  }
+}
+
+// If URL has ?edit=1 and user isn't already authenticated, prompt sign-in
+(function(){
+  var p = new URLSearchParams(window.location.search);
+  if(!p.has('edit')) return;
+  // Wait briefly for cached auth to resolve before prompting
+  setTimeout(function(){
+    if(!auth.currentUser) loginAsAdmin();
+  }, 1200);
+})();
 
 // ========== PUSH NOTIFICATIONS (FCM) ==========
 var fcmMessaging=null;
