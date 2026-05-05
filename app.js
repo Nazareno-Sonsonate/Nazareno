@@ -497,8 +497,8 @@ function loadSaved() {
     return true;
   } catch(e){return false;}
 }
-function resetData(){
-  if(!confirm('¿Borrar TODO el progreso guardado?')) return;
+async function resetData(){
+  if(!await customConfirm('¿Borrar TODO el progreso guardado?')) return;
   localStorage.removeItem(SAVE_KEY);
   savedPositions=[null,null,null,null,null];savedRefs=[null,null,null,null,null];
   location.reload();
@@ -676,6 +676,53 @@ function customAlert(message){
   setTimeout(function(){ btn.focus(); }, 0);
 }
 window.alert = customAlert;
+
+function _customDialog(opts){
+  // Shared modal scaffold for confirm/prompt. Returns a Promise.
+  return new Promise(function(resolve){
+    var overlay = document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;display:flex;align-items:center;justify-content:center;padding:16px';
+    var inputHtml = opts.input ? '<input id="cdInput" type="text" style="width:100%;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;font-size:14px;font-family:inherit;margin-bottom:12px">' : '';
+    var okLabel = opts.okLabel || 'OK';
+    var cancelLabel = opts.cancelLabel || 'Cancelar';
+    overlay.innerHTML =
+      '<div style="background:#1a0a1f;border:2px solid #c084fc;border-radius:14px;padding:20px;max-width:340px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,.6);font-family:Georgia,serif">' +
+      '<div id="cdMsg" style="color:#eee;font-size:14px;line-height:1.5;margin-bottom:14px;white-space:pre-wrap;word-wrap:break-word"></div>' +
+      inputHtml +
+      '<div style="display:flex;gap:8px">' +
+      '<button id="cdCancel" style="flex:1;padding:10px;background:none;border:1px solid #666;color:#aaa;font-weight:600;font-size:13px;border-radius:8px;cursor:pointer;font-family:inherit">'+cancelLabel+'</button>' +
+      '<button id="cdOK" style="flex:1;padding:10px;background:rgba(124,58,237,.2);border:1px solid #7c3aed;color:#c084fc;font-weight:700;font-size:14px;border-radius:8px;cursor:pointer;font-family:inherit">'+okLabel+'</button>' +
+      '</div></div>';
+    document.body.appendChild(overlay);
+    overlay.querySelector('#cdMsg').textContent = String(opts.message==null?'':opts.message);
+    var input = overlay.querySelector('#cdInput');
+    if(input){ input.value = opts.defaultValue || ''; setTimeout(function(){ input.focus(); input.select(); }, 0); }
+    else { setTimeout(function(){ overlay.querySelector('#cdOK').focus(); }, 0); }
+    var close = function(result){
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+      resolve(result);
+    };
+    var doOK = function(){ close(opts.input ? input.value : true); };
+    var doCancel = function(){ close(opts.input ? null : false); };
+    var onKey = function(e){
+      if(e.key==='Enter'){ e.preventDefault(); doOK(); }
+      else if(e.key==='Escape'){ e.preventDefault(); doCancel(); }
+    };
+    overlay.querySelector('#cdOK').addEventListener('click', doOK);
+    overlay.querySelector('#cdCancel').addEventListener('click', doCancel);
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) doCancel(); });
+    document.addEventListener('keydown', onKey);
+  });
+}
+
+function customConfirm(message){
+  return _customDialog({message: message, input: false, okLabel: 'Sí', cancelLabel: 'No'});
+}
+
+function customPrompt(message, defaultValue){
+  return _customDialog({message: message, input: true, defaultValue: defaultValue, okLabel: 'OK', cancelLabel: 'Cancelar'});
+}
 function cfg() {
   var mujGrupos=isSEMode?23:27;
   var st=getStartTime();
@@ -1736,8 +1783,8 @@ function renderWPmarkers() {
   });
 }
 
-function addRef(){
-  const name=prompt('Nombre de la referencia:');
+async function addRef(){
+  const name=await customPrompt('Nombre de la referencia:');
   if(!name) return;
   const center=gmap.getCenter();
   const wps=getWPs();
@@ -1755,10 +1802,10 @@ function deleteRef(i){
   saveAll();
 }
 
-function renameRef(i){
+async function renameRef(i){
   const wps=getWPs();
   if(i<0||i>=wps.length) return;
-  const name=prompt('Nuevo nombre para referencia:',wps[i].n);
+  const name=await customPrompt('Nuevo nombre para referencia:',wps[i].n);
   if(name===null) return;
   wps[i].n=name;
   infoWin.close();
@@ -1766,9 +1813,9 @@ function renameRef(i){
   saveAll();
 }
 
-function renameChange(ci){
+async function renameChange(ci){
   if(ci<0||ci>=positions.length) return;
-  const name=prompt('Nuevo nombre para este cambio:',positions[ci].n||'');
+  const name=await customPrompt('Nuevo nombre para este cambio:',positions[ci].n||'');
   if(name===null) return;
   positions[ci].n=name;
   infoWin.close();
@@ -1802,8 +1849,8 @@ function copyToClip(txt){
   navigator.clipboard.writeText(txt).then(()=>{
     alert('✅ Copiado al portapapeles. Pegalo en WhatsApp y mandámelo.');
   }).catch(()=>{
-    // Fallback: show in prompt
-    prompt('Copiá este texto y mandámelo por WhatsApp:',txt);
+    // Fallback: show in modal so user can copy manually
+    customPrompt('Copiá este texto y mandámelo por WhatsApp:',txt);
   });
 }
 
@@ -2039,8 +2086,8 @@ function undoLast(){
   calc();
 }
 
-function resetLive(){
-  if(!confirm('¿Reiniciar cargadas de '+dayNames[currentDay]+'?')) return;
+async function resetLive(){
+  if(!await customConfirm('¿Reiniciar cargadas de '+dayNames[currentDay]+'?')) return;
   carryTimes[currentDay]={};
   saveCompleted();
   renderLive();
@@ -2845,8 +2892,8 @@ function addAdminEmail(){
   });
 }
 
-function removeAdminEmail(email){
-  if(!confirm('¿Quitar a '+email+' como editor?\n\nVa a perder acceso de edición la próxima vez que use la app.')) return;
+async function removeAdminEmail(email){
+  if(!await customConfirm('¿Quitar a '+email+' como editor?\n\nVa a perder acceso de edición la próxima vez que use la app.')) return;
   db.ref('admins/' + _emailToKey(email)).remove().catch(function(err){
     alert('Error al quitar: '+(err.message||err.code||'desconocido'));
   });
@@ -3115,10 +3162,10 @@ function toggleUrna(tipo){
   }
   if(!navigator.geolocation){alert('GPS no disponible');return;}
   
-  db.ref(tipo).once('value',function(snap){
+  db.ref(tipo).once('value',async function(snap){
     const d=snap.val();
     if(d&&d.t&&Date.now()-d.t<120000){
-      if(!confirm('⚠️ '+label+' ya está siendo rastreada. ¿Tomar control?')) return;
+      if(!await customConfirm('⚠️ '+label+' ya está siendo rastreada. ¿Tomar control?')) return;
     }
     urnaActive[tipo]=true;
     saveUrnaState();
@@ -3884,10 +3931,10 @@ function advanceGrupo(delta){
   }
 }
 
-function setGrupoManual(){
+async function setGrupoManual(){
   var tot=changes.length;
   if(tot===0) tot=positions.length;
-  var input=prompt('En que cambio van? (1 al '+tot+')');
+  var input=await customPrompt('En que cambio van? (1 al '+tot+')');
   if(!input) return;
   var num=parseInt(input);
   if(isNaN(num)||num<0||num>tot){alert('Numero invalido');return;}
