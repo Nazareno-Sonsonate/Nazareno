@@ -87,6 +87,21 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
 .rfloat.show{display:block}
 @keyframes flashPulse{0%,100%{opacity:1}50%{opacity:0.3}}
 .flash{animation:flashPulse 0.8s ease-in-out 6}
+/* Santo Entierro theme — toggled via body.se-mode class */
+body.se-mode .vtab.a{color:#d4af37!important;border-top-color:#d4af37!important}
+body.se-mode .btn{border-color:#8B7355!important;color:#d4af37!important;background:rgba(212,175,55,.12)!important}
+body.se-mode #grupoActualBanner{background:rgba(212,175,55,.12)!important;border-color:rgba(212,175,55,.3)!important}
+body.se-mode #grupoActualText{color:#d4af37!important}
+body.se-mode .live-next .ln-num{color:#d4af37!important}
+body.se-mode .live-next{border-color:#d4af37!important;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.05))!important}
+body.se-mode .live-progress-bar{background:linear-gradient(90deg,#d4af37,#8B7355)!important}
+body.se-mode .bar{background:rgba(212,175,55,.08)!important}
+body.se-mode .bar .v{color:#d4af37!important}
+body.se-mode .cfg.open{border-color:rgba(212,175,55,.3)!important}
+body.se-mode .live-btn-done{background:#8B7355!important}
+body.se-mode .live-btn-undo{border-color:#8B7355!important;color:#d4af37!important}
+body.se-mode .hdr{border-bottom-color:rgba(212,175,55,.3)!important}
+body.se-mode .vtabs{border-bottom-color:rgba(212,175,55,.15)!important}
 </style>
 </head>
 <body>
@@ -841,12 +856,7 @@ function readParams(){
   if(isSEMode){
     $('hTitle').textContent='⚰️ Santo Entierro';
     $('hTitle').style.color='#d4af37';
-    var seStyleEl=document.getElementById('seThemeStyle');
-    if(!seStyleEl){
-      seStyleEl=document.createElement('style');seStyleEl.id='seThemeStyle';
-      seStyleEl.textContent='.vtab.a{color:#d4af37!important;border-top-color:#d4af37!important}.btn{border-color:#8B7355!important;color:#d4af37!important;background:rgba(212,175,55,.12)!important}#grupoActualBanner{background:rgba(212,175,55,.12)!important;border-color:rgba(212,175,55,.3)!important}#grupoActualText{color:#d4af37!important}.live-next .ln-num{color:#d4af37!important}.live-next{border-color:#d4af37!important;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.05))!important}.live-progress-bar{background:linear-gradient(90deg,#d4af37,#8B7355)!important}.bar{background:rgba(212,175,55,.08)!important}.bar .v{color:#d4af37!important}.cfg.open{border-color:rgba(212,175,55,.3)!important}.live-btn-done{background:#8B7355!important}.live-btn-undo{border-color:#8B7355!important;color:#d4af37!important}.hdr{border-bottom-color:rgba(212,175,55,.3)!important}.vtabs{border-bottom-color:rgba(212,175,55,.15)!important}';
-      document.head.appendChild(seStyleEl);
-    }
+    document.body.classList.add('se-mode');
     var opts=$('cType').options;
     for(var oi=0;oi<opts.length;oi++){
       if(opts[oi].value==='21') opts[oi].textContent='Hombres (22 grupos)';
@@ -1301,12 +1311,7 @@ function initMap() {
     isSEMode=true;
     $('hTitle').textContent='⚰️ Santo Entierro';
     $('hTitle').style.color='#d4af37';
-    var seStyleInit=document.getElementById('seThemeStyle');
-    if(!seStyleInit){
-      seStyleInit=document.createElement('style');seStyleInit.id='seThemeStyle';
-      seStyleInit.textContent='.vtab.a{color:#d4af37!important;border-top-color:#d4af37!important}.btn{border-color:#8B7355!important;color:#d4af37!important;background:rgba(212,175,55,.12)!important}#grupoActualBanner{background:rgba(212,175,55,.12)!important;border-color:rgba(212,175,55,.3)!important}#grupoActualText{color:#d4af37!important}.live-next .ln-num{color:#d4af37!important}.live-next{border-color:#d4af37!important;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.05))!important}.live-progress-bar{background:linear-gradient(90deg,#d4af37,#8B7355)!important}.bar{background:rgba(212,175,55,.08)!important}.bar .v{color:#d4af37!important}.cfg.open{border-color:rgba(212,175,55,.3)!important}.live-btn-done{background:#8B7355!important}.live-btn-undo{border-color:#8B7355!important;color:#d4af37!important}.hdr{border-bottom-color:rgba(212,175,55,.3)!important}.vtabs{border-bottom-color:rgba(212,175,55,.15)!important}';
-      document.head.appendChild(seStyleInit);
-    }
+    document.body.classList.add('se-mode');
     var optsInit=$('cType').options;
     for(var oii=0;oii<optsInit.length;oii++){
       if(optsInit[oii].value==='21') optsInit[oii].textContent='Hombres (22 grupos)';
@@ -1402,15 +1407,10 @@ function switchDay(d) {
   if(ds) ds.value=d;
 
   // Apply/remove SE theme
-  var seStyleEl=document.getElementById('seThemeStyle');
   if(isSEMode){
     $('hTitle').textContent='⚰️ Santo Entierro';
     $('hTitle').style.color='#d4af37';
-    if(!seStyleEl){
-      seStyleEl=document.createElement('style');seStyleEl.id='seThemeStyle';
-      seStyleEl.textContent='.vtab.a{color:#d4af37!important;border-top-color:#d4af37!important}.btn{border-color:#8B7355!important;color:#d4af37!important;background:rgba(212,175,55,.12)!important}#grupoActualBanner{background:rgba(212,175,55,.12)!important;border-color:rgba(212,175,55,.3)!important}#grupoActualText{color:#d4af37!important}.live-next .ln-num{color:#d4af37!important}.live-next{border-color:#d4af37!important;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.05))!important}.live-progress-bar{background:linear-gradient(90deg,#d4af37,#8B7355)!important}.bar{background:rgba(212,175,55,.08)!important}.bar .v{color:#d4af37!important}.cfg.open{border-color:rgba(212,175,55,.3)!important}.live-btn-done{background:#8B7355!important}.live-btn-undo{border-color:#8B7355!important;color:#d4af37!important}.hdr{border-bottom-color:rgba(212,175,55,.3)!important}.vtabs{border-bottom-color:rgba(212,175,55,.15)!important}';
-      document.head.appendChild(seStyleEl);
-    }
+    document.body.classList.add('se-mode');
     // Update group count labels
     var opts=$('cType').options;
     for(var oi=0;oi<opts.length;oi++){
@@ -1418,7 +1418,7 @@ function switchDay(d) {
       if(opts[oi].value==='27') opts[oi].textContent='Mujeres (23 grupos)';
     }
   } else {
-    if(seStyleEl) seStyleEl.remove();
+    document.body.classList.remove('se-mode');
     var opts2=$('cType').options;
     for(var oi2=0;oi2<opts2.length;oi2++){
       if(opts2[oi2].value==='21') opts2[oi2].textContent='Hombres (21 grupos)';
@@ -4415,6 +4415,8 @@ function startDayListeners(){
   gaRef.on('value',function(snap){
     var d=snap.val();
     if(!d) return;
+    // Reject snapshots older than what we already have (race-condition guard)
+    if(liveGrupoData && d.t && liveGrupoData.t && d.t < liveGrupoData.t) return;
     // Check for stale auto-completed data: if today and cambio>=tot, reset
     var nowDateGA=localDateStr(new Date());
     if(dayDates[currentDay]===nowDateGA&&d.cambio>0){
@@ -4460,11 +4462,13 @@ function startDayListeners(){
             window._lastSync=syncMsg;
             if(ss) ss.textContent=syncMsg;
             if(d){
+              // Reject responses older than what we already have
+              if(liveGrupoData && d.t && liveGrupoData.t && d.t < liveGrupoData.t) return;
               currentGrupoActual=d.cambio||0;
               liveGrupoData=d;
               if(d.desfase!==undefined) virgenDesfase=d.desfase;
               if(d.movidos!==undefined) virgenMovidos=d.movidos;
-    if(d.virgenMn) virgenMn=d.virgenMn;
+              if(d.virgenMn) virgenMn=d.virgenMn;
               if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
               try{updateGrupoUI();}catch(e7){}
               try{if(typeof renderLive==='function') renderLive();}catch(e9){}
