@@ -2396,24 +2396,42 @@ function fmtClock(ts){
   return h12+':'+String(m).padStart(2,'0')+' '+(h>=12&&h<24?'PM':'AM');
 }
 
+// Debounce + skip-if-unchanged wrapper around the heavy renderLiveImpl.
+// renderLive is called from many sources (Firebase listeners, polls, intervals);
+// coalescing close calls and skipping equal HTML cuts CPU/repaint cost on mobile.
+let _renderLiveTimer = null;
+let _renderLiveLastHTML = '';
 function renderLive(){
+  if(_renderLiveTimer) return;
+  _renderLiveTimer = setTimeout(function(){
+    _renderLiveTimer = null;
+    renderLiveImpl();
+  }, 80);
+}
+function renderLiveImmediate(){
+  if(_renderLiveTimer){ clearTimeout(_renderLiveTimer); _renderLiveTimer = null; }
+  renderLiveImpl();
+}
+function renderLiveImpl(){
   // Always update banners first
   updateBanners();
   // Wait for changes to be calculated
   if(!changes||changes.length===0){
+    _renderLiveLastHTML='<<loading>>';
     $('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">Cargando datos...</p></div>';
     return;
   }
   // Check if this day is in the past
   var isPastDay=isDayPast(currentDay);
-  
+
   // For past days with no carries, show banners only
   if(isPastDay&&changes.length>0&&!myCarries.length){
+    _renderLiveLastHTML='<<empty>>';
     $('livePanel').innerHTML='';
     return;
   }
 
-  if(!myCarries.length&&!isPastDay){$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">No hay cargadas. Verificá la configuración.</p></div>';return;}
+  if(!myCarries.length&&!isPastDay){_renderLiveLastHTML='<<no-carries>>';$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">No hay cargadas. Verificá la configuración.</p></div>';return;}
   
   var isPastDay=isDayPast(currentDay);
   
@@ -2569,6 +2587,9 @@ function renderLive(){
 
   h+='<div style="text-align:center;margin-top:12px"><button onclick="resetLive()" style="background:none;border:1px solid #914444;color:#e08080;padding:6px 14px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit">🗑️ Reiniciar cargadas</button></div>';
 
+  // Skip the DOM write if nothing changed since the last render
+  if(h === _renderLiveLastHTML) return;
+  _renderLiveLastHTML = h;
   $('livePanel').innerHTML=h;
   // Populate sticky info panel
   var si='';
