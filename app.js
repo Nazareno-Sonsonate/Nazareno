@@ -657,6 +657,25 @@ const $ = id => document.getElementById(id);
 function _escapeHtml(s){
   return String(s==null?'':s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
 }
+
+// Non-blocking alert that replaces the native one. Native browser alerts
+// pause the entire JS thread and on PWAs are sometimes suppressed entirely;
+// this modal shows the same message without freezing the page.
+function customAlert(message){
+  var overlay = document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML='<div style="background:#1a0a1f;border:2px solid #c084fc;border-radius:14px;padding:20px;max-width:340px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,.6);font-family:Georgia,serif"><div id="customAlertMsg" style="color:#eee;font-size:14px;line-height:1.5;margin-bottom:16px;white-space:pre-wrap;word-wrap:break-word"></div><button id="customAlertOK" style="width:100%;padding:10px;background:rgba(124,58,237,.2);border:1px solid #7c3aed;color:#c084fc;font-weight:700;font-size:14px;border-radius:8px;cursor:pointer;font-family:inherit">OK</button></div>';
+  document.body.appendChild(overlay);
+  overlay.querySelector('#customAlertMsg').textContent = String(message==null?'':message);
+  var btn = overlay.querySelector('#customAlertOK');
+  var close = function(){ overlay.remove(); document.removeEventListener('keydown', onKey); };
+  var onKey = function(e){ if(e.key==='Enter'||e.key==='Escape') close(); };
+  btn.addEventListener('click', close);
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) close(); });
+  document.addEventListener('keydown', onKey);
+  setTimeout(function(){ btn.focus(); }, 0);
+}
+window.alert = customAlert;
 function cfg() {
   var mujGrupos=isSEMode?23:27;
   var st=getStartTime();
