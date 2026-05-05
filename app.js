@@ -4242,55 +4242,37 @@ function startDayListeners(){
       try{checkVibrate(d.cambio);}catch(e10){_logErr('checkVibrate',e10);}
     }
   });
-  // Simple sync via XMLHttpRequest (bypasses Service Worker completely)
-  function syncGrupo(){
+  // Defensive backup poll on top of the realtime listener; covers cases
+  // where the Firebase websocket drops silently. fetch + AbortController
+  // replaces the earlier XMLHttpRequest-with-callbacks plumbing.
+  async function syncGrupo(){
+    var ss = document.getElementById('editorStatus');
+    var setStatus = function(text){ if(ss) ss.textContent = text; };
+    var ctrl = new AbortController();
+    var timer = setTimeout(function(){ ctrl.abort(); }, 5000);
     try{
-      var xhr=new XMLHttpRequest();
-      xhr.open('GET','https://procesion-sonsonate-default-rtdb.firebaseio.com/grupoActual/day'+currentDay+'.json?t='+Date.now(),true);
-      xhr.timeout=5000;
-      xhr.onload=function(){
-        if(xhr.status===200){
-          try{
-            var d=JSON.parse(xhr.responseText);
-            // Show sync status
-            var now=new Date();
-            var ss=document.getElementById('editorStatus');
-            var syncMsg='🟢 '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+' · FB:'+d.cambio+' Local:'+currentGrupoActual;
-            window._lastSync=syncMsg;
-            if(ss) ss.textContent=syncMsg;
-            if(d){
-              // Reject responses older than what we already have
-              if(liveGrupoData && d.t && liveGrupoData.t && d.t < liveGrupoData.t) return;
-              currentGrupoActual=d.cambio||0;
-              liveGrupoData=d;
-              if(d.desfase!==undefined) virgenDesfase=d.desfase;
-              if(d.movidos!==undefined) virgenMovidos=d.movidos;
-              if(d.virgenMn) virgenMn=d.virgenMn;
-              if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
-              try{updateGrupoUI();}catch(e7){_logErr('updateGrupoUI',e7);}
-              try{if(typeof renderLive==='function') renderLive();}catch(e9){_logErr('renderLive',e9);}
-            }
-          }catch(e){
-            var ss2=document.getElementById('editorStatus');
-            if(ss2) ss2.textContent='❌ Error: '+e.message;
-          }
-        } else {
-          var ss3=document.getElementById('editorStatus');
-          if(ss3) ss3.textContent='❌ HTTP '+xhr.status;
-        }
-      };
-      xhr.onerror=function(){
-        var ss4=document.getElementById('editorStatus');
-        if(ss4) ss4.textContent='❌ Sin conexión a Firebase';
-      };
-      xhr.ontimeout=function(){
-        var ss5=document.getElementById('editorStatus');
-        if(ss5) ss5.textContent='❌ Timeout';
-      };
-      xhr.send();
-    }catch(e){
-      var ss6=document.getElementById('editorStatus');
-      if(ss6) ss6.textContent='❌ XHR Error: '+e.message;
+      var resp = await fetch('https://procesion-sonsonate-default-rtdb.firebaseio.com/grupoActual/day'+currentDay+'.json?t='+Date.now(), {signal: ctrl.signal});
+      if(!resp.ok){ setStatus('❌ HTTP '+resp.status); return; }
+      var d = await resp.json();
+      if(!d) return;
+      // Reject responses older than what we already have
+      if(liveGrupoData && d.t && liveGrupoData.t && d.t < liveGrupoData.t) return;
+      var now = new Date();
+      window._lastSync = '🟢 '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+' · FB:'+d.cambio+' Local:'+currentGrupoActual;
+      setStatus(window._lastSync);
+      currentGrupoActual = d.cambio || 0;
+      liveGrupoData = d;
+      if(d.desfase !== undefined) virgenDesfase = d.desfase;
+      if(d.movidos !== undefined) virgenMovidos = d.movidos;
+      if(d.virgenMn) virgenMn = d.virgenMn;
+      if(d.sacaMuj) daySacaMuj[currentDay] = d.sacaMuj;
+      try{updateGrupoUI();}catch(e7){_logErr('updateGrupoUI',e7);}
+      try{if(typeof renderLive==='function') renderLive();}catch(e9){_logErr('renderLive',e9);}
+    }catch(err){
+      if(err && err.name === 'AbortError') setStatus('❌ Timeout');
+      else setStatus('❌ '+(err && err.message ? err.message : 'Sin conexión'));
+    }finally{
+      clearTimeout(timer);
     }
   }
   syncGrupo();
