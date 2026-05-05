@@ -2878,6 +2878,16 @@ auth.onAuthStateChanged(function(user){
 function loginAsAdmin(){
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({prompt:'select_account'});
+  // Mobile browsers (especially Chrome on Android) often block OAuth popups
+  // → use redirect on mobile; popup with redirect fallback on desktop
+  var isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'');
+  if(isMobile){
+    auth.signInWithRedirect(provider).catch(function(err){
+      console.error('Redirect login error:', err);
+      try{ alert('Error al iniciar sesión: '+(err.message||err.code||'desconocido')); }catch(e){}
+    });
+    return;
+  }
   auth.signInWithPopup(provider).then(function(result){
     if(result&&result.user&&result.user.email===ADMIN_EMAIL){
       // Reload to clean URL so admin-only init runs from a fresh state
@@ -2885,6 +2895,15 @@ function loginAsAdmin(){
     }
     // Wrong account is handled by onAuthStateChanged (signs out + alert)
   }).catch(function(err){
+    var code=err&&err.code||'';
+    if(code==='auth/popup-blocked'||code==='auth/cancelled-popup-request'||code==='auth/popup-closed-by-user'){
+      // Browser blocked the popup → fall back to redirect
+      auth.signInWithRedirect(provider).catch(function(err2){
+        console.error('Redirect fallback error:', err2);
+        try{ alert('Error al iniciar sesión: '+(err2.message||err2.code||'desconocido')); }catch(e){}
+      });
+      return;
+    }
     console.error('Login error:', err);
     try{ alert('Error al iniciar sesión: '+(err.message||err.code||'desconocido')); }catch(e){}
   });
@@ -2920,15 +2939,19 @@ function applyAuthMode(){
   }
 }
 
-// If URL has ?edit=1 and user isn't already authenticated, prompt sign-in
-(function(){
+// If URL has ?edit=1: handle redirect result, then prompt sign-in if needed
+auth.getRedirectResult().catch(function(err){
+  if(err&&err.code){
+    console.error('Redirect result error:', err.code, err.message);
+  }
+}).then(function(){
   var p = new URLSearchParams(window.location.search);
   if(!p.has('edit')) return;
   // Wait briefly for cached auth to resolve before prompting
   setTimeout(function(){
     if(!auth.currentUser) loginAsAdmin();
-  }, 1200);
-})();
+  }, 1500);
+});
 
 // ========== PUSH NOTIFICATIONS (FCM) ==========
 var fcmMessaging=null;
