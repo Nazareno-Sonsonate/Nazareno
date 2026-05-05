@@ -781,7 +781,7 @@ function loadSaved() {
 function resetData(){
   if(!confirm('¿Borrar TODO el progreso guardado?')) return;
   localStorage.removeItem(SAVE_KEY);
-  savedPositions=[null,null,null,null];savedRefs=[null,null,null,null];
+  savedPositions=[null,null,null,null,null];savedRefs=[null,null,null,null,null];
   location.reload();
 }
 
@@ -940,6 +940,9 @@ function showOffSeasonBanner(){
 }
 
 const $ = id => document.getElementById(id);
+function _escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+}
 function cfg() {
   var mujGrupos=isSEMode?23:27;
   var st=getStartTime();
@@ -1489,6 +1492,8 @@ function loadDay(d) {
     positions = savedPositions[d].map(p=>({lat:p.lat,lng:p.lng,n:p.n||''}));
   } else if(dayPts[d] && dayPts[d].length>0){
     positions = dayPts[d].map(p=>({lat:p.lat,lng:p.lng,n:p.n}));
+  } else {
+    positions = [];
   }
   // Load women's positions
   if(savedPositionsW[d] && savedPositionsW[d].length>0){
@@ -1994,7 +1999,7 @@ function renderWPmarkers() {
       const del=editMode?'<br><button onclick="deleteRef('+i+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🗑️ Eliminar</button>':'';
       const drag=(dragMode&&editMode)?'<br><i style="font-size:11px;color:#777">Arrastrá para mover</i>':'';
       const svBtn='<br><button onclick="openStreetView('+wp.lat+','+wp.lng+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#1a73e8;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🛣️ Street View</button>';
-      infoWin.setContent('<div style="text-align:center;font-family:Georgia;color:#111;font-size:13px"><b style="font-size:15px">'+wp.n+'</b><br><span style="font-size:12px;color:#555">Referencia</span>'+drag+ren+del+svBtn+'</div>');
+      infoWin.setContent('<div style="text-align:center;font-family:Georgia;color:#111;font-size:13px"><b style="font-size:15px">'+_escapeHtml(wp.n)+'</b><br><span style="font-size:12px;color:#555">Referencia</span>'+drag+ren+del+svBtn+'</div>');
       infoWin.open(gmap,mk);
     });
     if(dragMode&&editMode){
@@ -2119,8 +2124,8 @@ function renderMarkers() {
         mk2.addListener('click',function(){
           if(isZoom())return;
           var tag=m2?'<br><b style="color:#7c3aed">✝️ Tu cargada #'+ch2.ci+'</b>':'';
-          var colorTag='';if(m2){var mc3=myCarries.find(function(x){return x.num===ch2.num});if(mc3&&mc3.carryLabel) colorTag='<br><span style="font-size:12px">'+mc3.carryLabel+'</span>';}
-          var ref=ch2.n?'<br><span style="font-size:12px;color:#555">'+ch2.n+'</span>':'';
+          var colorTag='';if(m2){var mc3=myCarries.find(function(x){return x.num===ch2.num});if(mc3&&mc3.carryLabel) colorTag='<br><span style="font-size:12px">'+_escapeHtml(mc3.carryLabel)+'</span>';}
+          var ref=ch2.n?'<br><span style="font-size:12px;color:#555">'+_escapeHtml(ch2.n)+'</span>':'';
           var svBtn2='<br><button onclick="openStreetView('+positions[ci2].lat+','+positions[ci2].lng+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#1a73e8;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🛣️ Street View</button>';
           var ren=editMode?'<br><button onclick="renameChange('+ci2+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#7c3aed;color:#fff;font-size:12px;font-weight:600;cursor:pointer">✏️ Renombrar</button>':'';
           var del=editMode?'<br><button onclick="deleteChange('+ci2+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🗑️ Eliminar</button>':'';
@@ -2192,9 +2197,9 @@ function getCarryRef(mc){
 function renderTable() {
   let h='<div class="th"><span>#</span><span>Ubicación / Referencia</span><span style="text-align:right">Hora</span></div>';
   myCarries.forEach((mc,i)=>{
-    const ref=getCarryRef(mc);
-    const label=mc.carryLabel||'';
-    h+='<div class="tr" onclick="zoomTo('+i+')"><span class="rn">'+mc.ci+'</span><div><div style="font-weight:600">'+ref+'</div><div class="rs">Cambio #'+mc.num+(label?' · '+label:'')+'</div></div><div class="rt">'+mc.time+'</div></div>';
+    const ref=_escapeHtml(getCarryRef(mc));
+    const label=_escapeHtml(mc.carryLabel||'');
+    h+='<div class="tr" onclick="zoomTo('+i+')"><span class="rn">'+mc.ci+'</span><div><div style="font-weight:600">'+ref+'</div><div class="rs">Cambio #'+mc.num+(label?' · '+label:'')+'</div></div><div class="rt">'+_escapeHtml(mc.time)+'</div></div>';
   });
   $('tbl').innerHTML=h;
 }
@@ -2546,17 +2551,18 @@ function renderLive(){
     const passedByGrupo=!mcDone&&effCambio>0&&mc.num<=effCambio;
     const isCurrent=nextCarry&&mc.ci===nextCarry.ci;
     const cls=mcDone?'done':(passedByGrupo?'done':(isCurrent?'current':'pending'));
-    const ref=getCarryRef(mc);
-    const label=mc.carryLabel||'';
+    const ref=_escapeHtml(getCarryRef(mc));
+    const label=_escapeHtml(mc.carryLabel||'');
     const icon=mcDone?'✅':(passedByGrupo?'☑️':(isCurrent?'✝️':'⏳'));
     const entry=getEntry(mc.ci);
-    const realT=entry?fmtClock(entry.t):'';
-    const estT=mcDone?realT:getEstimate(mc);
-    const borderColor=mc.colorHex&&isCurrent?'border-color:'+mc.colorHex:'';
+    const realT=entry?_escapeHtml(fmtClock(entry.t)):'';
+    const estT=_escapeHtml(mcDone?realT:getEstimate(mc));
+    const colorHexSafe=/^#[0-9a-fA-F]{3,8}$/.test(mc.colorHex||'')?mc.colorHex:'#c084fc';
+    const borderColor=mc.colorHex&&isCurrent?'border-color:'+colorHexSafe:'';
     h+='<div class="live-carry '+cls+'" style="'+borderColor+'" onclick="zoomTo('+(mc.ci-1)+')">';
     h+='<div class="lc-num">'+icon+'</div>';
     h+='<div class="lc-info"><div class="lc-ref">Cargada #'+mc.ci+' — '+ref+'</div><div class="lc-sub">Cambio #'+mc.num+(label?' · '+label:'')+(realT?' · '+realT:'')+'</div></div>';
-    h+='<div class="lc-time" style="color:'+(mcDone?'#4CAF50':(mc.colorHex||'#c084fc'))+';'+(isSEMode?'font-size:11px;':'')+'">'+estT+'</div>';
+    h+='<div class="lc-time" style="color:'+(mcDone?'#4CAF50':colorHexSafe)+';'+(isSEMode?'font-size:11px;':'')+'">'+estT+'</div>';
     h+='</div>';
   });
   h+='</div>';
@@ -2695,9 +2701,9 @@ function toggleGps(){
       const near=changes[nearIdx];
       if(near){
         const nextMine=myCarries.find(mc=>mc.num>near.num);
-        let info='📍 Cerca del cambio #'+near.num+' (Grp #'+near.grp+')';
-        if(near.n) info+=' · '+near.n;
-        if(nextMine) info+='<br>Próxima cargada: #'+nextMine.ci+' (~'+nextMine.time+')';
+        let info='📍 Cerca del cambio #'+(+near.num||0)+' (Grp #'+(+near.grp||0)+')';
+        if(near.n) info+=' · '+_escapeHtml(near.n);
+        if(nextMine) info+='<br>Próxima cargada: #'+(+nextMine.ci||0)+' (~'+_escapeHtml(nextMine.time||'')+')';
         $('noti').innerHTML='<b style="color:#4285F4">'+info+'</b>';
         $('noti').classList.add('show');
       }
@@ -3084,10 +3090,6 @@ function renderAdminList(){
   container.innerHTML = html;
 }
 
-function _escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
-}
-
 function addAdminEmail(){
   var input = document.getElementById('newAdminEmail');
   if(!input) return;
@@ -3137,7 +3139,7 @@ function initPush(){
       // Show in-app notification
       var notDiv=document.getElementById('pushNotiBanner');
       if(notDiv){
-        notDiv.innerHTML='<b>'+title+'</b><br>'+body;
+        notDiv.innerHTML='<b>'+_escapeHtml(title)+'</b><br>'+_escapeHtml(body);
         notDiv.style.display='block';
         setTimeout(function(){notDiv.style.display='none';},5000);
       }
@@ -3458,8 +3460,8 @@ function startKeepAlive(){
       });
     }).catch(function(){});
   }
-}
   showBlackScreenBtn();
+}
 function showBlackScreenBtn(){
   if(document.getElementById('blackScreenBtn')) return;
   var btn=document.createElement('div');
@@ -4436,6 +4438,10 @@ function startDayListeners(){
     try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(d));}catch(e){}
     try{updateGrupoUI();}catch(e8){}
     try{if(typeof renderLive==='function') renderLive();}catch(e9){}
+    if(d.cambio!==window._lastSyncCambio){
+      window._lastSyncCambio=d.cambio;
+      try{checkVibrate(d.cambio);}catch(e10){}
+    }
   });
   // Simple sync via XMLHttpRequest (bypasses Service Worker completely)
   function syncGrupo(){
@@ -4814,48 +4820,6 @@ function adjustAutoTime(delta){
   if(typeof renderLive==='function') renderLive();
 }
 
-function globalSync(){
-  try{
-    // Detect day: check URL for SE mode, otherwise use currentDay
-    var params=new URLSearchParams(window.location.search);
-    var day=params.has('se')?4:(window.currentDay!==undefined?window.currentDay:0);
-    if(day===0&&!window._mapReady) return; // Skip sync before map loads
-    var x=new XMLHttpRequest();
-    x.open('GET','https://procesion-sonsonate-default-rtdb.firebaseio.com/grupoActual/day'+day+'.json?_='+Date.now(),true);
-    x.onload=function(){
-      var el=document.getElementById('editorStatus');
-      if(x.status===200){
-        try{
-          var d=JSON.parse(x.responseText);
-          if(el) el.textContent='🟢 FB:cambio='+(d?d.cambio:'?')+' Local:'+(window.currentGrupoActual||0);
-          if(d&&window.liveGrupoData!==undefined){
-            // Ensure currentDay matches
-            window.currentDay=day;
-            window.currentGrupoActual=d.cambio||0;
-            window.liveGrupoData=d;
-            if(d.desfase!==undefined) window.virgenDesfase=d.desfase;
-            if(d.movidos!==undefined) window.virgenMovidos=d.movidos;
-            if(d.virgenMn) window.virgenMn=d.virgenMn;
-            if(d.sacaMuj&&window.daySacaMuj) window.daySacaMuj[day]=d.sacaMuj;
-            try{if(typeof window.updateGrupoUI==='function') window.updateGrupoUI();}catch(e2){}
-            // Rebuild panel to update carries
-            try{if(typeof window.renderLive==='function') window.renderLive();}catch(e3){}
-            if(d.cambio!==window._lastSyncCambio){
-              window._lastSyncCambio=d.cambio;
-              try{checkVibrate(d.cambio);}catch(e5){}
-            }
-          }
-        }catch(e){if(el) el.textContent='❌ Parse: '+e.message;}
-      } else {if(el) el.textContent='❌ HTTP '+x.status;}
-    };
-    x.onerror=function(){var el=document.getElementById('editorStatus');if(el) el.textContent='❌ Sin conexión';};
-    x.send();
-  }catch(e){}
-}
-globalSync();
-setTimeout(globalSync,3000);
-setInterval(globalSync,10000);
-document.addEventListener('visibilitychange',function(){if(!document.hidden)globalSync();});
 </script>
 <div id="editorStatus" class="adminOnly" style="position:fixed;bottom:50px;left:0;right:0;background:rgba(0,0,0,.85);color:#0f0;font-size:10px;padding:3px 8px;z-index:9999;font-family:monospace;display:none"></div>
 </body>
