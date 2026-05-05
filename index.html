@@ -161,6 +161,16 @@ body{font-family:Georgia,serif;background:#1a0a1f;color:#eee;min-height:100vh;pa
       </div>
     </div>
     <div id="adminLiveControls"></div>
+    <!-- Super-admin only: manage editor list -->
+    <div id="cfgAdminListSection" class="superAdminOnly" style="display:none;border-top:1px solid rgba(212,175,55,.2);padding-top:10px;margin-top:10px">
+      <div style="font-size:13px;font-weight:700;color:#d4af37;margin-bottom:8px">👥 Editores autorizados</div>
+      <div id="adminListContainer" style="margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px">
+        <input type="email" id="newAdminEmail" placeholder="email@gmail.com" style="flex:1;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:14px;font-family:inherit">
+        <button onclick="addAdminEmail()" style="padding:8px 12px;background:rgba(212,175,55,.2);border:1px solid #d4af37;color:#d4af37;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">+ Agregar</button>
+      </div>
+      <div style="font-size:10px;color:#888;margin-top:6px;line-height:1.4">Solo cuentas de Google. La persona podrá entrar al modo editor en su navegador iniciando sesión con esa cuenta.</div>
+    </div>
   </div>
 </div>
 <div id="cfgOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:4999" onclick="closeCfg()"></div>
@@ -2849,45 +2859,101 @@ const db = firebase.database();
 // We use GIS instead of Firebase signInWithRedirect because the firebaseapp.com
 // auth handler fails on mobile due to third-party cookie restrictions when the
 // app is hosted cross-origin (GitHub Pages).
-// To add or remove admins, edit this list (and update Firebase Database rules
-// in the console to match — see Authentication setup notes).
-const ADMIN_EMAILS = [
+// Super-admins are hardcoded. They can manage the editors list via UI.
+// Other editors live at /admins/{email-with-dots-as-commas} in Firebase.
+const ADMIN_SUPER_EMAILS = [
   'njrmancia@gmail.com'
 ];
 const ADMIN_OAUTH_CLIENT_ID = '972231146098-2q1titms75k7mfdvsu2l5upmrb73ltcm.apps.googleusercontent.com';
 const auth = firebase.auth();
 let isAdmin = false;
+let isSuperAdmin = false;
 let authResolved = false;
 let _gisInitialized = false;
+let _adminListFromDB = [];
+let _adminListLoaded = false;
 
+function _emailToKey(email){
+  return (email||'').toLowerCase().trim().replace(/\./g,',');
+}
+function _keyToEmail(key){
+  return (key||'').replace(/,/g,'.');
+}
+function _isSuperAdmin(email){
+  if(!email) return false;
+  return ADMIN_SUPER_EMAILS.indexOf(email.toLowerCase().trim()) !== -1;
+}
 function _isAdminEmail(email){
-  return !!email && ADMIN_EMAILS.indexOf(email) !== -1;
+  if(!email) return false;
+  email = email.toLowerCase().trim();
+  if(_isSuperAdmin(email)) return true;
+  return _adminListFromDB.indexOf(email) !== -1;
+}
+
+// Live editor list from Firebase
+db.ref('admins').on('value', function(snap){
+  var d = snap.val() || {};
+  _adminListFromDB = Object.keys(d).filter(function(k){return d[k]===true;}).map(_keyToEmail);
+  _adminListLoaded = true;
+  renderAdminList();
+  _recheckCurrentUser();
+}, function(err){
+  console.warn('Cannot read /admins:', err && err.code);
+  _adminListLoaded = true;
+  _adminListFromDB = [];
+  _recheckCurrentUser();
+});
+
+function _recheckCurrentUser(){
+  var user = auth.currentUser;
+  if(!user) return;
+  var nowAdmin = _isAdminEmail(user.email);
+  if(nowAdmin === isAdmin) return;
+  if(!nowAdmin && isAdmin){
+    // Was admin, now revoked
+    isAdmin = false; isShared = true;
+    try{ alert('Tu acceso de editor fue revocado.'); }catch(e){}
+    auth.signOut().then(function(){ window.location.href = window.location.pathname; });
+    return;
+  }
+  // Newly admin (e.g., list loaded after auth)
+  isAdmin = true; isShared = false;
+  _cleanEditParam();
+  applyAuthMode();
 }
 
 auth.onAuthStateChanged(function(user){
   authResolved = true;
-  if(user && _isAdminEmail(user.email)){
-    isAdmin = true;
-    isShared = false;
-    // Clean ?edit=1 from URL once authenticated
-    try{
-      var u=new URL(window.location.href);
-      if(u.searchParams.has('edit')){
-        u.searchParams.delete('edit');
-        window.history.replaceState({}, '', u.pathname + (u.search?u.search:'') + u.hash);
-      }
-    }catch(e){}
-  } else {
-    isAdmin = false;
-    isShared = true;
-    if(user){
-      // Logged in but not authorized — sign out
+  if(user && _isSuperAdmin(user.email)){
+    isAdmin = true; isShared = false;
+    _cleanEditParam();
+  } else if(user){
+    if(!_adminListLoaded){
+      // List not loaded yet — public UI for now; _recheckCurrentUser will flip it
+      isAdmin = false; isShared = true;
+    } else if(_isAdminEmail(user.email)){
+      isAdmin = true; isShared = false;
+      _cleanEditParam();
+    } else {
+      isAdmin = false; isShared = true;
       auth.signOut();
       try{ alert('Esta cuenta de Google no está autorizada para editar.'); }catch(e){}
     }
+  } else {
+    isAdmin = false; isShared = true;
   }
   applyAuthMode();
 });
+
+function _cleanEditParam(){
+  try{
+    var u=new URL(window.location.href);
+    if(u.searchParams.has('edit')){
+      u.searchParams.delete('edit');
+      window.history.replaceState({}, '', u.pathname + (u.search?u.search:'') + u.hash);
+    }
+  }catch(e){}
+}
 
 function _waitForGIS(timeoutMs){
   return new Promise(function(resolve, reject){
@@ -2979,21 +3045,71 @@ function applyAuthMode(){
   var glModal = document.getElementById('googleLoginModal');
   var loginBtn = document.getElementById('btnAdminLogin');
   var logoutBtn = document.getElementById('btnAdminLogout');
+  isSuperAdmin = isAdmin && !!auth.currentUser && _isSuperAdmin(auth.currentUser.email);
   if(isAdmin){
     if(eb) eb.style.display='flex';
     document.querySelectorAll('.adminOnly').forEach(function(el){el.style.display='';});
+    document.querySelectorAll('.superAdminOnly').forEach(function(el){el.style.display=isSuperAdmin?'':'none';});
     if(cfgBtn) cfgBtn.onclick = function(){openCfg();};
     if(modal) modal.style.display='none';
     if(glModal) glModal.remove();
     if(loginBtn) loginBtn.style.display='none';
     if(logoutBtn) logoutBtn.style.display='';
+    if(isSuperAdmin) renderAdminList();
   } else {
     if(eb) eb.style.display='none';
     document.querySelectorAll('.adminOnly').forEach(function(el){el.style.display='none';});
+    document.querySelectorAll('.superAdminOnly').forEach(function(el){el.style.display='none';});
     if(cfgBtn) cfgBtn.onclick = function(){reopenGroupSelector();};
     if(loginBtn) loginBtn.style.display='';
     if(logoutBtn) logoutBtn.style.display='none';
   }
+}
+
+// ========== ADMIN LIST MANAGEMENT (super-admin only) ==========
+function renderAdminList(){
+  var container = document.getElementById('adminListContainer');
+  if(!container) return;
+  var html = '';
+  ADMIN_SUPER_EMAILS.forEach(function(email){
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.3);border-radius:6px;margin-bottom:4px"><span style="font-size:12px;color:#d4af37;word-break:break-all">👑 '+_escapeHtml(email)+'</span><span style="font-size:9px;color:#aaa;flex-shrink:0;margin-left:6px">super-admin</span></div>';
+  });
+  _adminListFromDB.forEach(function(email){
+    if(_isSuperAdmin(email)) return;
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);border-radius:6px;margin-bottom:4px"><span style="font-size:12px;color:#c084fc;word-break:break-all">'+_escapeHtml(email)+'</span><button onclick="removeAdminEmail(\''+email.replace(/'/g,"\\'")+'\')" style="background:none;border:none;color:#c0392b;font-size:14px;cursor:pointer;flex-shrink:0;margin-left:6px">🗑️</button></div>';
+  });
+  if(_adminListFromDB.filter(function(e){return !_isSuperAdmin(e);}).length === 0){
+    html += '<div style="font-size:11px;color:#888;text-align:center;padding:8px;font-style:italic">Sin editores adicionales</div>';
+  }
+  container.innerHTML = html;
+}
+
+function _escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+}
+
+function addAdminEmail(){
+  var input = document.getElementById('newAdminEmail');
+  if(!input) return;
+  var email = (input.value||'').toLowerCase().trim();
+  if(!email.match(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)){
+    alert('Email inválido. Tiene que ser un correo de Google (gmail.com o Workspace).');
+    return;
+  }
+  if(_isSuperAdmin(email)){ alert('Ese email ya es super-admin.'); input.value=''; return; }
+  if(_adminListFromDB.indexOf(email) !== -1){ alert('Ese email ya es editor.'); input.value=''; return; }
+  db.ref('admins/' + _emailToKey(email)).set(true).then(function(){
+    input.value='';
+  }).catch(function(err){
+    alert('Error al agregar: '+(err.message||err.code||'desconocido'));
+  });
+}
+
+function removeAdminEmail(email){
+  if(!confirm('¿Quitar a '+email+' como editor?\n\nVa a perder acceso de edición la próxima vez que use la app.')) return;
+  db.ref('admins/' + _emailToKey(email)).remove().catch(function(err){
+    alert('Error al quitar: '+(err.message||err.code||'desconocido'));
+  });
 }
 
 // If URL has ?edit=1 and user isn't already authenticated, auto-open the login modal
