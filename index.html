@@ -2849,16 +2849,24 @@ const db = firebase.database();
 // We use GIS instead of Firebase signInWithRedirect because the firebaseapp.com
 // auth handler fails on mobile due to third-party cookie restrictions when the
 // app is hosted cross-origin (GitHub Pages).
-const ADMIN_EMAIL = 'njrmancia@gmail.com';
+// To add or remove admins, edit this list (and update Firebase Database rules
+// in the console to match — see Authentication setup notes).
+const ADMIN_EMAILS = [
+  'njrmancia@gmail.com'
+];
 const ADMIN_OAUTH_CLIENT_ID = '972231146098-2q1titms75k7mfdvsu2l5upmrb73ltcm.apps.googleusercontent.com';
 const auth = firebase.auth();
 let isAdmin = false;
 let authResolved = false;
 let _gisInitialized = false;
 
+function _isAdminEmail(email){
+  return !!email && ADMIN_EMAILS.indexOf(email) !== -1;
+}
+
 auth.onAuthStateChanged(function(user){
   authResolved = true;
-  if(user && user.email === ADMIN_EMAIL){
+  if(user && _isAdminEmail(user.email)){
     isAdmin = true;
     isShared = false;
     // Clean ?edit=1 from URL once authenticated
@@ -2873,7 +2881,7 @@ auth.onAuthStateChanged(function(user){
     isAdmin = false;
     isShared = true;
     if(user){
-      // Logged in but not the admin email — sign out
+      // Logged in but not authorized — sign out
       auth.signOut();
       try{ alert('Esta cuenta de Google no está autorizada para editar.'); }catch(e){}
     }
@@ -2914,7 +2922,7 @@ function handleGoogleCredential(response){
   // Exchange the Google id_token for a Firebase credential
   var credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
   auth.signInWithCredential(credential).then(function(result){
-    if(result && result.user && result.user.email === ADMIN_EMAIL){
+    if(result && result.user && _isAdminEmail(result.user.email)){
       // Reload to clean URL so admin-only init runs from a fresh state
       window.location.href = window.location.pathname;
     }
