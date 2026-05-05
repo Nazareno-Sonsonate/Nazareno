@@ -723,6 +723,18 @@ function customConfirm(message){
 function customPrompt(message, defaultValue){
   return _customDialog({message: message, input: true, defaultValue: defaultValue, okLabel: 'OK', cancelLabel: 'Cancelar'});
 }
+
+// Centralized error logger for swallowed exceptions. Silent by default; turn on
+// in the browser console with `window._debug = true` to surface every catch
+// that was previously empty. Useful for diagnosing field issues without
+// flooding logs in production.
+function _logErr(label, err){
+  try{
+    if(window._debug || (typeof localStorage!=='undefined' && localStorage.getItem('debug')==='1')){
+      console.warn('['+label+']', err);
+    }
+  }catch(_){/* localStorage unavailable in private mode */}
+}
 function cfg() {
   var mujGrupos=isSEMode?23:27;
   var st=getStartTime();
@@ -774,7 +786,7 @@ function updateStartTime(){
         // Set timestamp to the calculated time for this cambio (not Date.now)
         var correctTs=departMs+(expectedCambio-1)*mn*60000;
         liveGrupoData={cambio:expectedCambio,grp:grp,nombre:nombre,tot:positions.length,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:correctTs,autoSet:true};
-        try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+        try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
         saveAll();
         db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
       }
@@ -1067,7 +1079,7 @@ function initMap() {
       var lastDay=+(localStorage.getItem('lastViewedDay')||0);
       if(lastDay>=0&&lastDay<=4) currentDay=lastDay;
       if(currentDay===4) isSEMode=true;
-      try{ showOffSeasonBanner(); }catch(e){}
+      try{ showOffSeasonBanner(); }catch(e){_logErr("swallow",e);}
     }
   }
   // Apply admin/public UI based on current auth state
@@ -1170,7 +1182,7 @@ function switchDay(d) {
 
   currentDay = d;
   window.currentDay=d;
-  try{localStorage.setItem('lastViewedDay',d);}catch(e){}
+  try{localStorage.setItem('lastViewedDay',d);}catch(e){_logErr("swallow",e);}
   isSEMode=(d===4);
   document.querySelectorAll('.day').forEach((b,i) => b.classList.toggle('a',i===d));
   var ds=document.getElementById('daySelector');
@@ -1215,7 +1227,7 @@ function switchDay(d) {
   var nowDate=localDateStr(new Date());
   if(dayDates[d]===nowDate){
     // Clear any stale completed data
-    try{localStorage.removeItem('grupoActual_day'+d);}catch(e){}
+    try{localStorage.removeItem('grupoActual_day'+d);}catch(e){_logErr("swallow",e);}
     db.ref('grupoActual/day'+d).once('value',function(snap){
       var gd=snap.val();
       if(gd&&gd.cambio>0&&gd.cambio>=(positions.length||44)){
@@ -1369,7 +1381,7 @@ function toggleMapLock(){
     btn.textContent=mapLocked[currentDay]?'🔒 Mapa fijo':'🔓 Mapa libre';
     btn.style.background=mapLocked[currentDay]?'rgba(76,175,80,.85)':'rgba(0,0,0,.6)';
   }
-  try{localStorage.setItem('mapLocks',JSON.stringify({l:mapLocked,v:mapSavedView}));}catch(e){}
+  try{localStorage.setItem('mapLocks',JSON.stringify({l:mapLocked,v:mapSavedView}));}catch(e){_logErr("swallow",e);}
   if(typeof syncConfig==='function') syncConfig();
 }
 function restoreMapView(){
@@ -1394,7 +1406,7 @@ function restoreMapView(){
   }
 }
 // Load saved locks
-try{var ml=JSON.parse(localStorage.getItem('mapLocks')||'{}');if(ml.l)mapLocked=ml.l;if(ml.v)mapSavedView=ml.v;}catch(e){}
+try{var ml=JSON.parse(localStorage.getItem('mapLocks')||'{}');if(ml.l)mapLocked=ml.l;if(ml.v)mapSavedView=ml.v;}catch(e){_logErr("swallow",e);}
 
 // ========== INSERT CHANGE (tap on route line) ==========
 function insertAtPosition(lat,lng,edge) {
@@ -1983,10 +1995,10 @@ function loadCompleted(){
   try{
     const raw=localStorage.getItem(COMP_KEY);
     if(raw) carryTimes=JSON.parse(raw);
-  }catch(e){}
+  }catch(e){_logErr("swallow",e);}
 }
 function saveCompleted(){
-  try{localStorage.setItem(COMP_KEY,JSON.stringify(carryTimes));}catch(e){}
+  try{localStorage.setItem(COMP_KEY,JSON.stringify(carryTimes));}catch(e){_logErr("swallow",e);}
 }
 loadCompleted();
 
@@ -2703,7 +2715,7 @@ function _recheckCurrentUser(){
   if(!nowAdmin && isAdmin){
     // Was admin, now revoked
     isAdmin = false; isShared = true;
-    try{ alert('Tu acceso de editor fue revocado.'); }catch(e){}
+    try{ alert('Tu acceso de editor fue revocado.'); }catch(e){_logErr("swallow",e);}
     auth.signOut().then(function(){ window.location.href = window.location.pathname; });
     return;
   }
@@ -2728,7 +2740,7 @@ auth.onAuthStateChanged(function(user){
     } else {
       isAdmin = false; isShared = true;
       auth.signOut();
-      try{ alert('Esta cuenta de Google no está autorizada para editar.'); }catch(e){}
+      try{ alert('Esta cuenta de Google no está autorizada para editar.'); }catch(e){_logErr("swallow",e);}
     }
   } else {
     isAdmin = false; isShared = true;
@@ -2743,7 +2755,7 @@ function _cleanEditParam(){
       u.searchParams.delete('edit');
       window.history.replaceState({}, '', u.pathname + (u.search?u.search:'') + u.hash);
     }
-  }catch(e){}
+  }catch(e){_logErr("swallow",e);}
 }
 
 function _waitForGIS(timeoutMs){
@@ -2773,7 +2785,7 @@ function _initGIS(){
 
 function handleGoogleCredential(response){
   if(!response||!response.credential){
-    try{ alert('No se recibió credencial de Google.'); }catch(e){}
+    try{ alert('No se recibió credencial de Google.'); }catch(e){_logErr("swallow",e);}
     return;
   }
   // Exchange the Google id_token for a Firebase credential
@@ -2786,7 +2798,7 @@ function handleGoogleCredential(response){
     // Wrong account is handled by onAuthStateChanged (signs out + alert)
   }).catch(function(err){
     console.error('signInWithCredential error:', err);
-    try{ alert('Error al iniciar sesión: '+(err.message||err.code||'desconocido')); }catch(e){}
+    try{ alert('Error al iniciar sesión: '+(err.message||err.code||'desconocido')); }catch(e){_logErr("swallow",e);}
   });
 }
 
@@ -2796,7 +2808,7 @@ function loginAsAdmin(){
     _showGoogleLoginModal();
   }).catch(function(err){
     console.error('GIS not loaded:', err);
-    try{ alert('La librería de Google no se cargó. Refrescá la página y probá de nuevo.'); }catch(e){}
+    try{ alert('La librería de Google no se cargó. Refrescá la página y probá de nuevo.'); }catch(e){_logErr("swallow",e);}
   });
 }
 
@@ -2820,7 +2832,7 @@ function _showGoogleLoginModal(){
 function logoutAdmin(){
   // Sign out of Firebase + revoke GIS auto-select to force account picker next time
   if(typeof google!=='undefined' && google.accounts && google.accounts.id){
-    try{ google.accounts.id.disableAutoSelect(); }catch(e){}
+    try{ google.accounts.id.disableAutoSelect(); }catch(e){_logErr("swallow",e);}
   }
   auth.signOut().then(function(){
     // Redirect to clean public URL
@@ -2981,7 +2993,7 @@ function getPushToken(){
   }).then(function(token){
     if(!token) return;
     pushSubscribed=true;
-    try{localStorage.setItem('pushToken',token);}catch(e){}
+    try{localStorage.setItem('pushToken',token);}catch(e){_logErr("swallow",e);}
     updatePushToken();
     updatePushUI();
     alert('✅ ¡Notificaciones activadas! Te avisaremos cuando tu grupo esté por cargar.');
@@ -3001,7 +3013,7 @@ function showPermissionHelp(){
 }
 
 function updatePushToken(){
-  var token;try{token=localStorage.getItem('pushToken');}catch(e){}
+  var token;try{token=localStorage.getItem('pushToken');}catch(e){_logErr("swallow",e);}
   if(!token) return;
   var grupo=+document.getElementById('cG').value||5;
   var tipo=+document.getElementById('cType').value||21;
@@ -3044,7 +3056,7 @@ function updatePushToken(){
     day:currentDay,
     t:Date.now()
   });
-  try{localStorage.setItem('pushWatchGrp',watchGrp);localStorage.setItem('pushAlertBefore',alertBefore);}catch(e){}
+  try{localStorage.setItem('pushWatchGrp',watchGrp);localStorage.setItem('pushAlertBefore',alertBefore);}catch(e){_logErr("swallow",e);}
 }
 
 function updatePushUI(){
@@ -3086,7 +3098,7 @@ function updatePushUI(){
 }
 
 function unsubscribePush(){
-  var token;try{token=localStorage.getItem('pushToken');}catch(e){}
+  var token;try{token=localStorage.getItem('pushToken');}catch(e){_logErr("swallow",e);}
   if(token){
     db.ref('pushTokens/'+token.substring(0,20)).remove();
   }
@@ -3094,7 +3106,7 @@ function unsubscribePush(){
     localStorage.removeItem('pushToken');
     localStorage.removeItem('pushWatchGrp');
     localStorage.removeItem('pushAlertBefore');
-  }catch(e){}
+  }catch(e){_logErr("swallow",e);}
   pushSubscribed=false;
   updatePushUI();
   alert('✅ Notificaciones desactivadas');
@@ -3137,7 +3149,7 @@ function showUrnaButton(){
 }
 
 async function requestWakeLock(){
-  try{if('wakeLock' in navigator){wakeLock=await navigator.wakeLock.request('screen');}}catch(e){}
+  try{if('wakeLock' in navigator){wakeLock=await navigator.wakeLock.request('screen');}}catch(e){_logErr("swallow",e);}
 }
 function releaseWakeLock(){
   if(wakeLock){wakeLock.release();wakeLock=null;}
@@ -3197,7 +3209,7 @@ function startGPSWatch(tipo){
 
 // Save/restore GPS tracking state
 function saveUrnaState(){
-  try{localStorage.setItem('urnaActive',JSON.stringify(urnaActive));}catch(e){}
+  try{localStorage.setItem('urnaActive',JSON.stringify(urnaActive));}catch(e){_logErr("swallow",e);}
 }
 
 function restoreUrnaState(){
@@ -3221,7 +3233,7 @@ function restoreUrnaState(){
       var btn2=document.getElementById('bUrnaV');
       if(btn2){btn2.style.background='rgba(59,130,246,1)';btn2.textContent='👑 Virgen ACTIVA';}
     }
-  }catch(e){}
+  }catch(e){_logErr("swallow",e);}
 }
 
 // Keep-alive: prevent browser from killing the tab when screen is off
@@ -3497,7 +3509,7 @@ function listenAnda(tipo,imgUrl,color,zIdx){
         var grp=((sacaH-1+nearCambio-1)%getHomCount())+1;
         var nombre=nearCambio<=changes.length?changes[nearCambio-1].n||'':'';
         liveGrupoData={cambio:nearCambio,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
-        try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+        try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
         saveAll();
         updateGrupoUI();
         db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
@@ -3561,7 +3573,7 @@ function checkVibrate(cambio){
           if(navigator.vibrate) navigator.vibrate([300,100,300,100,500]);
           if('Notification' in window){
             if(Notification.permission==='granted'){
-              try{new Notification('🔔 ¡Prepárate!',{body:'Tu cargada #'+myCarries[i].ci+' está a '+diff+' cambio'+(diff>1?'s':'')+' · Grupo #'+myCarries[i].grp,icon:isSEMode?'se-icon-192.png':'icon-192.png',tag:'cargada-'+myCarries[i].ci,renotify:true});}catch(e){}
+              try{new Notification('🔔 ¡Prepárate!',{body:'Tu cargada #'+myCarries[i].ci+' está a '+diff+' cambio'+(diff>1?'s':'')+' · Grupo #'+myCarries[i].grp,icon:isSEMode?'se-icon-192.png':'icon-192.png',tag:'cargada-'+myCarries[i].ci,renotify:true});}catch(e){_logErr("swallow",e);}
             } else if(Notification.permission!=='denied'){
               Notification.requestPermission();
             }
@@ -3586,7 +3598,7 @@ function checkVibrate(cambio){
         if(wDiff<=10&&wDiff>=0){
           if(navigator.vibrate) navigator.vibrate([200,100,200,100,200,100,400]);
           if('Notification' in window&&Notification.permission==='granted'){
-            try{new Notification('👁️ Grupo #'+watchGrp+(wDiff===0?' ¡AHORA!':' en '+wDiff+' cambio'+(wDiff>1?'s':'')),{body:wDiff===0?'El grupo que vigilás está cargando ahora':'Faltan '+wDiff+' cambio'+(wDiff>1?'s':'')+' para el Grupo #'+watchGrp,icon:isSEMode?'se-icon-192.png':'icon-192.png',tag:'watch-'+watchGrp,renotify:true});}catch(e){}
+            try{new Notification('👁️ Grupo #'+watchGrp+(wDiff===0?' ¡AHORA!':' en '+wDiff+' cambio'+(wDiff>1?'s':'')),{body:wDiff===0?'El grupo que vigilás está cargando ahora':'Faltan '+wDiff+' cambio'+(wDiff>1?'s':'')+' para el Grupo #'+watchGrp,icon:isSEMode?'se-icon-192.png':'icon-192.png',tag:'watch-'+watchGrp,renotify:true});}catch(e){_logErr("swallow",e);}
           }
           found=true;
           break;
@@ -3772,7 +3784,7 @@ if(_isSE){
         xhrV2.send();
       };
       xhrV.send();
-    }catch(e){}
+    }catch(e){_logErr("swallow",e);}
   }
   var ahsEl=document.getElementById('ahsecStatus');if(ahsEl)ahsEl.style.display='block';
   fetchAHSECGPS();
@@ -3798,7 +3810,7 @@ function cleanStaleOnline(){
     var now=Date.now();
     Object.keys(d).forEach(function(k){
       if(now-d[k]>60000){
-        try{db.ref('online/'+k).remove();}catch(e){}
+        try{db.ref('online/'+k).remove();}catch(e){_logErr("swallow",e);}
       }
     });
   });
@@ -3844,7 +3856,7 @@ function changeVirgenMn(delta){
   virgenMn=Math.max(1,Math.min(20,current+delta));
   if(liveGrupoData){liveGrupoData.virgenMn=virgenMn;}
   if(liveGrupoData&&liveGrupoData.cambio>0){
-    try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+    try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
     saveAll();
     db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
   }
@@ -3862,7 +3874,7 @@ function loadGrupoFromStorage(){
       if(sg&&sg.movidos!==undefined) virgenMovidos=sg.movidos;
       if(sg&&sg.virgenMn) virgenMn=sg.virgenMn;
     }
-  }catch(e){}
+  }catch(e){_logErr("swallow",e);}
 }
 
 var cronoInterval=null;
@@ -3911,7 +3923,7 @@ function advanceGrupo(delta){
     grp=((sacaH-1+Math.min(currentGrupoActual,tot)-1)%getHomCount())+1;
   }
   liveGrupoData={cambio:currentGrupoActual,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
-  try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+  try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
   saveAll();
   updateGrupoUI();
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
@@ -3943,7 +3955,7 @@ async function setGrupoManual(){
   var grp=0,nombre='';
   if(num>0&&num<=changes.length){grp=((sacaH-1+num-1)%getHomCount())+1;nombre=changes[num-1].n||'';}
   liveGrupoData={cambio:num,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
-  try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+  try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
   saveAll();
   updateGrupoUI();
   db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
@@ -3965,7 +3977,7 @@ function changeDesfase(delta){
   var el=document.getElementById('desfaseNum');
   if(el) el.textContent=virgenDesfase;
   if(liveGrupoData&&liveGrupoData.cambio>0){
-    try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+    try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
     saveAll();
     db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
   }
@@ -3979,7 +3991,7 @@ function changeMovidos(delta){
   var el=document.getElementById('movidosNum');
   if(el) el.textContent=(virgenMovidos>0?'+':'')+virgenMovidos;
   if(liveGrupoData&&liveGrupoData.cambio>0){
-    try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+    try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
     saveAll();
     db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
   }
@@ -4222,12 +4234,12 @@ function startDayListeners(){
     if(d.movidos!==undefined) virgenMovidos=d.movidos;
     if(d.virgenMn) virgenMn=d.virgenMn;
     if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
-    try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(d));}catch(e){}
-    try{updateGrupoUI();}catch(e8){}
-    try{if(typeof renderLive==='function') renderLive();}catch(e9){}
+    try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(d));}catch(e){_logErr("swallow",e);}
+    try{updateGrupoUI();}catch(e8){_logErr('updateGrupoUI',e8);}
+    try{if(typeof renderLive==='function') renderLive();}catch(e9){_logErr('renderLive',e9);}
     if(d.cambio!==window._lastSyncCambio){
       window._lastSyncCambio=d.cambio;
-      try{checkVibrate(d.cambio);}catch(e10){}
+      try{checkVibrate(d.cambio);}catch(e10){_logErr('checkVibrate',e10);}
     }
   });
   // Simple sync via XMLHttpRequest (bypasses Service Worker completely)
@@ -4255,8 +4267,8 @@ function startDayListeners(){
               if(d.movidos!==undefined) virgenMovidos=d.movidos;
               if(d.virgenMn) virgenMn=d.virgenMn;
               if(d.sacaMuj) daySacaMuj[currentDay]=d.sacaMuj;
-              try{updateGrupoUI();}catch(e7){}
-              try{if(typeof renderLive==='function') renderLive();}catch(e9){}
+              try{updateGrupoUI();}catch(e7){_logErr('updateGrupoUI',e7);}
+              try{if(typeof renderLive==='function') renderLive();}catch(e9){_logErr('renderLive',e9);}
             }
           }catch(e){
             var ss2=document.getElementById('editorStatus');
@@ -4530,7 +4542,7 @@ function autoTimeStep(){
       var grpF=((sacaF-1+tot-1)%getHomCount())+1;
       var nombreF=(tot<=changes.length&&changes[tot-1])?changes[tot-1].n||'':'';
       liveGrupoData={cambio:tot,grp:grpF,nombre:nombreF,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
-      try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+      try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
       saveAll();
       db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
     }
@@ -4554,7 +4566,7 @@ function autoTimeStep(){
     var grp=((sacaH-1+currentCambio-1)%getHomCount())+1;
     var nombre=(currentCambio<=changes.length&&changes[currentCambio-1])?changes[currentCambio-1].n||'':'';
     liveGrupoData={cambio:currentCambio,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
-    try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){}
+    try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
     saveAll();
     db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
     if(typeof renderLive==='function') renderLive();
