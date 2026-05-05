@@ -2830,6 +2830,7 @@ if('serviceWorker' in navigator){
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 // ========== URNA GPS TRACKING ==========
 const firebaseConfig = {
@@ -2844,11 +2845,16 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ========== ADMIN AUTH (Google Sign-In) ==========
+// ========== ADMIN AUTH (Google Identity Services + Firebase) ==========
+// We use GIS instead of Firebase signInWithRedirect because the firebaseapp.com
+// auth handler fails on mobile due to third-party cookie restrictions when the
+// app is hosted cross-origin (GitHub Pages).
 const ADMIN_EMAIL = 'njrmancia@gmail.com';
+const ADMIN_OAUTH_CLIENT_ID = '972231146098-2q1titms75k7mfdvsu2l5upmrb73ltcm.apps.googleusercontent.com';
 const auth = firebase.auth();
 let isAdmin = false;
 let authResolved = false;
+let _gisInitialized = false;
 
 auth.onAuthStateChanged(function(user){
   authResolved = true;
@@ -2875,41 +2881,82 @@ auth.onAuthStateChanged(function(user){
   applyAuthMode();
 });
 
-function loginAsAdmin(){
-  const provider = new firebase.auth.GoogleAuthProvider();
-  provider.setCustomParameters({prompt:'select_account'});
-  // Mobile browsers (especially Chrome on Android) often block OAuth popups
-  // → use redirect on mobile; popup with redirect fallback on desktop
-  var isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'');
-  if(isMobile){
-    auth.signInWithRedirect(provider).catch(function(err){
-      console.error('Redirect login error:', err);
-      try{ alert('Error al iniciar sesión: '+(err.message||err.code||'desconocido')); }catch(e){}
-    });
+function _waitForGIS(timeoutMs){
+  return new Promise(function(resolve, reject){
+    var start = Date.now();
+    (function check(){
+      if(typeof google!=='undefined' && google.accounts && google.accounts.id){
+        return resolve();
+      }
+      if(Date.now()-start > timeoutMs) return reject(new Error('GIS load timeout'));
+      setTimeout(check, 100);
+    })();
+  });
+}
+
+function _initGIS(){
+  if(_gisInitialized) return;
+  google.accounts.id.initialize({
+    client_id: ADMIN_OAUTH_CLIENT_ID,
+    callback: handleGoogleCredential,
+    auto_select: false,
+    cancel_on_tap_outside: true,
+    use_fedcm_for_prompt: true
+  });
+  _gisInitialized = true;
+}
+
+function handleGoogleCredential(response){
+  if(!response||!response.credential){
+    try{ alert('No se recibió credencial de Google.'); }catch(e){}
     return;
   }
-  auth.signInWithPopup(provider).then(function(result){
-    if(result&&result.user&&result.user.email===ADMIN_EMAIL){
+  // Exchange the Google id_token for a Firebase credential
+  var credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
+  auth.signInWithCredential(credential).then(function(result){
+    if(result && result.user && result.user.email === ADMIN_EMAIL){
       // Reload to clean URL so admin-only init runs from a fresh state
       window.location.href = window.location.pathname;
     }
     // Wrong account is handled by onAuthStateChanged (signs out + alert)
   }).catch(function(err){
-    var code=err&&err.code||'';
-    if(code==='auth/popup-blocked'||code==='auth/cancelled-popup-request'||code==='auth/popup-closed-by-user'){
-      // Browser blocked the popup → fall back to redirect
-      auth.signInWithRedirect(provider).catch(function(err2){
-        console.error('Redirect fallback error:', err2);
-        try{ alert('Error al iniciar sesión: '+(err2.message||err2.code||'desconocido')); }catch(e){}
-      });
-      return;
-    }
-    console.error('Login error:', err);
+    console.error('signInWithCredential error:', err);
     try{ alert('Error al iniciar sesión: '+(err.message||err.code||'desconocido')); }catch(e){}
   });
 }
 
+function loginAsAdmin(){
+  _waitForGIS(8000).then(function(){
+    _initGIS();
+    _showGoogleLoginModal();
+  }).catch(function(err){
+    console.error('GIS not loaded:', err);
+    try{ alert('La librería de Google no se cargó. Refrescá la página y probá de nuevo.'); }catch(e){}
+  });
+}
+
+function _showGoogleLoginModal(){
+  var modal = document.getElementById('googleLoginModal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'googleLoginModal';
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+    modal.innerHTML='<div style="background:#1a0a1f;border:2px solid #c084fc;border-radius:14px;padding:24px;text-align:center;max-width:340px;width:100%"><div style="font-size:14px;color:#c084fc;font-weight:700;margin-bottom:8px">🔐 Acceso administrador</div><div style="font-size:12px;color:#aaa;margin-bottom:20px">Iniciá sesión con la cuenta autorizada</div><div id="googleSignInButton" style="display:flex;justify-content:center;margin-bottom:16px"></div><button onclick="document.getElementById(\'googleLoginModal\').remove()" style="background:none;border:1px solid #666;color:#aaa;padding:8px 16px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit">Cancelar</button></div>';
+    document.body.appendChild(modal);
+  } else {
+    modal.style.display='flex';
+  }
+  google.accounts.id.renderButton(
+    document.getElementById('googleSignInButton'),
+    {type:'standard', theme:'filled_blue', size:'large', text:'signin_with', shape:'rectangular', logo_alignment:'left', width:280}
+  );
+}
+
 function logoutAdmin(){
+  // Sign out of Firebase + revoke GIS auto-select to force account picker next time
+  if(typeof google!=='undefined' && google.accounts && google.accounts.id){
+    try{ google.accounts.id.disableAutoSelect(); }catch(e){}
+  }
   auth.signOut().then(function(){
     // Redirect to clean public URL
     window.location.href = window.location.pathname;
@@ -2921,6 +2968,7 @@ function applyAuthMode(){
   var eb = document.getElementById('mapEditBar');
   var cfgBtn = document.getElementById('btnConfig');
   var modal = document.getElementById('sharedModal');
+  var glModal = document.getElementById('googleLoginModal');
   var loginBtn = document.getElementById('btnAdminLogin');
   var logoutBtn = document.getElementById('btnAdminLogout');
   if(isAdmin){
@@ -2928,6 +2976,7 @@ function applyAuthMode(){
     document.querySelectorAll('.adminOnly').forEach(function(el){el.style.display='';});
     if(cfgBtn) cfgBtn.onclick = function(){openCfg();};
     if(modal) modal.style.display='none';
+    if(glModal) glModal.remove();
     if(loginBtn) loginBtn.style.display='none';
     if(logoutBtn) logoutBtn.style.display='';
   } else {
@@ -2939,19 +2988,14 @@ function applyAuthMode(){
   }
 }
 
-// If URL has ?edit=1: handle redirect result, then prompt sign-in if needed
-auth.getRedirectResult().catch(function(err){
-  if(err&&err.code){
-    console.error('Redirect result error:', err.code, err.message);
-  }
-}).then(function(){
+// If URL has ?edit=1 and user isn't already authenticated, auto-open the login modal
+(function(){
   var p = new URLSearchParams(window.location.search);
   if(!p.has('edit')) return;
-  // Wait briefly for cached auth to resolve before prompting
   setTimeout(function(){
     if(!auth.currentUser) loginAsAdmin();
   }, 1500);
-});
+})();
 
 // ========== PUSH NOTIFICATIONS (FCM) ==========
 var fcmMessaging=null;
