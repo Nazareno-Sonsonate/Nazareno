@@ -202,9 +202,11 @@ function reopenGroupSelector(){
 }
 
 function shareWhatsApp(){
-  // Single public link — auto-detects today's day (incl. Santo Entierro)
-  const link=window.location.origin+window.location.pathname;
-  const isSE=(currentDay===4);
+  // Two distinct entry points: SE link locks viewers to Santo Entierro,
+  // bare URL locks them to the regular procession days (Lun-Vie).
+  const base=window.location.origin+window.location.pathname;
+  const isSE=isSEMode||currentDay===4;
+  const link=isSE?(base+'?se=1'):base;
   const msg=(isSE?'⚰️ *Santo Entierro de Cristo · Sonsonate*\n\n':'✝️ *Procesión de Semana Santa · Sonsonate*\n\n')
     +'Rastreo en vivo de la procesión\n'
     +'Abrí el link, elegí tu grupo y mirá tus cargadas:\n'+link;
@@ -212,6 +214,34 @@ function shareWhatsApp(){
     navigator.share({title:isSE?'Santo Entierro · Sonsonate':'Procesión Semana Santa · Sonsonate',text:msg,url:link}).catch(function(){});
   } else {
     window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+  }
+}
+
+// Filter the day-selector options to match the current mode for public users.
+// Admins keep all options so they can edit any day from a single view.
+function applyDayFilter(){
+  var sel = document.getElementById('daySelector');
+  if(!sel) return;
+  var seOpt = document.getElementById('seOpt');
+  var procOpts = sel.querySelectorAll('option:not(#seOpt)');
+  if(isAdmin){
+    // Admin: every option visible
+    if(seOpt) seOpt.hidden = false;
+    procOpts.forEach(function(o){ o.hidden = false; });
+    sel.style.display = '';
+    return;
+  }
+  if(isSEMode){
+    // Public viewer locked to Santo Entierro
+    procOpts.forEach(function(o){ o.hidden = true; });
+    if(seOpt) seOpt.hidden = false;
+    // Only one option left — hide the dropdown entirely to reduce clutter
+    sel.style.display = 'none';
+  } else {
+    // Public viewer locked to the regular procession days
+    if(seOpt) seOpt.hidden = true;
+    procOpts.forEach(function(o){ o.hidden = false; });
+    sel.style.display = '';
   }
 }
 
@@ -641,17 +671,23 @@ function initMap() {
   });
   const hasSaved = loadSaved();
   readParams();
-  // Auto-detect today's day for everyone (skipped only if URL forced a day)
+  // Auto-detect today's day, constrained to the current mode so a public
+  // viewer locked into SE mode never switches to a procession day, and
+  // vice versa. Admins still have all days available via the day selector.
   if(!explicitDay){
     const todayIdx = detectToday();
-    if(todayIdx>=0){
+    if(isSEMode){
+      currentDay = 4;
+      if(todayIdx !== 4){
+        try{ showOffSeasonBanner(); }catch(e){_logErr("swallow",e);}
+      }
+    } else if(todayIdx >= 0 && todayIdx <= 3){
       currentDay = todayIdx;
-      if(currentDay===4) isSEMode=true;
     } else {
-      // Off-season — fall back to last viewed day and show a banner
+      // Either off-season or today is the SE day. In procession mode show
+      // the most recently viewed procession day with the off-season notice.
       var lastDay=+(localStorage.getItem('lastViewedDay')||0);
-      if(lastDay>=0&&lastDay<=4) currentDay=lastDay;
-      if(currentDay===4) isSEMode=true;
+      currentDay = (lastDay>=0&&lastDay<=3) ? lastDay : 0;
       try{ showOffSeasonBanner(); }catch(e){_logErr("swallow",e);}
     }
   }
@@ -2440,6 +2476,7 @@ function applyAuthMode(){
     if(loginBtn) loginBtn.style.display='';
     if(logoutBtn) logoutBtn.style.display='none';
   }
+  applyDayFilter();
 }
 
 // ========== ADMIN LIST MANAGEMENT (super-admin only) ==========
