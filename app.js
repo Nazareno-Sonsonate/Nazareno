@@ -218,11 +218,11 @@ function shareWhatsApp(){
   if(!pn.endsWith('/')) pn += '/';
   const procBase = window.location.origin + pn;
   const link = isSE ? (procBase + 'santo-entierro/') : procBase;
-  const msg=(isSE?'⚰️ *Santo Entierro de Cristo · Sonsonate*\n\n':'✝️ *Procesión de Semana Santa · Sonsonate*\n\n')
+  const msg=(isSE?'⚰️ *Santo Entierro de Cristo · Sonsonate*\n\n':'✝️ *Jesús Nazareno · Sonsonate*\n\n')
     +'Rastreo en vivo de la procesión\n'
     +'Abrí el link, elegí tu grupo y mirá tus cargadas:\n'+link;
   if(navigator.share){
-    navigator.share({title:isSE?'Santo Entierro · Sonsonate':'Procesión Semana Santa · Sonsonate',text:msg,url:link}).catch(function(){});
+    navigator.share({title:isSE?'Santo Entierro · Sonsonate':'Jesús Nazareno · Sonsonate',text:msg,url:link}).catch(function(){});
   } else {
     window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
   }
@@ -2552,7 +2552,7 @@ function initPush(){
     // Foreground message handler
     fcmMessaging.onMessage(function(payload){
       var data=payload.data||{};
-      var title=data.title||'Procesión Sonsonate';
+      var title=data.title||(isSEMode?'Santo Entierro · Sonsonate':'Jesús Nazareno · Sonsonate');
       var body=data.body||'Grupo actualizado';
       // Show in-app notification
       var notDiv=document.getElementById('pushNotiBanner');
