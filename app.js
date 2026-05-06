@@ -682,11 +682,13 @@ function initMap() {
     styles:[]
   });
   infoWin = new google.maps.InfoWindow();
-  // Re-render markers on zoom change (show/hide others based on zoom)
+  // Re-render markers when the map settles after pan/zoom. The padded bounds
+  // logic in renderMarkers means we don't need to fire on every frame; idle
+  // with a short debounce is enough for fluid feel without thrashing setMap.
   let zoomTimer=null;
   gmap.addListener('idle',function(){
     clearTimeout(zoomTimer);
-    zoomTimer=setTimeout(function(){renderMarkers();},800);
+    zoomTimer=setTimeout(function(){renderMarkers();},150);
   });
   const hasSaved = loadSaved();
   readParams();
@@ -1499,13 +1501,21 @@ function renderMarkers() {
   const zoom=gmap?gmap.getZoom():15;
   const showOthers=showAll&&(zoom>=15||editMode);
   const bounds=gmap?gmap.getBounds():null;
-  
-  var step=1;
-  if(!editMode&&changes.length>60){
-    if(zoom<=14) step=8;
-    else if(zoom<=15) step=5;
-    else if(zoom<=16) step=3;
+  // Buffer the viewport so markers near the edge don't pop in/out as you pan.
+  // We use a 25% padding around the current visible bounds.
+  var paddedBounds=null;
+  if(bounds){
+    var ne=bounds.getNorthEast(), sw=bounds.getSouthWest();
+    var latPad=(ne.lat()-sw.lat())*0.25, lngPad=(ne.lng()-sw.lng())*0.25;
+    paddedBounds=new google.maps.LatLngBounds(
+      new google.maps.LatLng(sw.lat()-latPad, sw.lng()-lngPad),
+      new google.maps.LatLng(ne.lat()+latPad, ne.lng()+lngPad)
+    );
   }
+  // Skip markers only at very low zoom (zoom 13 or less) to keep groups
+  // visible when a cargador is exploring the map.
+  var step=1;
+  if(!editMode&&changes.length>60&&zoom<=13) step=3;
 
   // Recreate if changes count changed
   if(allMarkers.length>0&&allMarkers.length!==changes.length){
@@ -1517,14 +1527,15 @@ function renderMarkers() {
   if(allMarkers.length===0&&changes.length>0){
     changes.forEach(function(ch,ci){
       var m=ch.mine;
-      var sc=m?13:7;
+      // Bigger markers so groups are readable on phone screens.
+      var sc=m?14:10;
       var fc=m?'#c084fc':'#5599ff';
       if(m){var mc2=myCarries.find(function(x){return x.num===ch.num});if(mc2&&mc2.colorHex) fc=mc2.colorHex;}
-      var lbl={text:String(ch.grp),color:m?'#111':'#fff',fontWeight:'bold',fontSize:m?'12px':'9px'};
+      var lbl={text:String(ch.grp),color:m?'#111':'#fff',fontWeight:'bold',fontSize:m?'13px':'11px'};
       var mk=new google.maps.Marker({
         position:{lat:ch.lat,lng:ch.lng},map:null,
         label:lbl,
-        icon:{path:google.maps.SymbolPath.CIRCLE,scale:sc,fillColor:fc,fillOpacity:m?1:.35,strokeColor:m?'#fff':fc,strokeWeight:m?2:0},
+        icon:{path:google.maps.SymbolPath.CIRCLE,scale:sc,fillColor:fc,fillOpacity:m?1:.85,strokeColor:m?'#fff':'#1a1a2e',strokeWeight:m?2:1.5},
         zIndex:m?3000:100, draggable:false,
         optimized:true, clickable:true
       });
@@ -1559,21 +1570,24 @@ function renderMarkers() {
     });
   }
 
-  // Show/hide based on zoom, bounds, step
+  // Show/hide based on zoom, padded bounds, step
   for(var mi=0;mi<allMarkers.length;mi++){
     var mk=allMarkers[mi];
     var visible=true;
     if(!mk._isMine&&!showOthers) visible=false;
     if(!mk._isMine&&step>1&&mi%step!==0) visible=false;
-    if(bounds&&!bounds.contains(mk.getPosition())) visible=false;
-    mk.setMap(visible?gmap:null);
+    if(paddedBounds&&!paddedBounds.contains(mk.getPosition())) visible=false;
+    // Avoid redundant setMap calls — they trigger unnecessary repaints.
+    var current = mk.getMap();
+    if(visible && !current) mk.setMap(gmap);
+    else if(!visible && current) mk.setMap(null);
     // Update draggable for edit mode
     if(dragMode&&editMode&&mk.getDraggable()!==true){
       mk.setDraggable(true);
-      mk.setIcon({path:google.maps.SymbolPath.CIRCLE,scale:mk._isMine?20:14,fillColor:mk._isMine?'#c084fc':'#5599ff',fillOpacity:mk._isMine?1:.35,strokeColor:mk._isMine?'#fff':'#5599ff',strokeWeight:mk._isMine?2:0});
+      mk.setIcon({path:google.maps.SymbolPath.CIRCLE,scale:mk._isMine?20:14,fillColor:mk._isMine?'#c084fc':'#5599ff',fillOpacity:mk._isMine?1:.85,strokeColor:mk._isMine?'#fff':'#1a1a2e',strokeWeight:mk._isMine?2:1.5});
     } else if(!dragMode&&mk.getDraggable()===true){
       mk.setDraggable(false);
-      mk.setIcon({path:google.maps.SymbolPath.CIRCLE,scale:mk._isMine?13:7,fillColor:mk._isMine?'#c084fc':'#5599ff',fillOpacity:mk._isMine?1:.35,strokeColor:mk._isMine?'#fff':'#5599ff',strokeWeight:mk._isMine?2:0});
+      mk.setIcon({path:google.maps.SymbolPath.CIRCLE,scale:mk._isMine?14:10,fillColor:mk._isMine?'#c084fc':'#5599ff',fillOpacity:mk._isMine?1:.85,strokeColor:mk._isMine?'#fff':'#1a1a2e',strokeWeight:mk._isMine?2:1.5});
     }
   }
 }
