@@ -9,6 +9,10 @@
   "orientation": "portrait",
   "background_color": "#1a0a1f",
   "theme_color": "#1a0a1f",
+  "launch_handler": {
+    "client_mode": ["focus-existing", "auto"]
+  },
+  "prefer_related_applications": false,
   "icons": [
     {"src": "../icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
     {"src": "../icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
