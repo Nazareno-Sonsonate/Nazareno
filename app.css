@@ -67,18 +67,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 .rfloat.show{display:block}
 @keyframes flashPulse{0%,100%{opacity:1}50%{opacity:0.3}}
 .flash{animation:flashPulse 0.8s ease-in-out 6}
-/* Santo Entierro theme — toggled via body.se-mode class */
-body.se-mode .vtab.a{color:#d4af37!important;border-top-color:#d4af37!important}
-body.se-mode .btn{border-color:#8B7355!important;color:#d4af37!important;background:rgba(212,175,55,.12)!important}
-body.se-mode #grupoActualBanner{background:rgba(212,175,55,.12)!important;border-color:rgba(212,175,55,.3)!important}
-body.se-mode #grupoActualText{color:#d4af37!important}
-body.se-mode .live-next .ln-num{color:#d4af37!important}
-body.se-mode .live-next{border-color:#d4af37!important;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.05))!important}
-body.se-mode .live-progress-bar{background:linear-gradient(90deg,#d4af37,#8B7355)!important}
-body.se-mode .bar{background:rgba(212,175,55,.08)!important}
-body.se-mode .bar .v{color:#d4af37!important}
-body.se-mode .cfg.open{border-color:rgba(212,175,55,.3)!important}
-body.se-mode .live-btn-done{background:#8B7355!important}
-body.se-mode .live-btn-undo{border-color:#8B7355!important;color:#d4af37!important}
-body.se-mode .hdr{border-bottom-color:rgba(212,175,55,.3)!important}
-body.se-mode .vtabs{border-bottom-color:rgba(212,175,55,.15)!important}
+/* Santo Entierro theme — luto (mourning): black background, silver/white accents */
+body.se-mode{background:#0a0a0a!important}
+body.se-mode .hdr{background:#000!important;border-bottom-color:rgba(255,255,255,.18)!important}
+body.se-mode .vtabs{background:#000!important;border-top-color:rgba(255,255,255,.18)!important}
+body.se-mode .vtab{color:#888!important}
+body.se-mode .vtab.a{color:#e8e8e8!important;border-top-color:#e8e8e8!important}
+body.se-mode .btn{border-color:#444!important;color:#e8e8e8!important;background:rgba(255,255,255,.06)!important}
+body.se-mode #grupoActualBanner{background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.18)!important}
+body.se-mode #grupoActualText{color:#e8e8e8!important}
+body.se-mode .live-next .ln-num{color:#e8e8e8!important}
+body.se-mode .live-next .ln-time{color:#e8e8e8!important}
+body.se-mode .live-next{border-color:#e8e8e8!important;background:linear-gradient(135deg,rgba(255,255,255,.05),rgba(255,255,255,.02))!important}
+body.se-mode .live-progress-bar{background:linear-gradient(90deg,#e8e8e8,#888)!important;color:#000!important}
+body.se-mode .bar{background:rgba(255,255,255,.04)!important}
+body.se-mode .bar .v{color:#e8e8e8!important}
+body.se-mode .cfg.open{border-color:rgba(255,255,255,.18)!important}
+body.se-mode .live-btn-done{background:#444!important;color:#e8e8e8!important}
+body.se-mode .live-btn-undo{border-color:#444!important;color:#aaa!important}
+body.se-mode .live-card{border-color:rgba(255,255,255,.1)!important}
+body.se-mode .live-carry.current{border-color:#e8e8e8!important;background:rgba(255,255,255,.06)!important}
+body.se-mode .tbl{border-color:rgba(255,255,255,.1)!important}
+body.se-mode .tbl .th{color:#e8e8e8!important;background:rgba(255,255,255,.04)!important}
+body.se-mode .tbl .rn,body.se-mode .tbl .rt{color:#e8e8e8!important}
+body.se-mode .day.a{color:#e8e8e8!important;background:rgba(255,255,255,.06)!important;border-bottom-color:#e8e8e8!important}
+body.se-mode .days{border-bottom-color:rgba(255,255,255,.18)!important}
+body.se-mode #daySelector{border-color:#444!important;color:#e8e8e8!important;background:rgba(255,255,255,.04)!important}
+body.se-mode .hdr h1{color:#e8e8e8!important}

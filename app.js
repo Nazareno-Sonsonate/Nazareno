@@ -122,7 +122,7 @@ function readParams(){
       if(isSEMode){
         var step1El=document.getElementById('step1');
         if(step1El){
-          step1El.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#d4af37;font-weight:700;margin-bottom:4px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#ccc;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div style="display:flex;gap:12px;justify-content:center"><div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-entierro.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">22 grupos</div></div><div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#0a0a0a;border:2px solid #d4af37;border-radius:14px;padding:12px;text-align:center"><img src="se-virgen.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#d4af37;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">23 grupos</div></div></div>';
+          step1El.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#e8e8e8;font-weight:700;margin-bottom:4px;letter-spacing:1px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#aaa;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div style="display:flex;gap:12px;justify-content:center"><div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#000;border:2px solid #444;border-radius:14px;padding:12px;text-align:center"><img src="se-entierro.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#e8e8e8;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">22 grupos</div></div><div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#000;border:2px solid #444;border-radius:14px;padding:12px;text-align:center"><img src="se-virgen.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#e8e8e8;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">23 grupos</div></div></div>';
         }
       }
       $('sharedModal').style.display='flex';
@@ -132,7 +132,7 @@ function readParams(){
   // Apply SE theme if day 4
   if(isSEMode){
     $('hTitle').textContent='⚰️ Santo Entierro';
-    $('hTitle').style.color='#d4af37';
+    $('hTitle').style.color='#e8e8e8';
     document.body.classList.add('se-mode');
     var opts=$('cType').options;
     for(var oi=0;oi<opts.length;oi++){
@@ -172,7 +172,7 @@ function showGroupGrid(t){
   let h='';
   for(let i=1;i<=gridCount;i++){
     const isLast=(i===sharedLastGroup);
-    const goldBg=isSEMode?(isLast?'background:#d4af37;color:#000;border-color:#d4af37':'background:rgba(212,175,55,.15);color:#d4af37;border-color:#8B7355'):'';
+    const goldBg=isSEMode?(isLast?'background:#e8e8e8;color:#000;border-color:#e8e8e8':'background:rgba(255,255,255,.08);color:#e8e8e8;border-color:#444'):'';
     const purpleBg=!isSEMode?(isLast?'background:#7c3aed;color:#fff;border-color:#c084fc':'background:rgba(124,58,237,.15);color:#c084fc;border-color:#7c3aed'):'';
     const bg=isSEMode?goldBg:purpleBg;
     h+='<button onclick="pickGroup('+i+')" style="padding:10px 0;border:1px solid;border-radius:8px;'+bg+';font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">'+i+'</button>';
@@ -665,7 +665,7 @@ function initMap() {
   if(currentDay===4){
     isSEMode=true;
     $('hTitle').textContent='⚰️ Santo Entierro';
-    $('hTitle').style.color='#d4af37';
+    $('hTitle').style.color='#e8e8e8';
     document.body.classList.add('se-mode');
     var optsInit=$('cType').options;
     for(var oii=0;oii<optsInit.length;oii++){
@@ -764,7 +764,7 @@ function switchDay(d) {
   // Apply/remove SE theme
   if(isSEMode){
     $('hTitle').textContent='⚰️ Santo Entierro';
-    $('hTitle').style.color='#d4af37';
+    $('hTitle').style.color='#e8e8e8';
     document.body.classList.add('se-mode');
     // Update group count labels
     var opts=$('cType').options;
@@ -1316,7 +1316,7 @@ function calc() {
   var titleIcon=isSEMode?'⚰️':'✝️';
   var titleText=isSEMode?'Santo Entierro de Cristo':dayNames[currentDay];
   $('hTitle').textContent=titleIcon+' '+titleText;
-  $('hTitle').style.color=isSEMode?'#d4af37':'#c084fc';
+  $('hTitle').style.color=isSEMode?'#e8e8e8':'#c084fc';
   var depTimeStr=fmt(c.h*60+(c.hm||0));
   if(isShared){
     $('hSub').textContent=dateStr+' · Sale '+depTimeStr+' · Grupo #'+c.g;
@@ -2998,7 +2998,7 @@ function getAndaIcon(tipo){
   return isSEMode?'se-virgen-marker.png':'maria-marker.png';
 }
 function getAndaColor(tipo){
-  if(isSEMode) return '#d4af37';
+  if(isSEMode) return '#e8e8e8';
   return tipo==='jesus'?'#dc2626':'#3b82f6';
 }
 function listenAnda(tipo,imgUrl,color,zIdx){
@@ -3101,8 +3101,8 @@ function listenAnda(tipo,imgUrl,color,zIdx){
     }
   });
 }
-listenAnda('jesus',isSEMode?'se-entierro-marker.png':'jesus-marker.png',isSEMode?'#d4af37':'#dc2626',10000);
-listenAnda('virgen',isSEMode?'se-virgen-marker.png':'maria-marker.png',isSEMode?'#d4af37':'#3b82f6',9998);
+listenAnda('jesus',isSEMode?'se-entierro-marker.png':'jesus-marker.png',isSEMode?'#e8e8e8':'#dc2626',10000);
+listenAnda('virgen',isSEMode?'se-virgen-marker.png':'maria-marker.png',isSEMode?'#e8e8e8':'#3b82f6',9998);
 
 // AHSEC GPS tracking for SE mode
 // ========== VIBRATION ALERTS ==========
@@ -3213,7 +3213,7 @@ if(_isSE){
           if(gmap){
             if(!urnaMarkers.jesus){
               urnaMarkers.jesus=new google.maps.Marker({position:ll,map:gmap,zIndex:10000,icon:{url:'se-entierro-marker.png',scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)}});
-              urnaMarkers.jesus._ring=new google.maps.Circle({center:ll,map:gmap,radius:15,fillColor:'#d4af37',fillOpacity:0.25,strokeColor:'#d4af37',strokeWeight:5,strokeOpacity:0.9,zIndex:9999});
+              urnaMarkers.jesus._ring=new google.maps.Circle({center:ll,map:gmap,radius:15,fillColor:'#e8e8e8',fillOpacity:0.25,strokeColor:'#e8e8e8',strokeWeight:5,strokeOpacity:0.9,zIndex:9999});
             } else {
               urnaMarkers.jesus.setPosition(ll);
               if(urnaMarkers.jesus._ring) urnaMarkers.jesus._ring.setCenter(ll);
