@@ -237,7 +237,7 @@ function _escapeHtml(s){
 function customAlert(message){
   var overlay = document.createElement('div');
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;display:flex;align-items:center;justify-content:center;padding:16px';
-  overlay.innerHTML='<div style="background:#1a0a1f;border:2px solid #c084fc;border-radius:14px;padding:20px;max-width:340px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,.6);font-family:Georgia,serif"><div id="customAlertMsg" style="color:#eee;font-size:14px;line-height:1.5;margin-bottom:16px;white-space:pre-wrap;word-wrap:break-word"></div><button id="customAlertOK" style="width:100%;padding:10px;background:rgba(124,58,237,.2);border:1px solid #7c3aed;color:#c084fc;font-weight:700;font-size:14px;border-radius:8px;cursor:pointer;font-family:inherit">OK</button></div>';
+  overlay.innerHTML='<div style="background:#1a0a1f;border:2px solid #c084fc;border-radius:14px;padding:22px;max-width:360px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,.6)"><div id="customAlertMsg" style="color:#eee;font-size:16px;line-height:1.5;margin-bottom:18px;white-space:pre-wrap;word-wrap:break-word"></div><button id="customAlertOK" style="width:100%;padding:12px;background:rgba(124,58,237,.2);border:1px solid #7c3aed;color:#c084fc;font-weight:700;font-size:15px;border-radius:8px;cursor:pointer;font-family:inherit">OK</button></div>';
   document.body.appendChild(overlay);
   overlay.querySelector('#customAlertMsg').textContent = String(message==null?'':message);
   var btn = overlay.querySelector('#customAlertOK');
@@ -255,16 +255,16 @@ function _customDialog(opts){
   return new Promise(function(resolve){
     var overlay = document.createElement('div');
     overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;display:flex;align-items:center;justify-content:center;padding:16px';
-    var inputHtml = opts.input ? '<input id="cdInput" type="text" style="width:100%;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;font-size:14px;font-family:inherit;margin-bottom:12px">' : '';
+    var inputHtml = opts.input ? '<input id="cdInput" type="text" style="width:100%;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:12px;border-radius:6px;font-size:16px;font-family:inherit;margin-bottom:14px">' : '';
     var okLabel = opts.okLabel || 'OK';
     var cancelLabel = opts.cancelLabel || 'Cancelar';
     overlay.innerHTML =
-      '<div style="background:#1a0a1f;border:2px solid #c084fc;border-radius:14px;padding:20px;max-width:340px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,.6);font-family:Georgia,serif">' +
-      '<div id="cdMsg" style="color:#eee;font-size:14px;line-height:1.5;margin-bottom:14px;white-space:pre-wrap;word-wrap:break-word"></div>' +
+      '<div style="background:#1a0a1f;border:2px solid #c084fc;border-radius:14px;padding:22px;max-width:360px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,.6)">' +
+      '<div id="cdMsg" style="color:#eee;font-size:16px;line-height:1.5;margin-bottom:16px;white-space:pre-wrap;word-wrap:break-word"></div>' +
       inputHtml +
-      '<div style="display:flex;gap:8px">' +
-      '<button id="cdCancel" style="flex:1;padding:10px;background:none;border:1px solid #666;color:#aaa;font-weight:600;font-size:13px;border-radius:8px;cursor:pointer;font-family:inherit">'+cancelLabel+'</button>' +
-      '<button id="cdOK" style="flex:1;padding:10px;background:rgba(124,58,237,.2);border:1px solid #7c3aed;color:#c084fc;font-weight:700;font-size:14px;border-radius:8px;cursor:pointer;font-family:inherit">'+okLabel+'</button>' +
+      '<div style="display:flex;gap:10px">' +
+      '<button id="cdCancel" style="flex:1;padding:12px;background:none;border:1px solid #666;color:#bbb;font-weight:600;font-size:15px;border-radius:8px;cursor:pointer;font-family:inherit">'+cancelLabel+'</button>' +
+      '<button id="cdOK" style="flex:1;padding:12px;background:rgba(124,58,237,.2);border:1px solid #7c3aed;color:#c084fc;font-weight:700;font-size:15px;border-radius:8px;cursor:pointer;font-family:inherit">'+okLabel+'</button>' +
       '</div></div>';
     document.body.appendChild(overlay);
     overlay.querySelector('#cdMsg').textContent = String(opts.message==null?'':opts.message);
