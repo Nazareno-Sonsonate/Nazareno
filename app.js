@@ -690,13 +690,27 @@ function initMap() {
     ]
   });
   infoWin = new google.maps.InfoWindow();
-  // Re-render markers when the map settles after pan/zoom. The padded bounds
-  // logic in renderMarkers means we don't need to fire on every frame; idle
-  // with a short debounce is enough for fluid feel without thrashing setMap.
+  // Marker visibility during gestures: while the user is actively zooming
+  // (or panning fast), keep the markers off the canvas so Google Maps only
+  // has the basemap to repaint. The 'idle' event fires once the camera
+  // settles; we render the markers in their final positions then.
   let zoomTimer=null;
+  let _gestureActive=false;
+  gmap.addListener('zoom_changed',function(){
+    if(_gestureActive) return;
+    _gestureActive=true;
+    if(allMarkers && allMarkers.length){
+      for(var i=0;i<allMarkers.length;i++){
+        if(allMarkers[i].getMap()) allMarkers[i].setMap(null);
+      }
+    }
+  });
   gmap.addListener('idle',function(){
     clearTimeout(zoomTimer);
-    zoomTimer=setTimeout(function(){renderMarkers();},150);
+    zoomTimer=setTimeout(function(){
+      _gestureActive=false;
+      renderMarkers();
+    },120);
   });
   const hasSaved = loadSaved();
   readParams();
