@@ -675,11 +675,19 @@ function initMap() {
     mapTypeControl:false, streetViewControl:false, fullscreenControl:false,
     gestureHandling:'greedy',
     minZoom:15, maxZoom:21,
+    clickableIcons:false,
     restriction:{
       latLngBounds:{north:13.732,south:13.714,east:-89.718,west:-89.735},
       strictBounds:true
     },
-    styles:[]
+    styles:[
+      // Hide commercial POIs and transit overlays — they add visual noise
+      // and force Google Maps to redraw a lot during pan. Keep places of
+      // worship and schools (useful procession landmarks).
+      {featureType:'poi.business',stylers:[{visibility:'off'}]},
+      {featureType:'poi.medical',stylers:[{visibility:'simplified'}]},
+      {featureType:'transit',stylers:[{visibility:'off'}]}
+    ]
   });
   infoWin = new google.maps.InfoWindow();
   // Re-render markers when the map settles after pan/zoom. The padded bounds
@@ -1501,6 +1509,10 @@ function renderMarkers() {
   const zoom=gmap?gmap.getZoom():15;
   const showOthers=showAll&&(zoom>=15||editMode);
   const bounds=gmap?gmap.getBounds():null;
+  // At zoom < 16 we show small unlabeled dots so Google Maps can keep all
+  // markers in its optimized canvas (labels force per-marker DOM nodes,
+  // killing fluidity on phones with 100+ groups in view at once).
+  const showLabels=zoom>=16;
   // Buffer the viewport so markers near the edge don't pop in/out as you pan.
   // We use a 25% padding around the current visible bounds.
   var paddedBounds=null;
@@ -1512,10 +1524,6 @@ function renderMarkers() {
       new google.maps.LatLng(ne.lat()+latPad, ne.lng()+lngPad)
     );
   }
-  // Skip markers only at very low zoom (zoom 13 or less) to keep groups
-  // visible when a cargador is exploring the map.
-  var step=1;
-  if(!editMode&&changes.length>60&&zoom<=13) step=3;
 
   // Recreate if changes count changed
   if(allMarkers.length>0&&allMarkers.length!==changes.length){
@@ -1523,23 +1531,29 @@ function renderMarkers() {
     allMarkers=[];
   }
 
-  // First time: create all markers
+  // Helper: build the icon descriptor for a marker given its state and zoom.
+  function _iconFor(m, fc, labeled){
+    if(labeled){
+      return {path:google.maps.SymbolPath.CIRCLE,scale:m?14:10,fillColor:fc,fillOpacity:m?1:.85,strokeColor:m?'#fff':'#1a1a2e',strokeWeight:m?2:1.5};
+    }
+    // Compact dots for the unlabeled (zoom <16) view
+    return {path:google.maps.SymbolPath.CIRCLE,scale:m?9:6,fillColor:fc,fillOpacity:m?1:.7,strokeColor:m?'#fff':'#1a1a2e',strokeWeight:m?1.5:0.8};
+  }
+
+  // First time: create all markers (without labels — we apply them below
+  // based on the current zoom).
   if(allMarkers.length===0&&changes.length>0){
     changes.forEach(function(ch,ci){
       var m=ch.mine;
-      // Bigger markers so groups are readable on phone screens.
-      var sc=m?14:10;
       var fc=m?'#c084fc':'#5599ff';
       if(m){var mc2=myCarries.find(function(x){return x.num===ch.num});if(mc2&&mc2.colorHex) fc=mc2.colorHex;}
-      var lbl={text:String(ch.grp),color:m?'#111':'#fff',fontWeight:'bold',fontSize:m?'13px':'11px'};
       var mk=new google.maps.Marker({
         position:{lat:ch.lat,lng:ch.lng},map:null,
-        label:lbl,
-        icon:{path:google.maps.SymbolPath.CIRCLE,scale:sc,fillColor:fc,fillOpacity:m?1:.85,strokeColor:m?'#fff':'#1a1a2e',strokeWeight:m?2:1.5},
+        icon:_iconFor(m, fc, showLabels),
         zIndex:m?3000:100, draggable:false,
         optimized:true, clickable:true
       });
-      mk._isMine=m;mk._ci=ci;mk._ch=ch;
+      mk._isMine=m;mk._ci=ci;mk._ch=ch;mk._fc=fc;
       // Click handler
       (function(mk2,ch2,ci2,m2){
         mk2.addListener('click',function(){
@@ -1570,13 +1584,23 @@ function renderMarkers() {
     });
   }
 
-  // Show/hide based on zoom, padded bounds, step
+  // Apply zoom-dependent style + visibility in a single pass
   for(var mi=0;mi<allMarkers.length;mi++){
     var mk=allMarkers[mi];
     var visible=true;
     if(!mk._isMine&&!showOthers) visible=false;
-    if(!mk._isMine&&step>1&&mi%step!==0) visible=false;
     if(paddedBounds&&!paddedBounds.contains(mk.getPosition())) visible=false;
+    // Toggle label/icon only when the zoom mode actually changes — avoids
+    // the per-marker repaint cost of setLabel/setIcon during pan.
+    if(mk._labeled !== showLabels){
+      mk._labeled = showLabels;
+      if(showLabels){
+        mk.setLabel({text:String(mk._ch.grp),color:mk._isMine?'#111':'#fff',fontWeight:'bold',fontSize:mk._isMine?'13px':'11px'});
+      } else {
+        mk.setLabel(null);
+      }
+      mk.setIcon(_iconFor(mk._isMine, mk._fc, showLabels));
+    }
     // Avoid redundant setMap calls — they trigger unnecessary repaints.
     var current = mk.getMap();
     if(visible && !current) mk.setMap(gmap);
@@ -1584,10 +1608,10 @@ function renderMarkers() {
     // Update draggable for edit mode
     if(dragMode&&editMode&&mk.getDraggable()!==true){
       mk.setDraggable(true);
-      mk.setIcon({path:google.maps.SymbolPath.CIRCLE,scale:mk._isMine?20:14,fillColor:mk._isMine?'#c084fc':'#5599ff',fillOpacity:mk._isMine?1:.85,strokeColor:mk._isMine?'#fff':'#1a1a2e',strokeWeight:mk._isMine?2:1.5});
+      mk.setIcon({path:google.maps.SymbolPath.CIRCLE,scale:mk._isMine?20:14,fillColor:mk._fc,fillOpacity:mk._isMine?1:.85,strokeColor:mk._isMine?'#fff':'#1a1a2e',strokeWeight:mk._isMine?2:1.5});
     } else if(!dragMode&&mk.getDraggable()===true){
       mk.setDraggable(false);
-      mk.setIcon({path:google.maps.SymbolPath.CIRCLE,scale:mk._isMine?14:10,fillColor:mk._isMine?'#c084fc':'#5599ff',fillOpacity:mk._isMine?1:.85,strokeColor:mk._isMine?'#fff':'#1a1a2e',strokeWeight:mk._isMine?2:1.5});
+      mk.setIcon(_iconFor(mk._isMine, mk._fc, showLabels));
     }
   }
 }
