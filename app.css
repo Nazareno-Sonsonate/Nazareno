@@ -94,3 +94,29 @@ body.se-mode .day.a{color:#e8e8e8!important;background:rgba(255,255,255,.06)!imp
 body.se-mode .days{border-bottom-color:rgba(255,255,255,.18)!important}
 body.se-mode #daySelector{border-color:#444!important;color:#e8e8e8!important;background:rgba(255,255,255,.04)!important}
 body.se-mode .hdr h1{color:#e8e8e8!important}
+/* Live-carry list: kill the purple time/num/ref/sub colors */
+body.se-mode .live-carry .lc-time{color:#e8e8e8!important}
+body.se-mode .live-carry .lc-num{color:#e8e8e8!important}
+body.se-mode .live-carry .lc-ref{color:#eee!important}
+body.se-mode .live-carry .lc-sub{color:#999!important}
+body.se-mode .live-carry.current .lc-num{color:#e8e8e8!important}
+body.se-mode .live-carry.pending .lc-num{color:#666!important}
+body.se-mode .live-carry.done .lc-num{color:#888!important}
+body.se-mode .live-carry.done .lc-ref{color:#888!important}
+body.se-mode .live-carry.done .lc-time{color:#aaa!important}
+/* Off-season banner: solemnize */
+body.se-mode #offSeasonBanner{background:rgba(255,255,255,.04)!important;color:#aaa!important;border-bottom-color:rgba(255,255,255,.1)!important}
+/* Catch any inline purple colors used by dynamic renderers */
+body.se-mode [style*="color:#c084fc"],
+body.se-mode [style*="color: #c084fc"]{color:#e8e8e8!important}
+body.se-mode [style*="color:#7c3aed"],
+body.se-mode [style*="color: #7c3aed"]{color:#e8e8e8!important}
+body.se-mode [style*="border-color:#c084fc"],
+body.se-mode [style*="border-color: #c084fc"]{border-color:#e8e8e8!important}
+/* Header subtitle (date / next departure info) */
+body.se-mode #hSub{color:#aaa!important}
+/* Footer text */
+body.se-mode .ftr{color:#999!important}
+/* Bottom tabs — already covered, but force cross-style overrides */
+body.se-mode .vtab{color:#888!important}
+body.se-mode .vtab.a{color:#e8e8e8!important}
