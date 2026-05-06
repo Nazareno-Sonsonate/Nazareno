@@ -59,7 +59,7 @@ self.addEventListener('fetch', event => {
     return;
   }
   // HTML and the JS/CSS bundle: network-first so deploys propagate quickly.
-  if(event.request.url.includes('.html')||event.request.url.endsWith('/Procesion/')||event.request.url.endsWith('/Procesion')||url.pathname.endsWith('app.js')||url.pathname.endsWith('app.css')||url.pathname.endsWith('routes-data.js')){
+  if(event.request.url.includes('.html')||event.request.url.endsWith('/Nazareno/')||event.request.url.endsWith('/Nazareno')||url.pathname.endsWith('app.js')||url.pathname.endsWith('app.css')||url.pathname.endsWith('routes-data.js')){
     event.respondWith(fetch(event.request).then(r=>{if(r.ok){const c=r.clone();caches.open(CACHE_NAME).then(cache=>cache.put(event.request,c));}return r;}).catch(()=>caches.match(event.request)));
   } else {
     event.respondWith(caches.match(event.request).then(c=>c||fetch(event.request).then(r=>{if(r.ok){const cl=r.clone();caches.open(CACHE_NAME).then(cache=>cache.put(event.request,cl));}return r;})));
