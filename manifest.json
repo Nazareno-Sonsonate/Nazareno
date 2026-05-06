@@ -1,8 +1,8 @@
 {
-  "name": "Jesús Nazareno · Sonsonate",
-  "short_name": "Jesús Nazareno",
-  "description": "Rastreo de cargadas - Jesús Nazareno · Semana Santa Sonsonate",
-  "start_url": "./index.html",
+  "name": "Semana Santa · Sonsonate",
+  "short_name": "Semana Santa",
+  "description": "Rastreo de cargadas - Procesiones de Semana Santa en Sonsonate",
+  "start_url": "./jesus-nazareno/",
   "scope": "./",
   "id": "/procesion/",
   "display": "standalone",

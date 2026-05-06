@@ -207,17 +207,16 @@ function reopenGroupSelector(){
 }
 
 function shareWhatsApp(){
-  // Two installable PWAs from this codebase. Each lives at its own URL so
-  // the home-screen icons stay separate. Build the canonical link for the
-  // current mode by stripping (or appending) the santo-entierro/ segment.
+  // Two installable PWAs from this codebase, both under a common root.
+  // Build the canonical link for the current mode by trimming the current
+  // app's directory off the path and appending the target's directory.
   const isSE = isSEMode || currentDay === 4;
   let pn = window.location.pathname;
-  // Normalize: strip optional trailing index.html, then strip santo-entierro/.
   pn = pn.replace(/index\.html$/, '');
-  pn = pn.replace(/santo-entierro\/$/, '');
+  pn = pn.replace(/(jesus-nazareno|santo-entierro)\/$/, '');
   if(!pn.endsWith('/')) pn += '/';
-  const procBase = window.location.origin + pn;
-  const link = isSE ? (procBase + 'santo-entierro/') : procBase;
+  const root = window.location.origin + pn;
+  const link = root + (isSE ? 'santo-entierro/' : 'jesus-nazareno/');
   const msg=(isSE?'⚰️ *Santo Entierro de Cristo · Sonsonate*\n\n':'✝️ *Jesús Nazareno · Sonsonate*\n\n')
     +'Rastreo en vivo de la procesión\n'
     +'Abrí el link, elegí tu grupo y mirá tus cargadas:\n'+link;

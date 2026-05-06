@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a0a1f">
+<link rel="apple-touch-icon" href="../icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Jesús Nazareno">
+<script>
+// If someone ends up here with the legacy ?se=1 query string, send them
+// to the dedicated Santo Entierro app so the right PWA opens.
+if(new URLSearchParams(window.location.search).has('se')){
+  window.location.replace('../santo-entierro/');
+}
+</script>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Jesús Nazareno · Sonsonate</title>
+<meta name="description" content="Rastreo en vivo de la procesión de Jesús Nazareno - Semana Santa en Sonsonate, El Salvador">
+<meta property="og:title" content="Jesús Nazareno · Sonsonate">
+<meta property="og:description" content="Rastreo en vivo de cargadas, ubicación de las andas y avance de la procesión">
+<meta property="og:image" content="https://nazareno-sonsonate.github.io/Nazareno/jesus-nazareno/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://nazareno-sonsonate.github.io/Nazareno/jesus-nazareno/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../app.css">
+</head>
+<body>
+
+<div class="hdr">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <h1 id="hTitle" style="font-size:15px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">✝️ Lunes Santo</h1>
+    <div style="display:flex;gap:3px;align-items:center;flex-shrink:0">
+      <select id="daySelector" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:3px 5px;border-radius:5px;font-size:10px;font-weight:700;font-family:inherit">
+        <option value="0">Lun</option><option value="1">Mar</option><option value="2">Mié</option><option value="3">Vie</option><option value="4" id="seOpt">SE</option>
+      </select>
+      <button class="btn" onclick="var ap=document.getElementById('alertPanel');var ao=document.getElementById('alertOverlay');var vis=ap.style.display==='none';ap.style.display=vis?'block':'none';ao.style.display=vis?'block':'none';if(vis&&typeof populateAlertSelects==='function')populateAlertSelects();if(vis&&typeof updatePushUI==='function')updatePushUI()" style="padding:4px 7px;font-size:11px" id="btnAlert">🔔</button>
+      <button class="btn" onclick="openCfg()" style="padding:4px 7px;font-size:11px" id="btnConfig">⚙️</button>
+      <button class="btn" onclick="shareWhatsApp()" style="padding:4px 7px;font-size:11px">📤</button>
+      <button class="btn" onclick="loginAsAdmin()" style="padding:4px 7px;font-size:11px" id="btnAdminLogin" title="Acceso administrador">🔑</button>
+      <button class="btn adminOnly" onclick="logoutAdmin()" style="padding:4px 7px;font-size:11px;display:none" id="btnAdminLogout" title="Cerrar sesión administrador">🚪</button>
+    </div>
+  </div>
+  <div id="hSub" style="font-size:11px;color:#aaa;overflow-x:auto;white-space:nowrap;padding:1px 0"></div>
+  <div id="onlineCounter" style="display:none;font-size:10px;color:#4CAF50;margin-top:1px"></div>
+</div>
+
+<!-- Live broadcast banner (everyone sees) -->
+<div id="broadcastBanner" style="display:none;padding:10px;background:rgba(255,152,0,.12);border-bottom:1px solid rgba(255,152,0,.3);text-align:center">
+  <div style="font-size:13px;color:#ff9800;font-weight:700" id="broadcastText"></div>
+  <div style="font-size:9px;color:#888;margin-top:2px" id="broadcastTime"></div>
+</div>
+
+<!-- Admin broadcast input (only editor) -->
+<div id="broadcastInput" style="display:none;padding:8px;background:rgba(0,0,0,.3);border-bottom:1px solid rgba(124,58,237,.2)">
+  <div style="display:flex;gap:6px">
+    <input type="text" id="broadcastMsg" placeholder="Escribí un mensaje en vivo..." style="flex:1;padding:8px;border:1px solid #666;border-radius:8px;background:rgba(0,0,0,.4);color:#fff;font-size:13px;font-family:inherit">
+    <button onclick="sendBroadcast()" style="padding:8px 14px;border:none;border-radius:8px;background:#ff9800;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">📢</button>
+    <button onclick="clearBroadcast()" style="padding:8px;border:1px solid #666;border-radius:8px;background:none;color:#888;font-size:11px;cursor:pointer;font-family:inherit">✕</button>
+  </div>
+</div>
+
+<!-- Carry alert banner -->
+
+<div id="installBanner" style="display:none;padding:10px;background:rgba(124,58,237,.15);border-bottom:1px solid rgba(124,58,237,.3);text-align:center;cursor:pointer;position:relative" onclick="installApp()">
+  <span style="font-size:13px;color:#c084fc">📱 <b>Tocá aquí para instalar la app</b></span>
+  <br><span style="font-size:11px;color:#aaa">Se agrega a tu pantalla de inicio · Funciona sin internet</span>
+  <span onclick="event.stopPropagation();dismissInstall()" style="position:absolute;right:10px;top:8px;color:#666;font-size:16px;cursor:pointer">✕</span>
+</div>
+
+
+<div id="cfgP" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5000;width:90%;max-width:340px;background:#1a1a2e;border:2px solid #7c3aed;border-radius:14px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.8);max-height:80vh;overflow-y:auto">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <span style="font-size:16px;font-weight:700;color:#c084fc">⚙️ Configuración</span>
+    <button onclick="closeCfg()" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer">✕</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+    <div><label style="font-size:13px;color:#ccc;display:block;margin-bottom:2px">Cargadores de</label><select id="cType" onchange="onTypeChange()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;font-size:14px"><option value="21">Hombres (21)</option><option value="27">Mujeres (27)</option></select></div>
+    <div><label style="font-size:13px;color:#ccc;display:block;margin-bottom:2px">Tu grupo</label><input type="number" id="cG" value="5" min="1" max="50" onchange="calc();closeCfg()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;text-align:center;font-size:18px"></div>
+  </div>
+  <div id="colorDiv" style="display:none;margin-bottom:10px"><label style="font-size:13px;color:#ccc;display:block;margin-bottom:2px">Tu color</label><select id="cColor" onchange="calc()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;font-size:14px"><option value="0">🟡 Amarillo</option><option value="1">🔴 Rojo</option><option value="2">🔵 Azul</option></select></div>
+  <!-- Admin controls -->
+  <div id="cfgAdminSection" class="adminOnly" style="border-top:1px solid rgba(124,58,237,.2);padding-top:10px;margin-top:4px">
+    <div style="font-size:13px;font-weight:700;color:#c084fc;margin-bottom:8px">🔧 Editor</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Grupo saca</label><input type="number" id="cS" value="19" min="1" max="50" onchange="daySacaManual[currentDay]=true;if(+$('cType').value===27){daySacaMuj[currentDay]=+this.value;if(liveGrupoData){liveGrupoData.sacaMuj=+this.value;db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}else{daySaca[currentDay]=+this.value;if(liveGrupoData&&liveGrupoData.cambio>0){liveGrupoData.grp=((+this.value-1+liveGrupoData.cambio-1)%getHomCount())+1;saveAll();db.ref('grupoActual/day'+currentDay).set(liveGrupoData);}updateGrupoUI();}calc()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;text-align:center;font-size:18px"></div>
+      <div><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Min/cambio</label><input type="number" id="cMn" value="6" min="0.5" max="20" step="0.5" onchange="updateRhythm()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;text-align:center;font-size:18px"></div>
+    </div>
+    <div style="margin-bottom:8px"><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Fecha procesión</label><input type="date" id="cDate" onchange="changeDayDate(this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;font-size:16px"></div>
+    <div style="margin-bottom:8px"><label style="font-size:12px;color:#ccc;display:block;margin-bottom:2px">Hora de salida</label><div style="display:flex;gap:6px"><select id="cHour" onchange="updateStartTime()" style="flex:1;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:16px;font-family:inherit"><option value="0">12 AM</option><option value="1">1 AM</option><option value="2">2 AM</option><option value="3">3 AM</option><option value="4">4 AM</option><option value="5">5 AM</option><option value="6">6 AM</option><option value="7">7 AM</option><option value="8">8 AM</option><option value="9">9 AM</option><option value="10">10 AM</option><option value="11">11 AM</option><option value="12">12 PM</option><option value="13">1 PM</option><option value="14">2 PM</option><option value="15">3 PM</option><option value="16">4 PM</option><option value="17">5 PM</option><option value="18">6 PM</option><option value="19">7 PM</option><option value="20">8 PM</option><option value="21">9 PM</option><option value="22">10 PM</option><option value="23">11 PM</option></select><select id="cMin" onchange="updateStartTime()" style="width:70px;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:16px;font-family:inherit"><option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option></select></div></div>
+    <div id="cortesiasConfig" style="display:none;margin-bottom:8px;padding:8px;background:rgba(255,152,0,.08);border-radius:6px;border:1px solid rgba(255,152,0,.2)">
+      <div style="font-size:12px;font-weight:700;color:#ff9800;margin-bottom:6px">✝️ Cortesías (solo Viernes)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        <div><label style="font-size:10px;color:#ccc;display:block">Cambio H</label><input type="number" id="cortCambioH" value="40" min="1" max="60" onchange="VIER_CORTESIAS_CHANGE=+this.value;calc();renderLive()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;text-align:center;font-size:16px"></div>
+        <div><label style="font-size:10px;color:#ccc;display:block">Cambio M</label><input type="number" id="cortCambioM" value="40" min="1" max="60" onchange="VIER_CORTESIAS_CHANGE_M=+this.value;calc();renderLive()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;text-align:center;font-size:16px"></div>
+        <div><label style="font-size:10px;color:#ccc;display:block">Pausa min</label><input type="number" id="cortMinutos" value="45" min="5" max="120" onchange="VIER_CORTESIAS_MIN=+this.value;calc();renderLive()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:6px;border-radius:4px;width:100%;text-align:center;font-size:16px"></div>
+      </div>
+    </div>
+    <div id="adminLiveControls"></div>
+    <!-- Super-admin only: manage editor list -->
+    <div id="cfgAdminListSection" class="superAdminOnly" style="display:none;border-top:1px solid rgba(212,175,55,.2);padding-top:10px;margin-top:10px">
+      <div style="font-size:13px;font-weight:700;color:#d4af37;margin-bottom:8px">👥 Editores autorizados</div>
+      <div id="adminListContainer" style="margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px">
+        <input type="email" id="newAdminEmail" placeholder="email@gmail.com" style="flex:1;background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;font-size:14px;font-family:inherit">
+        <button onclick="addAdminEmail()" style="padding:8px 12px;background:rgba(212,175,55,.2);border:1px solid #d4af37;color:#d4af37;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">+ Agregar</button>
+      </div>
+      <div style="font-size:10px;color:#888;margin-top:6px;line-height:1.4">Solo cuentas de Google. La persona podrá entrar al modo editor en su navegador iniciando sesión con esa cuenta.</div>
+    </div>
+  </div>
+</div>
+<div id="cfgOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:4999" onclick="closeCfg()"></div>
+<div id="alertPanel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5000;width:85%;max-width:320px;background:#1a1a2e;border:2px solid #ff9800;border-radius:14px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.8);max-height:80vh;overflow-y:auto">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <span style="font-size:16px;font-weight:700;color:#ff9800">🔔 Alertas y Push</span>
+    <button onclick="document.getElementById('alertPanel').style.display='none';document.getElementById('alertOverlay').style.display='none'" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer">✕</button>
+  </div>
+  <div style="margin-bottom:10px"><label style="font-size:14px;color:#eee;display:block;margin-bottom:4px">🔔 Alerta mi cargada (app abierta)</label><select id="vibrateCfg" onchange="setVibrateN(+this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
+  <div style="margin-bottom:12px;border-top:1px solid rgba(124,58,237,.2);padding-top:10px">
+    <div style="font-size:14px;font-weight:700;color:#c084fc;margin-bottom:8px">📲 Push (app cerrada)</div>
+    <button id="pushSubBtn" onclick="subscribePush()" style="width:100%;padding:12px;border:2px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.15);color:#c084fc;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px">🔔 Activar notificaciones push</button>
+    <div id="pushSettings" style="display:none">
+      <div style="margin-bottom:8px"><label style="font-size:13px;color:#eee;display:block;margin-bottom:4px">👁️ Vigilar grupo</label><select id="pushWatchGrp" onchange="updatePushToken()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="0">Mi grupo</option></select></div>
+      <div style="margin-bottom:8px"><label style="font-size:13px;color:#eee;display:block;margin-bottom:4px">⏰ Avisar con anticipación</label><select id="pushAlertBefore" onchange="updatePushToken()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="1">1 cambio antes</option><option value="2">2 cambios antes</option><option value="3" selected>3 cambios antes</option><option value="5">5 cambios antes</option></select></div>
+      <div style="padding:6px;background:rgba(76,175,80,.08);border-radius:6px;font-size:12px;color:#4CAF50">✅ Push activo · Recibirás alerta cuando tu grupo se acerque</div>
+    </div>
+    <div style="font-size:11px;color:#888;margin-top:4px;text-align:center">Recibí alertas aunque la app esté cerrada</div>
+  </div>
+</div>
+<div id="alertOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:4999" onclick="document.getElementById('alertPanel').style.display='none';this.style.display='none'"></div>
+<div id="pushNotiBanner" style="display:none;position:fixed;top:56px;left:8px;right:8px;z-index:5001;padding:12px;background:rgba(124,58,237,.95);border-radius:10px;color:#fff;font-size:14px;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,.5)" onclick="this.style.display='none'"></div>
+
+<div class="vtabs">
+  <button class="vtab" onclick="showView(0)">🗺️ MAPA</button>
+  <button class="vtab a" onclick="showView(1)" style="font-weight:700">✝️ AVANCE</button>
+</div>
+
+<div class="pnl" id="v0">
+  <div class="notice" id="noti"></div>
+  <div style="position:relative">
+    <div id="map"></div>
+    <div id="streetView" style="display:none;width:100%;height:calc(100vh - 110px);min-height:300px"></div>
+    <button id="bStreet" onclick="closeStreetView()" class="mapbtn" style="display:none;position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:1001;background:rgba(220,38,38,.85);border-color:#dc2626">✕ Cerrar Street View</button>
+    <!-- Right side: edit controls -->
+    <div id="mapEditBar" style="position:absolute;top:8px;right:8px;z-index:1000;display:flex;flex-direction:column;gap:5px">
+      <button id="bEdit" onclick="toggleEdit()" class="mapbtn">✏️ Editar</button>
+    </div>
+    <div id="mapEditTools" style="position:absolute;top:8px;right:8px;z-index:1000;display:none;flex-direction:column;gap:5px">
+      <button id="bEditClose" onclick="toggleEdit()" class="mapbtn" style="background:rgba(76,175,80,.85)">✏️ Editando</button>
+      <button id="bDrag" onclick="toggleDrag()" class="mapbtn">🔀 Mover</button>
+      <button onclick="addRef()" class="mapbtn">📌 Ref</button>
+      <button onclick="undoMapEdit()" class="mapbtn">↩️ Deshacer</button>
+      <button onclick="exportPoints()" class="mapbtn">📤 Exportar</button>
+      <button id="mapLockBtn" onclick="toggleMapLock()" class="mapbtn">🔓 Mapa libre</button>
+      <button id="bRouteW" onclick="toggleEditWomen()" class="mapbtn" style="font-size:10px">🔵 Ruta mujeres</button>
+    </div>
+    <!-- Left side: view controls -->
+    <div style="position:absolute;top:8px;left:8px;z-index:1000;display:flex;flex-direction:column;gap:5px">
+      <button id="bGps" onclick="toggleGps()" class="mapbtn">📍 Mi Ubicación</button>
+      <button id="bAll" onclick="toggleAll()" class="mapbtn">👥 Ver otros grupos</button>
+      <button onclick="openStreetView(gmap.getCenter().lat(),gmap.getCenter().lng())" class="mapbtn" style="background:rgba(26,115,232,.8);border-color:#1a73e8">🛣️ Street View</button>
+      <button id="bUrna" onclick="toggleUrna('jesus')" class="mapbtn" style="display:none;background:rgba(220,38,38,.8);border-color:#dc2626">✝️ Anda Jesús</button>
+      <button id="bUrnaV" onclick="toggleUrna('virgen')" class="mapbtn" style="display:none;background:rgba(59,130,246,.8);border-color:#3b82f6">👑 Anda Virgen</button>
+    </div>
+  </div>
+</div>
+<div class="pnl a" id="v1">
+  <div style="position:sticky;top:52px;z-index:2000;background:#1a0a1f;padding:0 10px;border-bottom:1px solid rgba(255,255,255,.06)">
+    <div id="bannersContainer"></div>
+    <div id="stickyInfo"></div>
+  </div>
+  <div id="livePanel" style="padding:10px"></div>
+</div>
+<div id="tbl" style="display:none"></div>
+
+<!-- Modal for shared users -->
+<div id="sharedModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;align-items:center;justify-content:center;padding:16px;overflow-y:auto">
+  <div style="max-width:340px;width:100%;margin:auto">
+    <!-- Step 1: Choose type -->
+    <div id="step1" style="text-align:center">
+      <div style="font-size:16px;color:#c084fc;font-weight:700;margin-bottom:4px">✝️ JESÚS NAZARENO</div>
+      <div style="font-size:12px;color:#ccc;margin-bottom:16px" id="sharedDayLabel"></div>
+      <div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div>
+      <div style="display:flex;gap:12px;justify-content:center">
+        <div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#1a0a1f;border:2px solid #7c3aed;border-radius:14px;padding:12px;text-align:center">
+          <img src="../jesus.jpg" style="width:100%;border-radius:10px;margin-bottom:8px">
+          <div style="font-size:14px;color:#c084fc;font-weight:700">CARGADOR</div>
+          <div style="font-size:11px;color:#aaa">21 grupos</div>
+        </div>
+        <div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#1a0a1f;border:2px solid #7c3aed;border-radius:14px;padding:12px;text-align:center">
+          <img src="../maria.jpg" style="width:100%;border-radius:10px;margin-bottom:8px">
+          <div style="font-size:14px;color:#c084fc;font-weight:700">CARGADORA</div>
+          <div style="font-size:11px;color:#aaa">27 grupos</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Color (only for women) -->
+    <div id="step2" style="display:none;text-align:center">
+      <div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Tu color?</div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button onclick="pickColor(0)" style="flex:1;padding:16px;border:2px solid #fbbf24;border-radius:12px;background:rgba(251,191,36,.15);font-size:24px;cursor:pointer">🟡<br><span style="font-size:12px;color:#fbbf24">Amarillo</span></button>
+        <button onclick="pickColor(1)" style="flex:1;padding:16px;border:2px solid #ef4444;border-radius:12px;background:rgba(239,68,68,.15);font-size:24px;cursor:pointer">🔴<br><span style="font-size:12px;color:#ef4444">Rojo</span></button>
+        <button onclick="pickColor(2)" style="flex:1;padding:16px;border:2px solid #3b82f6;border-radius:12px;background:rgba(59,130,246,.15);font-size:24px;cursor:pointer">🔵<br><span style="font-size:12px;color:#3b82f6">Azul</span></button>
+      </div>
+      <button onclick="$('step2').style.display='none';$('step1').style.display='block'" style="margin-top:12px;background:none;border:none;color:#888;font-size:12px;cursor:pointer;font-family:inherit">← Atrás</button>
+    </div>
+
+    <!-- Step 3: Group number grid -->
+    <div id="step3" style="display:none;text-align:center">
+      <div style="font-size:14px;color:#eee;margin-bottom:4px;font-weight:600">¿Tu grupo?</div>
+      <div style="font-size:11px;color:#aaa;margin-bottom:12px" id="step3label"></div>
+      <div id="groupGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px"></div>
+      <button onclick="$('step3').style.display='none';sharedPickedType===27?($('step2').style.display='block'):($('step1').style.display='block')" style="margin-top:12px;background:none;border:none;color:#888;font-size:12px;cursor:pointer;font-family:inherit">← Atrás</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- Application code (must run before Maps so window.initMap is defined) -->
+<script src="../routes-data.js"></script>
+<script src="../app.js"></script>
+<!-- Google Maps API (calls initMap when ready) -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxQxXH4qihmmjiGTVdWC7QnBfdbklfcU8&libraries=geometry&callback=initMap" async defer></script>
+
+
+<div id="editorStatus" class="adminOnly" style="position:fixed;bottom:50px;left:0;right:0;background:rgba(0,0,0,.85);color:#0f0;font-size:10px;padding:3px 8px;z-index:9999;font-family:monospace;display:none"></div>
+</body>
+</html>

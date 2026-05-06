@@ -35,8 +35,8 @@ self.addEventListener('notificationclick', function(event) {
   );
 });
 
-const CACHE_NAME = 'semana-santa-v52';
-const URLS_TO_CACHE = ['./', './index.html', './app.js', './app.css', './routes-data.js', './icon-192.png', './icon-512.png', './se-icon-192.png', './jesus.jpg', './maria.jpg', './se-entierro.jpg', './se-virgen.jpg'];
+const CACHE_NAME = 'semana-santa-v53';
+const URLS_TO_CACHE = ['./', './index.html', './app.js', './app.css', './routes-data.js', './icon-192.png', './icon-512.png', './se-icon-192.png', './jesus.jpg', './maria.jpg', './se-entierro.jpg', './se-virgen.jpg', './jesus-nazareno/', './jesus-nazareno/index.html', './jesus-nazareno/manifest.json', './santo-entierro/', './santo-entierro/index.html', './santo-entierro/manifest.json'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(URLS_TO_CACHE)));
@@ -59,7 +59,7 @@ self.addEventListener('fetch', event => {
     return;
   }
   // HTML and the JS/CSS bundle: network-first so deploys propagate quickly.
-  if(event.request.url.includes('.html')||event.request.url.endsWith('/Nazareno/')||event.request.url.endsWith('/Nazareno')||url.pathname.endsWith('app.js')||url.pathname.endsWith('app.css')||url.pathname.endsWith('routes-data.js')){
+  if(event.request.url.includes('.html')||url.pathname.endsWith('/')||url.pathname.endsWith('app.js')||url.pathname.endsWith('app.css')||url.pathname.endsWith('routes-data.js')){
     event.respondWith(fetch(event.request).then(r=>{if(r.ok){const c=r.clone();caches.open(CACHE_NAME).then(cache=>cache.put(event.request,c));}return r;}).catch(()=>caches.match(event.request)));
   } else {
     event.respondWith(caches.match(event.request).then(c=>c||fetch(event.request).then(r=>{if(r.ok){const cl=r.clone();caches.open(CACHE_NAME).then(cache=>cache.put(event.request,cl));}return r;})));
