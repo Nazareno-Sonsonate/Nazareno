@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<link rel="manifest" href="manifest.json">
+<!-- Landing chooser deliberately has no <link rel="manifest"> so it isn't -->
+<!-- installable — visitors should install Jesús Nazareno or Santo Entierro -->
+<!-- directly, each with its own narrow scope. The backwards-compat -->
+<!-- manifest.json at root is still served for older installs that already -->
+<!-- reference it; new visitors don't see an install banner here. -->
 <meta name="theme-color" content="#1a0a1f">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
