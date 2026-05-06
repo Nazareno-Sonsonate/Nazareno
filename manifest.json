@@ -3,6 +3,7 @@
   "short_name": "Procesión",
   "description": "Rastreo de cargadas - Semana Santa Sonsonate",
   "start_url": "./index.html",
+  "scope": "./",
   "id": "/procesion/",
   "display": "standalone",
   "orientation": "portrait",
