@@ -85,11 +85,16 @@ function isZoom() { return Date.now()-lastMulti<500; }
 // ========== URL PARAMS & SHARING ==========
 // Default to PUBLIC (shared) — admin status comes from Firebase Auth
 let isShared = true;
-let isSEMode = false;
-let explicitDay = false;
+// Detect Santo Entierro at parse time so the rest of the script sees the
+// right value. The dedicated /santo-entierro/index.html sets window._forceSE
+// before loading us; otherwise fall back to the legacy ?se=1 query string.
+let isSEMode = (typeof window!=='undefined' && window._forceSE === true);
+let explicitDay = isSEMode;
+if(isSEMode) currentDay = 4;
 function readParams(){
   const p = new URLSearchParams(window.location.search);
-  // Legacy: ?se=1 → day 4 + SE theme
+  // Legacy: ?se=1 → day 4 + SE theme (kept for backward compatibility with
+  // shared links from before the santo-entierro/ subdirectory existed)
   if(p.has('se')){
     currentDay=4;isSEMode=true;explicitDay=true;
   }
@@ -202,11 +207,17 @@ function reopenGroupSelector(){
 }
 
 function shareWhatsApp(){
-  // Two distinct entry points: SE link locks viewers to Santo Entierro,
-  // bare URL locks them to the regular procession days (Lun-Vie).
-  const base=window.location.origin+window.location.pathname;
-  const isSE=isSEMode||currentDay===4;
-  const link=isSE?(base+'?se=1'):base;
+  // Two installable PWAs from this codebase. Each lives at its own URL so
+  // the home-screen icons stay separate. Build the canonical link for the
+  // current mode by stripping (or appending) the santo-entierro/ segment.
+  const isSE = isSEMode || currentDay === 4;
+  let pn = window.location.pathname;
+  // Normalize: strip optional trailing index.html, then strip santo-entierro/.
+  pn = pn.replace(/index\.html$/, '');
+  pn = pn.replace(/santo-entierro\/$/, '');
+  if(!pn.endsWith('/')) pn += '/';
+  const procBase = window.location.origin + pn;
+  const link = isSE ? (procBase + 'santo-entierro/') : procBase;
   const msg=(isSE?'⚰️ *Santo Entierro de Cristo · Sonsonate*\n\n':'✝️ *Procesión de Semana Santa · Sonsonate*\n\n')
     +'Rastreo en vivo de la procesión\n'
     +'Abrí el link, elegí tu grupo y mirá tus cargadas:\n'+link;
