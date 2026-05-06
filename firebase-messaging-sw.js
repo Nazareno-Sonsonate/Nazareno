@@ -35,8 +35,8 @@ self.addEventListener('notificationclick', function(event) {
   );
 });
 
-const CACHE_NAME = 'semana-santa-v48';
-const URLS_TO_CACHE = ['./', './index.html', './icon-192.png', './icon-512.png', './jesus.jpg', './maria.jpg'];
+const CACHE_NAME = 'semana-santa-v52';
+const URLS_TO_CACHE = ['./', './index.html', './app.js', './app.css', './routes-data.js', './icon-192.png', './icon-512.png', './se-icon-192.png', './jesus.jpg', './maria.jpg', './se-entierro.jpg', './se-virgen.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(URLS_TO_CACHE)));
@@ -52,7 +52,14 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if(url.hostname.includes('googleapis.com')||url.hostname.includes('gstatic.com')||url.hostname.includes('firebaseio.com')||url.hostname.includes('firebase')||url.hostname.includes('fcm')) return;
-  if(event.request.url.includes('.html')||event.request.url.endsWith('/procesion/')||event.request.url.endsWith('/procesion')){
+  // Never cache manifests — the choice between procession and Santo Entierro
+  // depends on what the user requests this load and must always be fresh.
+  if(url.pathname.endsWith('.json') && (url.pathname.includes('manifest'))){
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  // HTML and the JS/CSS bundle: network-first so deploys propagate quickly.
+  if(event.request.url.includes('.html')||event.request.url.endsWith('/Nazareno/')||event.request.url.endsWith('/Nazareno')||url.pathname.endsWith('app.js')||url.pathname.endsWith('app.css')||url.pathname.endsWith('routes-data.js')){
     event.respondWith(fetch(event.request).then(r=>{if(r.ok){const c=r.clone();caches.open(CACHE_NAME).then(cache=>cache.put(event.request,c));}return r;}).catch(()=>caches.match(event.request)));
   } else {
     event.respondWith(caches.match(event.request).then(c=>c||fetch(event.request).then(r=>{if(r.ok){const cl=r.clone();caches.open(CACHE_NAME).then(cache=>cache.put(event.request,cl));}return r;})));

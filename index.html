@@ -3,15 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<!-- Static defaults; the inline script below swaps them for ?se=1 BEFORE -->
+<!-- the parser keeps going so the install prompt picks the right PWA. -->
+<link rel="manifest" href="manifest.json" id="appManifest">
+<meta name="theme-color" content="#1a0a1f" id="appTheme">
+<link rel="apple-touch-icon" href="icon-192.png" id="appIcon">
+<meta name="apple-mobile-web-app-title" content="Procesión" id="appTitle">
 <script>
-// Pick the right manifest BEFORE first paint so the install prompt picks up
-// the correct PWA identity. ?se=1 → Santo Entierro app; otherwise → procession.
 (function(){
-  var isSE = new URLSearchParams(window.location.search).has('se');
-  document.write('<link rel="manifest" href="' + (isSE ? 'manifest-se.json' : 'manifest.json') + '" id="appManifest">');
-  document.write('<meta name="theme-color" content="' + (isSE ? '#000000' : '#1a0a1f') + '">');
-  document.write('<link rel="apple-touch-icon" href="' + (isSE ? 'se-icon-192.png' : 'icon-192.png') + '">');
-  document.write('<meta name="apple-mobile-web-app-title" content="' + (isSE ? 'Santo Entierro' : 'Procesión') + '">');
+  if(!new URLSearchParams(window.location.search).has('se')) return;
+  var m = document.getElementById('appManifest'); if(m) m.href='manifest-se.json';
+  var t = document.getElementById('appTheme');    if(t) t.setAttribute('content','#000000');
+  var i = document.getElementById('appIcon');     if(i) i.href='se-icon-192.png';
+  var n = document.getElementById('appTitle');    if(n) n.setAttribute('content','Santo Entierro');
 })();
 </script>
 <meta name="apple-mobile-web-app-capable" content="yes">
