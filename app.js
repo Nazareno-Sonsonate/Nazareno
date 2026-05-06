@@ -127,7 +127,7 @@ function readParams(){
       if(isSEMode){
         var step1El=document.getElementById('step1');
         if(step1El){
-          step1El.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#e8e8e8;font-weight:700;margin-bottom:4px;letter-spacing:1px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#aaa;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div style="display:flex;gap:12px;justify-content:center"><div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#000;border:2px solid #444;border-radius:14px;padding:12px;text-align:center"><img src="se-entierro.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#e8e8e8;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">22 grupos</div></div><div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#000;border:2px solid #444;border-radius:14px;padding:12px;text-align:center"><img src="se-virgen.jpg" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#e8e8e8;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">23 grupos</div></div></div>';
+          step1El.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#e8e8e8;font-weight:700;margin-bottom:4px;letter-spacing:1px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#aaa;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div style="display:flex;gap:12px;justify-content:center"><div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#000;border:2px solid #444;border-radius:14px;padding:12px;text-align:center"><img src="'+_asset('se-entierro.jpg')+'" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#e8e8e8;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">22 grupos</div></div><div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#000;border:2px solid #444;border-radius:14px;padding:12px;text-align:center"><img src="'+_asset('se-virgen.jpg')+'" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#e8e8e8;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">23 grupos</div></div></div>';
         }
       }
       $('sharedModal').style.display='flex';
@@ -270,6 +270,15 @@ const $ = id => document.getElementById(id);
 function _escapeHtml(s){
   return String(s==null?'':s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
 }
+
+// Static asset prefix. The procession and Santo Entierro PWAs live in
+// /jesus-nazareno/ and /santo-entierro/ subdirectories; their HTML and
+// markers reference shared images that live in the parent directory.
+var _ASSET_PREFIX = (function(){
+  var pn = window.location.pathname;
+  return (pn.indexOf('/jesus-nazareno/') !== -1 || pn.indexOf('/santo-entierro/') !== -1) ? '../' : './';
+})();
+function _asset(name){ return _ASSET_PREFIX + name; }
 
 // Non-blocking alert that replaces the native one. Native browser alerts
 // pause the entire JS thread and on PWAs are sometimes suppressed entirely;
@@ -2870,7 +2879,7 @@ function startKeepAlive(){
     navigator.serviceWorker.ready.then(function(reg){
       reg.showNotification('📡 Rastreando procesión',{
         body:'GPS activo — no cierre la app',
-        icon:'./icon-192.png',
+        icon:_asset('icon-192.png'),
         tag:'gps-active',
         requireInteraction:true,
         silent:true
@@ -3041,8 +3050,8 @@ function smoothMove(tipo,target){
   _smoothTimers[tipo]=requestAnimationFrame(step);
 }
 function getAndaIcon(tipo){
-  if(tipo==='jesus') return isSEMode?'se-entierro-marker.png':'jesus-marker.png';
-  return isSEMode?'se-virgen-marker.png':'maria-marker.png';
+  if(tipo==='jesus') return isSEMode?_asset('se-entierro-marker.png'):_asset('jesus-marker.png');
+  return isSEMode?_asset('se-virgen-marker.png'):_asset('maria-marker.png');
 }
 function getAndaColor(tipo){
   if(isSEMode) return '#e8e8e8';
@@ -3148,8 +3157,8 @@ function listenAnda(tipo,imgUrl,color,zIdx){
     }
   });
 }
-listenAnda('jesus',isSEMode?'se-entierro-marker.png':'jesus-marker.png',isSEMode?'#e8e8e8':'#dc2626',10000);
-listenAnda('virgen',isSEMode?'se-virgen-marker.png':'maria-marker.png',isSEMode?'#e8e8e8':'#3b82f6',9998);
+listenAnda('jesus',isSEMode?_asset('se-entierro-marker.png'):_asset('jesus-marker.png'),isSEMode?'#e8e8e8':'#dc2626',10000);
+listenAnda('virgen',isSEMode?_asset('se-virgen-marker.png'):_asset('maria-marker.png'),isSEMode?'#e8e8e8':'#3b82f6',9998);
 
 // AHSEC GPS tracking for SE mode
 // ========== VIBRATION ALERTS ==========
@@ -3193,7 +3202,7 @@ function checkVibrate(cambio){
           if(navigator.vibrate) navigator.vibrate([300,100,300,100,500]);
           if('Notification' in window){
             if(Notification.permission==='granted'){
-              try{new Notification('🔔 ¡Prepárate!',{body:'Tu cargada #'+myCarries[i].ci+' está a '+diff+' cambio'+(diff>1?'s':'')+' · Grupo #'+myCarries[i].grp,icon:isSEMode?'se-icon-192.png':'icon-192.png',tag:'cargada-'+myCarries[i].ci,renotify:true});}catch(e){_logErr("swallow",e);}
+              try{new Notification('🔔 ¡Prepárate!',{body:'Tu cargada #'+myCarries[i].ci+' está a '+diff+' cambio'+(diff>1?'s':'')+' · Grupo #'+myCarries[i].grp,icon:_asset(isSEMode?'se-icon-192.png':'icon-192.png'),tag:'cargada-'+myCarries[i].ci,renotify:true});}catch(e){_logErr("swallow",e);}
             } else if(Notification.permission!=='denied'){
               Notification.requestPermission();
             }
@@ -3218,7 +3227,7 @@ function checkVibrate(cambio){
         if(wDiff<=10&&wDiff>=0){
           if(navigator.vibrate) navigator.vibrate([200,100,200,100,200,100,400]);
           if('Notification' in window&&Notification.permission==='granted'){
-            try{new Notification('👁️ Grupo #'+watchGrp+(wDiff===0?' ¡AHORA!':' en '+wDiff+' cambio'+(wDiff>1?'s':'')),{body:wDiff===0?'El grupo que vigilás está cargando ahora':'Faltan '+wDiff+' cambio'+(wDiff>1?'s':'')+' para el Grupo #'+watchGrp,icon:isSEMode?'se-icon-192.png':'icon-192.png',tag:'watch-'+watchGrp,renotify:true});}catch(e){_logErr("swallow",e);}
+            try{new Notification('👁️ Grupo #'+watchGrp+(wDiff===0?' ¡AHORA!':' en '+wDiff+' cambio'+(wDiff>1?'s':'')),{body:wDiff===0?'El grupo que vigilás está cargando ahora':'Faltan '+wDiff+' cambio'+(wDiff>1?'s':'')+' para el Grupo #'+watchGrp,icon:_asset(isSEMode?'se-icon-192.png':'icon-192.png'),tag:'watch-'+watchGrp,renotify:true});}catch(e){_logErr("swallow",e);}
           }
           found=true;
           break;
@@ -3259,7 +3268,7 @@ if(_isSE){
           // Update SE marker
           if(gmap){
             if(!urnaMarkers.jesus){
-              urnaMarkers.jesus=new google.maps.Marker({position:ll,map:gmap,zIndex:10000,icon:{url:'se-entierro-marker.png',scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)}});
+              urnaMarkers.jesus=new google.maps.Marker({position:ll,map:gmap,zIndex:10000,icon:{url:_asset('se-entierro-marker.png'),scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)}});
               urnaMarkers.jesus._ring=new google.maps.Circle({center:ll,map:gmap,radius:15,fillColor:'#e8e8e8',fillOpacity:0.25,strokeColor:'#e8e8e8',strokeWeight:5,strokeOpacity:0.9,zIndex:9999});
             } else {
               urnaMarkers.jesus.setPosition(ll);
@@ -3349,7 +3358,7 @@ if(_isSE){
           var llV={lat:+latV,lng:+lngV};
           if(gmap){
             if(!urnaMarkers.virgen){
-              urnaMarkers.virgen=new google.maps.Marker({position:llV,map:gmap,zIndex:9998,icon:{url:'se-virgen-marker.png',scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)}});
+              urnaMarkers.virgen=new google.maps.Marker({position:llV,map:gmap,zIndex:9998,icon:{url:_asset('se-virgen-marker.png'),scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)}});
               urnaMarkers.virgen._ring=new google.maps.Circle({center:llV,map:gmap,radius:15,fillColor:'#3b82f6',fillOpacity:0.25,strokeColor:'#3b82f6',strokeWeight:5,strokeOpacity:0.9,zIndex:9997});
             } else {
               urnaMarkers.virgen.setPosition(llV);
@@ -3648,8 +3657,8 @@ function updateBanners(){
     window._bannerSEMode=isSEMode;
     var jLabel1=isSEMode?'Santo Entierro':'Jesús Nazareno';
     var vLabel=isSEMode?'Virgen Dolorosa':'María Santísima';
-    var jImg=isSEMode?'se-entierro.jpg':'jesus.jpg';
-    var vImg=isSEMode?'se-virgen.jpg':'maria.jpg';
+    var jImg=isSEMode?_asset('se-entierro.jpg'):_asset('jesus.jpg');
+    var vImg=isSEMode?_asset('se-virgen.jpg'):_asset('maria.jpg');
     // Main banner = user's type (full with image)
     // Secondary = other type (slim line)
     var mainLabel=isMuj?vLabel:jLabel1;
