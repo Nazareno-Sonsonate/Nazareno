@@ -3503,7 +3503,6 @@ function showAdminTools(){
   if(!isShared){
     document.getElementById('broadcastInput').style.display='block';
     document.getElementById('onlineCounter').style.display='block';
-    var es=document.getElementById('editorStatus');if(es) es.style.display='block';
     db.ref('online').on('value',function(snap){
       var d=snap.val();
       if(!d){document.getElementById('onlineCounter').textContent='👥 0 conectados';return;}
@@ -3923,42 +3922,13 @@ function startDayListeners(){
       try{checkVibrate(d.cambio);}catch(e10){_logErr('checkVibrate',e10);}
     }
   });
-  // Defensive backup poll on top of the realtime listener; covers cases
-  // where the Firebase websocket drops silently. fetch + AbortController
-  // replaces the earlier XMLHttpRequest-with-callbacks plumbing.
-  async function syncGrupo(){
-    var ss = document.getElementById('editorStatus');
-    var setStatus = function(text){ if(ss) ss.textContent = text; };
-    var ctrl = new AbortController();
-    var timer = setTimeout(function(){ ctrl.abort(); }, 5000);
-    try{
-      var resp = await fetch('https://procesion-sonsonate-default-rtdb.firebaseio.com/grupoActual/day'+currentDay+'.json?t='+Date.now(), {signal: ctrl.signal});
-      if(!resp.ok){ setStatus('❌ HTTP '+resp.status); return; }
-      var d = await resp.json();
-      if(!d) return;
-      // Reject responses older than what we already have
-      if(liveGrupoData && d.t && liveGrupoData.t && d.t < liveGrupoData.t) return;
-      var now = new Date();
-      window._lastSync = '🟢 '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+' · FB:'+d.cambio+' Local:'+currentGrupoActual;
-      setStatus(window._lastSync);
-      currentGrupoActual = d.cambio || 0;
-      liveGrupoData = d;
-      if(d.desfase !== undefined) virgenDesfase = d.desfase;
-      if(d.movidos !== undefined) virgenMovidos = d.movidos;
-      if(d.virgenMn) virgenMn = d.virgenMn;
-      if(d.sacaMuj) daySacaMuj[currentDay] = d.sacaMuj;
-      try{updateGrupoUI();}catch(e7){_logErr('updateGrupoUI',e7);}
-      try{if(typeof renderLive==='function') renderLive();}catch(e9){_logErr('renderLive',e9);}
-    }catch(err){
-      if(err && err.name === 'AbortError') setStatus('❌ Timeout');
-      else setStatus('❌ '+(err && err.message ? err.message : 'Sin conexión'));
-    }finally{
-      clearTimeout(timer);
-    }
-  }
-  syncGrupo();
-  setInterval(syncGrupo,10000);
-  document.addEventListener('visibilitychange',function(){if(!document.hidden)syncGrupo();});
+  // The Firebase websocket listener registered above is the single source
+  // of truth for grupoActual updates. The previous backup XHR poll was
+  // redundant — it duplicated the same data fetch over HTTP every 10s and
+  // surfaced false-alarm Timeout banners on flaky mobile networks even
+  // when realtime sync was working fine. Dropped on purpose; if the
+  // websocket really did silently drop in production we'd add a smarter
+  // health check instead.
   // Config sync
   if(!isShared){
     ['cS','cHour','cMin','cMn'].forEach(function(id){
