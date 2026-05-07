@@ -1213,32 +1213,100 @@ function distToSegment(p,a,b){
 var mapHistory=[];
 var mapHistoryW=[];
 
+// Take a full snapshot of the editable state so any undo can restore both
+// the route points AND the waypoint references for the current day.
 function pushMapHistory(){
-  mapHistory.push(positions.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};}));
-  if(mapHistory.length>20) mapHistory.shift();
+  var wps = (typeof getWPs==='function') ? getWPs() : [];
+  mapHistory.push({
+    positions: positions.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};}),
+    wps: wps.map(function(w){return{lat:w.lat,lng:w.lng,n:w.n||''};}),
+    day: currentDay,
+    t: Date.now()
+  });
+  if(mapHistory.length>30) mapHistory.shift();
+  _updateUndoButton();
 }
 function pushMapHistoryW(){
   mapHistoryW.push(positionsW.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};}));
-  if(mapHistoryW.length>20) mapHistoryW.shift();
+  if(mapHistoryW.length>30) mapHistoryW.shift();
+  _updateUndoButton();
+}
+
+// Update the visible undo button to show how many steps back we can go
+function _updateUndoButton(){
+  var btn = document.querySelector('button[onclick="undoMapEdit()"]');
+  if(!btn) return;
+  var count = editingWomen ? mapHistoryW.length : mapHistory.length;
+  if(count === 0){
+    btn.textContent = '↩️ Deshacer';
+    btn.style.opacity = '0.4';
+  } else {
+    btn.textContent = '↩️ Deshacer ('+count+')';
+    btn.style.opacity = '1';
+  }
+}
+
+function _showUndoToast(remaining){
+  var t=document.getElementById('undoToast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='undoToast';
+    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(76,175,80,.95);color:#fff;padding:10px 18px;border-radius:24px;font-size:14px;font-weight:600;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,.4);transition:opacity .3s;pointer-events:none';
+    document.body.appendChild(t);
+  }
+  t.textContent='↩️ Deshecho · '+remaining+' paso'+(remaining===1?'':'s')+' restante'+(remaining===1?'':'s');
+  t.style.opacity='1';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(function(){ t.style.opacity='0'; },2200);
 }
 
 function undoMapEdit(){
   if(editingWomen){
-    if(mapHistoryW.length===0){alert('No hay cambios para deshacer');return;}
+    if(mapHistoryW.length===0){customAlert('No hay cambios para deshacer en la ruta de mujeres');return;}
     positionsW=mapHistoryW.pop();
     drawRouteLine();
     renderMarkersW();
     syncPositionsW();
+    _updateUndoButton();
+    _showUndoToast(mapHistoryW.length);
   } else {
-    if(mapHistory.length===0){alert('No hay cambios para deshacer');return;}
-    positions=mapHistory.pop();
+    if(mapHistory.length===0){customAlert('No hay cambios para deshacer');return;}
+    var snap=mapHistory.pop();
+    if(snap.day !== currentDay){
+      // Restore the day first so the snapshot makes sense
+      mapHistory.push(snap);
+      customAlert('Ese cambio era de '+(dayNames[snap.day]||'otro día')+'. Cambiá a ese día y volvé a presionar deshacer.');
+      _updateUndoButton();
+      return;
+    }
+    positions=snap.positions;
+    // Restore waypoints if the snapshot has them (older snapshots without
+    // wps stay backward-compatible — only positions get restored)
+    if(snap.wps && typeof getWPs==='function'){
+      var wps=getWPs();
+      wps.length=0;
+      snap.wps.forEach(function(w){wps.push(w);});
+      try{ if(typeof renderWPmarkers==='function') renderWPmarkers(); }catch(e){_logErr('renderWPmarkers',e);}
+    }
     drawRouteLine();
     allMarkers.forEach(function(m){m.setMap(null);});
     allMarkers=[];
     calc();
     if(typeof syncPositions==='function') syncPositions();
+    _updateUndoButton();
+    _showUndoToast(mapHistory.length);
   }
 }
+
+// Keyboard shortcut for desktop admins editing in a browser
+document.addEventListener('keydown', function(e){
+  if(!editMode) return;
+  // Ctrl+Z (Windows/Linux) or Cmd+Z (Mac)
+  if((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey){
+    e.preventDefault();
+    undoMapEdit();
+  }
+});
 
 function toggleEditWomen(){
   editingWomen=!editingWomen;
@@ -1286,6 +1354,7 @@ function renderMarkersW(){
           infoWin.setContent('<div style="text-align:center;color:#111;font-size:13px"><b style="color:#3b82f6">🔵 Punto #'+(idx+1)+'</b><br><span style="font-size:11px">Ruta mujeres</span>'+del+'</div>');
           infoWin.open(gmap,mk2);
         });
+        mk2.addListener('dragstart',function(){ pushMapHistoryW(); });
         mk2.addListener('dragend',function(){
           var p=mk2.getPosition();
           positionsW[idx]={lat:p.lat(),lng:p.lng(),n:positionsW[idx].n||''};
@@ -1539,6 +1608,7 @@ function renderWPmarkers() {
       infoWin.open(gmap,mk);
     });
     if(dragMode&&editMode){
+      mk.addListener('dragstart',function(){ pushMapHistory(); });
       mk.addListener('dragend',function(){
         const p=mk.getPosition();
         wps[i].lat=p.lat(); wps[i].lng=p.lng();
@@ -1552,6 +1622,7 @@ function renderWPmarkers() {
 async function addRef(){
   const name=await customPrompt('Nombre de la referencia:');
   if(!name) return;
+  pushMapHistory();
   const center=gmap.getCenter();
   const wps=getWPs();
   wps.push({n:name,lat:center.lat(),lng:center.lng()});
@@ -1562,6 +1633,7 @@ async function addRef(){
 function deleteRef(i){
   const wps=getWPs();
   if(i<0||i>=wps.length) return;
+  pushMapHistory();
   wps.splice(i,1);
   infoWin.close();
   renderWPmarkers();
@@ -1573,6 +1645,7 @@ async function renameRef(i){
   if(i<0||i>=wps.length) return;
   const name=await customPrompt('Nuevo nombre para referencia:',wps[i].n);
   if(name===null) return;
+  pushMapHistory();
   wps[i].n=name;
   infoWin.close();
   renderWPmarkers();
@@ -1583,6 +1656,7 @@ async function renameChange(ci){
   if(ci<0||ci>=positions.length) return;
   const name=await customPrompt('Nuevo nombre para este cambio:',positions[ci].n||'');
   if(name===null) return;
+  pushMapHistory();
   positions[ci].n=name;
   infoWin.close();
   calc();
@@ -1683,6 +1757,7 @@ function renderMarkers() {
           infoWin.setContent('<div style="text-align:center;font-family:Georgia;min-width:150px;color:#111;font-size:13px"><b style="font-size:15px">Grupo #'+ch2.grp+'</b><br>Cambio #'+ch2.num+'<br><b>~'+ch2.time+'</b>'+tag+colorTag+ref+ren+del+svBtn2+'</div>');
           infoWin.open(gmap,mk2);
         });
+        mk2.addListener('dragstart',function(){ pushMapHistory(); });
         mk2.addListener('drag',function(){
           var p=mk2.getPosition();
           positions[ci2]={lat:p.lat(),lng:p.lng(),n:positions[ci2].n||''};
@@ -2234,6 +2309,8 @@ function toggleEdit(){
   $('mapEditBar').style.display=editMode?'none':'flex';
   $('mapEditTools').style.display=editMode?'flex':'none';
   if(!editMode&&dragMode) toggleDrag();
+  // Refresh the undo button count now that the toolbar is visible
+  if(editMode) _updateUndoButton();
 }
 function toggleDrag(){
   dragMode=!dragMode;
