@@ -74,7 +74,7 @@ body.se-mode .vtabs{background:#000!important;border-top-color:rgba(255,255,255,
 body.se-mode .vtab{color:#888!important}
 body.se-mode .vtab.a{color:#e8e8e8!important;border-top-color:#e8e8e8!important}
 body.se-mode .btn{border-color:#444!important;color:#e8e8e8!important;background:rgba(255,255,255,.06)!important}
-body.se-mode #grupoActualBanner{background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.18)!important}
+body.se-mode #grupoActualBanner{background:rgba(180,153,99,.12)!important;border-color:rgba(180,153,99,.32)!important}
 body.se-mode #grupoActualText{color:#e8e8e8!important}
 body.se-mode .live-next .ln-num{color:#e8e8e8!important}
 body.se-mode .live-next .ln-time{color:#e8e8e8!important}
@@ -104,6 +104,8 @@ body.se-mode .live-carry.pending .lc-num{color:#666!important}
 body.se-mode .live-carry.done .lc-num{color:#888!important}
 body.se-mode .live-carry.done .lc-ref{color:#888!important}
 body.se-mode .live-carry.done .lc-time{color:#aaa!important}
+/* Completed-cargada row in SE: switch the green wash for muted gold */
+body.se-mode .live-carry.done{background:rgba(180,153,99,.08)!important;border-color:rgba(180,153,99,.22)!important}
 /* Off-season banner: solemnize */
 body.se-mode #offSeasonBanner{background:rgba(255,255,255,.04)!important;color:#aaa!important;border-bottom-color:rgba(255,255,255,.1)!important}
 /* Catch any inline purple colors used by dynamic renderers */
