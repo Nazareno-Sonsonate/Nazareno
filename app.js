@@ -299,6 +299,75 @@ function showOffSeasonBanner(){
   else _init();
 })();
 
+// Pull-to-refresh: when scrolled to the top of the page, dragging downward
+// past the threshold reloads the page. Skipped if the touch starts on the
+// Google Map (Google Maps handles its own pan gestures and we don't want
+// to fight it). Designed to feel native on Android Chrome.
+(function(){
+  var startY=0, currentY=0, pulling=false, indicator=null;
+  var THRESHOLD=72;
+  function _ind(){
+    if(indicator) return indicator;
+    indicator=document.createElement('div');
+    indicator.id='ptrIndicator';
+    indicator.style.cssText='position:fixed;top:52px;left:0;right:0;height:0;background:rgba(26,10,31,.96);color:#aaa;text-align:center;z-index:3000;font-size:13px;font-weight:600;overflow:hidden;display:flex;align-items:center;justify-content:center;pointer-events:none;border-bottom:1px solid rgba(255,255,255,.08);transition:height .12s ease-out';
+    indicator.innerHTML='↓ Tirá para refrescar';
+    document.body.appendChild(indicator);
+    return indicator;
+  }
+  function _set(distance){
+    var ind=_ind();
+    var h=Math.min(distance,90);
+    ind.style.height=h+'px';
+    if(distance>THRESHOLD){
+      ind.innerHTML='↑ Soltá para refrescar';
+      ind.style.color='#4CAF50';
+    } else {
+      ind.innerHTML='↓ Tirá para refrescar';
+      ind.style.color='#aaa';
+    }
+  }
+  function _reset(){
+    var ind=_ind();
+    ind.style.transition='height .2s ease-out';
+    ind.style.height='0';
+    setTimeout(function(){ if(ind) ind.style.transition='height .12s ease-out'; },220);
+  }
+  document.addEventListener('touchstart',function(e){
+    if(window.scrollY>5) return;
+    if(e.touches.length!==1) return;
+    // Skip when the gesture starts inside the Google Map — Maps handles
+    // its own pan and we mustn't hijack it
+    var t=e.target;
+    if(t && (t.closest && (t.closest('#map') || t.closest('.gm-style')))) return;
+    startY=e.touches[0].pageY;
+    currentY=startY;
+    pulling=true;
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(!pulling) return;
+    if(window.scrollY>0){ pulling=false; _reset(); return; }
+    currentY=e.touches[0].pageY;
+    var distance=currentY-startY;
+    if(distance<0){ pulling=false; _reset(); return; }
+    if(distance>4) _set(distance);
+  },{passive:true});
+  document.addEventListener('touchend',function(){
+    if(!pulling) return;
+    pulling=false;
+    var distance=currentY-startY;
+    if(distance>THRESHOLD){
+      var ind=_ind();
+      ind.style.height='44px';
+      ind.style.color='#c084fc';
+      ind.innerHTML='⟳ Refrescando...';
+      setTimeout(function(){ location.reload(); },180);
+    } else {
+      _reset();
+    }
+  },{passive:true});
+})();
+
 const $ = id => document.getElementById(id);
 function _escapeHtml(s){
   return String(s==null?'':s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
