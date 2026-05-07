@@ -266,6 +266,39 @@ function showOffSeasonBanner(){
   else document.body.insertBefore(b,document.body.firstChild);
 }
 
+// Offline indicator: red banner under the header whenever the device drops
+// its network connection. We keep it minimal and pure-CSS so it can render
+// even if the rest of the app is mid-load.
+(function(){
+  function _ensureBanner(){
+    var b=document.getElementById('offlineBanner');
+    if(b) return b;
+    b=document.createElement('div');
+    b.id='offlineBanner';
+    b.style.cssText='padding:9px 12px;background:rgba(220,38,38,.18);border-bottom:1px solid rgba(220,38,38,.45);text-align:center;font-size:13px;color:#ff8a8a;font-weight:600;line-height:1.4;display:none';
+    b.innerHTML='📡 Sin conexión — los datos pueden estar desactualizados';
+    return b;
+  }
+  function _attach(){
+    var b=_ensureBanner();
+    if(b.parentNode) return; // already inserted
+    var hdr=document.querySelector('.hdr');
+    if(hdr && hdr.nextSibling) hdr.parentNode.insertBefore(b, hdr.nextSibling);
+    else if(document.body) document.body.insertBefore(b, document.body.firstChild);
+  }
+  function _show(){ _attach(); var b=document.getElementById('offlineBanner'); if(b) b.style.display='block'; }
+  function _hide(){ var b=document.getElementById('offlineBanner'); if(b) b.style.display='none'; }
+  // Wait for body to exist before trying to attach
+  function _init(){
+    _attach();
+    if(!navigator.onLine) _show();
+    window.addEventListener('offline', _show);
+    window.addEventListener('online', _hide);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', _init);
+  else _init();
+})();
+
 const $ = id => document.getElementById(id);
 function _escapeHtml(s){
   return String(s==null?'':s).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
