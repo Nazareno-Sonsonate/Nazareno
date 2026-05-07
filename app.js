@@ -3407,28 +3407,37 @@ document.addEventListener('click',function _reqNot(){
 
 var _isSE=new URLSearchParams(window.location.search).has('se');
 if(_isSE){
-  // Fetch GPS positions only (not full database)
-  function fetchAHSECGPS(){
+  // Fetch a single number from the AHSEC realtime DB. Returns null on
+  // any failure (HTTP error, timeout, parse error, missing/zero value).
+  async function _fetchAHSECValue(path){
+    var ctrl = new AbortController();
+    var timer = setTimeout(function(){ ctrl.abort(); }, 5000);
     try{
-      // Fetch SE position
-      var xhr=new XMLHttpRequest();
-      xhr.open('GET','https://bd-recorrido-ahsec-default-rtdb.firebaseio.com/latitud.json?_='+Date.now(),true);
-      xhr.timeout=5000;
-      xhr.onload=function(){
-        if(xhr.status!==200){var el=document.getElementById('ahsecStatus');if(el) el.textContent='⚰️ AHSEC HTTP:'+xhr.status;return;}
-        var lat=JSON.parse(xhr.responseText);
-        var el0=document.getElementById('ahsecStatus');
-        if(!lat||lat===0){if(el0) el0.textContent='⚰️ SE: sin señal GPS (lat='+lat+')';return;}
-        // Now fetch longitude
-        var xhr2=new XMLHttpRequest();
-        xhr2.open('GET','https://bd-recorrido-ahsec-default-rtdb.firebaseio.com/longitud.json?_='+Date.now(),true);
-        xhr2.timeout=5000;
-        xhr2.onload=function(){
-          if(xhr2.status!==200) return;
-          var lng=JSON.parse(xhr2.responseText);
-          if(!lng) return;
-          var ll={lat:+lat,lng:+lng};
-          // Update SE marker
+      var resp = await fetch('https://bd-recorrido-ahsec-default-rtdb.firebaseio.com/'+path+'?_='+Date.now(), {signal: ctrl.signal});
+      if(!resp.ok) return null;
+      var v = await resp.json();
+      return (v===null||v===undefined||v===0) ? null : v;
+    } catch(err){
+      _logErr('AHSEC '+path, err);
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function fetchAHSECGPS(){
+    var statusParts = [];
+
+    // ----- Jesus / Santo Entierro side -----
+    try {
+      var lat = await _fetchAHSECValue('latitud.json');
+      if(lat == null){
+        statusParts.push('⚰️ SE: sin señal GPS');
+      } else {
+        var lng = await _fetchAHSECValue('longitud.json');
+        if(lng != null){
+          var ll = {lat:+lat, lng:+lng};
+          statusParts.push('⚰️ SE: '+lat.toFixed(4)+','+lng.toFixed(4));
           if(gmap){
             if(!urnaMarkers.jesus){
               urnaMarkers.jesus=new google.maps.Marker({position:ll,map:gmap,zIndex:10000,icon:{url:_asset('se-entierro-marker.png'),scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)}});
@@ -3497,28 +3506,18 @@ if(_isSE){
               }
             }
           }
-          var el=document.getElementById('ahsecStatus');
-          if(el) el.textContent='⚰️ SE: '+lat.toFixed(4)+','+lng.toFixed(4);
-        };
-        xhr2.send();
-      };
-      xhr.send();
-      // Fetch Virgen position
-      var xhrV=new XMLHttpRequest();
-      xhrV.open('GET','https://bd-recorrido-ahsec-default-rtdb.firebaseio.com/latitud_V.json?_='+Date.now(),true);
-      xhrV.timeout=5000;
-      xhrV.onload=function(){
-        if(xhrV.status!==200) return;
-        var latV=JSON.parse(xhrV.responseText);
-        if(!latV) return;
-        var xhrV2=new XMLHttpRequest();
-        xhrV2.open('GET','https://bd-recorrido-ahsec-default-rtdb.firebaseio.com/longitud_V.json?_='+Date.now(),true);
-        xhrV2.timeout=5000;
-        xhrV2.onload=function(){
-          if(xhrV2.status!==200) return;
-          var lngV=JSON.parse(xhrV2.responseText);
-          if(!lngV) return;
-          var llV={lat:+latV,lng:+lngV};
+        }
+      }
+    } catch(err){ _logErr('jesus AHSEC', err); }
+
+    // ----- Virgen side -----
+    try {
+      var latV = await _fetchAHSECValue('latitud_V.json');
+      if(latV != null){
+        var lngV = await _fetchAHSECValue('longitud_V.json');
+        if(lngV != null){
+          var llV = {lat:+latV, lng:+lngV};
+          statusParts.push('👑 V: '+latV.toFixed(4)+','+lngV.toFixed(4));
           if(gmap){
             if(!urnaMarkers.virgen){
               urnaMarkers.virgen=new google.maps.Marker({position:llV,map:gmap,zIndex:9998,icon:{url:_asset('se-virgen-marker.png'),scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)}});
@@ -3528,7 +3527,6 @@ if(_isSE){
               if(urnaMarkers.virgen._ring) urnaMarkers.virgen._ring.setCenter(llV);
             }
           }
-          // Track Virgen GPS (same logic as Jesus)
           if(positions.length>2){
             virgenGpsReadings.push({lat:llV.lat,lng:llV.lng});
             if(virgenGpsReadings.length>20) virgenGpsReadings.shift();
@@ -3537,7 +3535,6 @@ if(_isSE){
             for(var vr2=0;vr2<vRecent2.length;vr2++){vAvgLat2+=vRecent2[vr2].lat;vAvgLng2+=vRecent2[vr2].lng;}
             vAvgLat2/=vRecent2.length;vAvgLng2/=vRecent2.length;
             if(virgenCambioGPS===0){
-              // Init: find nearest point in entire route
               var cosLatVI2=Math.cos(vAvgLat2*Math.PI/180);
               var bestVI2=Infinity,bestVCI2=0;
               for(var vii2=0;vii2<positions.length;vii2++){
@@ -3549,7 +3546,6 @@ if(_isSE){
                 if(typeof renderLive==='function') renderLive();
               }
             } else {
-              // Advance: search next 3 points
               var nextVI2=virgenCambioGPS;
               if(nextVI2<positions.length){
                 var cosLatV3=Math.cos(vAvgLat2*Math.PI/180);
@@ -3570,13 +3566,12 @@ if(_isSE){
               }
             }
           }
-          var el=document.getElementById('ahsecStatus');
-          if(el) el.textContent=(el.textContent||'')+' · 👑 V: '+latV.toFixed(4)+','+lngV.toFixed(4);
-        };
-        xhrV2.send();
-      };
-      xhrV.send();
-    }catch(e){_logErr("swallow",e);}
+        }
+      }
+    } catch(err){ _logErr('virgen AHSEC', err); }
+
+    var el = document.getElementById('ahsecStatus');
+    if(el) el.textContent = statusParts.join(' · ');
   }
   var ahsEl=document.getElementById('ahsecStatus');if(ahsEl)ahsEl.style.display='block';
   fetchAHSECGPS();
