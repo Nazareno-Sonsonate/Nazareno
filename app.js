@@ -1982,7 +1982,16 @@ function renderLiveImpl(){
   // Wait for changes to be calculated
   if(!changes||changes.length===0){
     _renderLiveLastHTML='<<loading>>';
-    $('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">Cargando datos...</p></div>';
+    $('livePanel').innerHTML=
+      '<div class="skel-card">'
+      +'<span class="skel skel-line" style="width:40%;margin:6px auto;height:11px"></span>'
+      +'<span class="skel skel-line" style="width:60px;height:36px;margin:8px auto"></span>'
+      +'<span class="skel skel-line" style="width:55%;margin:6px auto"></span>'
+      +'<span class="skel skel-line" style="width:35%;margin:6px auto"></span>'
+      +'</div>'
+      +'<div class="skel-row"><span class="skel skel-circle"></span><div class="skel-info"><span class="skel skel-line" style="width:80%;height:13px"></span><span class="skel skel-line" style="width:50%;height:10px;margin-top:4px"></span></div><span class="skel skel-time"></span></div>'
+      +'<div class="skel-row"><span class="skel skel-circle"></span><div class="skel-info"><span class="skel skel-line" style="width:75%;height:13px"></span><span class="skel skel-line" style="width:45%;height:10px;margin-top:4px"></span></div><span class="skel skel-time"></span></div>'
+      +'<div class="skel-row"><span class="skel skel-circle"></span><div class="skel-info"><span class="skel skel-line" style="width:70%;height:13px"></span><span class="skel skel-line" style="width:55%;height:10px;margin-top:4px"></span></div><span class="skel skel-time"></span></div>';
     return;
   }
   // Check if this day is in the past
