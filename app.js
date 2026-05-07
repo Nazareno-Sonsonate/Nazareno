@@ -382,6 +382,17 @@ var _ASSET_PREFIX = (function(){
 })();
 function _asset(name){ return _ASSET_PREFIX + name; }
 
+// Mobile detection — used to apply tighter marker culling and stricter
+// label thresholds, since phones have far less GPU/CPU headroom for
+// 100+ Google Maps markers than a desktop browser.
+var _MOBILE = (function(){
+  var ua = navigator.userAgent || '';
+  if(/Mobi|Android|iPhone|iPad|iPod/i.test(ua)) return true;
+  // Some Android tablets identify as Linux but expose touch + small DPI
+  if(navigator.maxTouchPoints > 1 && window.innerWidth < 900) return true;
+  return false;
+})();
+
 // Non-blocking alert that replaces the native one. Native browser alerts
 // pause the entire JS thread and on PWAs are sometimes suppressed entirely;
 // this modal shows the same message without freezing the page.
@@ -1697,18 +1708,25 @@ function copyToClip(txt){
 // ========== MARKERS ==========
 function renderMarkers() {
   const zoom=gmap?gmap.getZoom():15;
-  const showOthers=showAll&&(zoom>=15||editMode);
+  // Mobile gets tighter rules: hide other-group markers until zoom 16,
+  // and labels appear at zoom 17 instead of 16. Desktop has plenty of
+  // CPU headroom and keeps the original behaviour.
+  const showOthersZoomThreshold = _MOBILE ? 16 : 15;
+  const showLabelsZoomThreshold = _MOBILE ? 17 : 16;
+  const showOthers=showAll&&(zoom>=showOthersZoomThreshold||editMode);
   const bounds=gmap?gmap.getBounds():null;
-  // At zoom < 16 we show small unlabeled dots so Google Maps can keep all
+  // At low zoom we show small unlabeled dots so Google Maps can keep all
   // markers in its optimized canvas (labels force per-marker DOM nodes,
   // killing fluidity on phones with 100+ groups in view at once).
-  const showLabels=zoom>=16;
-  // Buffer the viewport so markers near the edge don't pop in/out as you pan.
-  // We use a 25% padding around the current visible bounds.
+  const showLabels=zoom>=showLabelsZoomThreshold;
+  // Buffer the viewport so markers near the edge don't pop in/out as you
+  // pan. Mobile uses a smaller buffer (10%) to keep fewer markers in
+  // memory; desktop a generous 25%.
   var paddedBounds=null;
   if(bounds){
+    var pad = _MOBILE ? 0.10 : 0.25;
     var ne=bounds.getNorthEast(), sw=bounds.getSouthWest();
-    var latPad=(ne.lat()-sw.lat())*0.25, lngPad=(ne.lng()-sw.lng())*0.25;
+    var latPad=(ne.lat()-sw.lat())*pad, lngPad=(ne.lng()-sw.lng())*pad;
     paddedBounds=new google.maps.LatLngBounds(
       new google.maps.LatLng(sw.lat()-latPad, sw.lng()-lngPad),
       new google.maps.LatLng(ne.lat()+latPad, ne.lng()+lngPad)
