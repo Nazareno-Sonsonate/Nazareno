@@ -393,6 +393,32 @@ var _MOBILE = (function(){
   return false;
 })();
 
+// Resolve a time-of-day (hour h, minute m) to the closest real Date around
+// "now". Procession days routinely cross midnight (Lun/Mar/Mié/Vie often go
+// past 1 AM, Santo Entierro past 5 AM), so a naive new Date() + setHours()
+// puts the timestamp 22+ hours in the future when the user enters a
+// pre-midnight time after midnight has already passed.
+//
+//   mode='past'   → the time refers to something that already happened.
+//                   If naive parse lands >12h in the future, it was
+//                   actually yesterday; subtract a day.
+//   mode='future' → the time is an upcoming estimate.
+//                   If naive parse lands >12h in the past, it's actually
+//                   tomorrow; add a day.
+function _resolveTimeOfDay(h, m, mode){
+  var now = new Date();
+  var d = new Date();
+  d.setHours(h, m, 0, 0);
+  var diff = d.getTime() - now.getTime();
+  var TWELVE_H = 12 * 3600 * 1000;
+  if(mode === 'past' && diff > TWELVE_H){
+    d.setDate(d.getDate() - 1);
+  } else if(mode === 'future' && diff < -TWELVE_H){
+    d.setDate(d.getDate() + 1);
+  }
+  return d;
+}
+
 // Non-blocking alert that replaces the native one. Native browser alerts
 // pause the entire JS thread and on PWAs are sometimes suppressed entirely;
 // this modal shows the same message without freezing the page.
@@ -1949,9 +1975,9 @@ function confirmTimePick(ci){
   const ap=$('tpAP').value;
   if(ap==='PM'&&h<12) h+=12;
   if(ap==='AM'&&h===12) h=0;
-  const now=new Date();
-  now.setHours(h,m,0,0);
-  getDayTimes()[String(ci)]={t:now.getTime(),manual:true};
+  // Resolve to a real Date that handles past-midnight procession days
+  const recordedAt = _resolveTimeOfDay(h, m, 'past');
+  getDayTimes()[String(ci)]={t:recordedAt.getTime(),manual:true};
   saveCompleted();
   renderLive();
   calc();
@@ -2042,8 +2068,9 @@ function parseTimeToMs(timeStr){
   let h=parseInt(tp[1]),m=parseInt(tp[2]);
   if(tp[3].toUpperCase()==='PM'&&h<12)h+=12;
   if(tp[3].toUpperCase()==='AM'&&h===12)h=0;
-  const d=new Date();d.setHours(h,m,0,0);
-  return d.getTime();
+  // Treat parsed times as "past" by default (recorded events). Callers
+  // that need future-tense parsing should resolve manually.
+  return _resolveTimeOfDay(h, m, 'past').getTime();
 }
 
 function fmtClock(ts){
@@ -2435,8 +2462,8 @@ function updateCountdown(){
   if(tp[3].toUpperCase()==='PM'&&h<12)h+=12;
   if(tp[3].toUpperCase()==='AM'&&h===12)h=0;
   const now=new Date();
-  const estDate=new Date();estDate.setHours(h,m,0,0);
-  if(estDate<now&&(now-estDate)>12*3600000) estDate.setDate(estDate.getDate()+1);
+  // Forward-looking estimate: handle midnight crossings via the shared helper
+  const estDate = _resolveTimeOfDay(h, m, 'future');
   const diffMin=Math.round((estDate-now)/60000);
   if(diffMin<=0){
     el.innerHTML='<span style="color:#c084fc;font-weight:700">⏰ Cargada en curso</span>';
