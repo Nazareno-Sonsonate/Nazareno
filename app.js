@@ -419,6 +419,26 @@ function _resolveTimeOfDay(h, m, mode){
   return d;
 }
 
+// Initialize early so any later GPS-active comparison
+// (Date.now() - window._lastRealGPS < GPS_TIMEOUT) is well-defined even
+// before the auto-time bootstrap block runs further down.
+if(typeof window._lastRealGPS !== 'number') window._lastRealGPS = 0;
+
+// Stable per-tab session id used as the Firebase key for the GPS keep-
+// alive ping, replacing the timestamp%10000 scheme that could collide
+// across two GPS-tracking phones pinging on the same millisecond.
+var _GPS_SESSION_ID = 'gps_' + Math.random().toString(36).substring(2, 10)
+  + '_' + Date.now().toString(36);
+
+// Convert an FCM push token into a Firebase-safe key. FCM tokens can
+// contain '/' '.' '$' '#' '[' ']' which are forbidden in Realtime
+// Database keys. Replace those with underscores so we can use the FULL
+// token as the key — the previous .substring(0,20) truncation collided
+// across phones whose tokens happened to share a prefix.
+function _tokenToKey(t){
+  return String(t || '').replace(/[.\#$\[\]\/]/g, '_');
+}
+
 // Non-blocking alert that replaces the native one. Native browser alerts
 // pause the entire JS thread and on PWAs are sometimes suppressed entirely;
 // this modal shows the same message without freezing the page.
@@ -2958,7 +2978,7 @@ function updatePushToken(){
   // If all passed, no alert needed
   var alertAtCambio=nextCambio>0?Math.max(1,nextCambio-alertBefore):0;
   
-  db.ref('pushTokens/'+token.substring(0,20)).set({
+  db.ref('pushTokens/'+_tokenToKey(token)).set({
     token:token,
     grupo:grupo,
     tipo:tipo,
@@ -3014,7 +3034,10 @@ function updatePushUI(){
 function unsubscribePush(){
   var token;try{token=localStorage.getItem('pushToken');}catch(e){_logErr("swallow",e);}
   if(token){
-    db.ref('pushTokens/'+token.substring(0,20)).remove();
+    // Remove both the new safe key and the old truncated key (legacy
+    // entries from devices that subscribed before _tokenToKey existed)
+    db.ref('pushTokens/'+_tokenToKey(token)).remove();
+    try{ db.ref('pushTokens/'+token.substring(0,20)).remove(); }catch(e){_logErr('legacy push key', e);}
   }
   try{
     localStorage.removeItem('pushToken');
@@ -3157,7 +3180,7 @@ function startKeepAlive(){
   // Ping Firebase every 30s to keep connection alive
   _keepAliveTimer=setInterval(function(){
     if(!urnaActive.jesus&&!urnaActive.virgen){stopKeepAlive();return;}
-    db.ref('online/gps_'+Date.now()%10000).set(Date.now());
+    db.ref('online/'+_GPS_SESSION_ID).set(Date.now());
   },30000);
   // Show persistent notification to keep service worker alive
   if('Notification' in window&&Notification.permission==='granted'){
