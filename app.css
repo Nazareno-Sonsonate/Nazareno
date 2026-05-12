@@ -132,3 +132,33 @@ body.se-mode .ftr{color:#999!important}
 /* Bottom tabs — already covered, but force cross-style overrides */
 body.se-mode .vtab{color:#888!important}
 body.se-mode .vtab.a{color:#e8e8e8!important}
+/* Spiritual modal — Vía Crucis y significado del día */
+.spiritual-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:6000;width:94%;max-width:520px;max-height:88vh;background:#1a1a2e;border:2px solid #7c3aed;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.85);flex-direction:column;overflow:hidden}
+.sp-hdr{display:flex;align-items:stretch;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.3);flex-shrink:0}
+.sp-tabs{flex:1;display:flex;min-width:0}
+.sp-tab{flex:1;background:none;border:none;color:#888;padding:12px 6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-tab.a{color:#c084fc;border-bottom-color:#c084fc;background:rgba(124,58,237,.08)}
+.sp-close{background:none;border:none;color:#888;font-size:22px;cursor:pointer;padding:0 14px;flex-shrink:0}
+.sp-content{overflow-y:auto;padding:14px 16px 22px;-webkit-overflow-scrolling:touch;font-size:15px;line-height:1.55;color:#e0d8e8}
+.sp-block{margin-bottom:6px}
+.sp-head{font-size:18px;font-weight:700;color:#c084fc;margin-bottom:10px;line-height:1.3}
+.sp-body{font-size:15px;line-height:1.65;color:#ddd;text-align:justify}
+.sp-cite{margin-top:14px;padding:10px;background:rgba(255,255,255,.04);border-left:3px solid #7c3aed;border-radius:4px;font-size:12px;color:#aaa;line-height:1.5;font-style:italic}
+.sp-intro{padding:10px 12px;background:rgba(124,58,237,.08);border-radius:8px;color:#c8b8d8;font-size:14px;line-height:1.55;margin-bottom:14px;font-style:italic}
+.sp-station{margin-bottom:14px;padding:12px 14px;background:rgba(0,0,0,.25);border-radius:10px;border:1px solid rgba(124,58,237,.18)}
+.sp-st-title{font-size:16px;font-weight:700;color:#c084fc;margin-bottom:8px;line-height:1.3}
+.sp-st-n{display:inline-block;min-width:26px;height:26px;line-height:26px;text-align:center;background:#7c3aed;color:#fff;border-radius:50%;font-size:13px;margin-right:6px;vertical-align:middle}
+.sp-st-vr{font-size:13px;color:#aaa;margin-bottom:8px;line-height:1.5}
+.sp-st-med{font-size:14px;color:#ddd;line-height:1.65;margin-bottom:8px;text-align:justify}
+.sp-st-or{font-size:14px;color:#c8b8d8;line-height:1.55;margin-bottom:6px;padding:8px 10px;background:rgba(124,58,237,.07);border-radius:6px}
+.sp-st-pad{font-size:12px;color:#888;text-align:center;font-style:italic}
+/* Santo Entierro: silver/luto colors for spiritual modal */
+body.se-mode .spiritual-modal{border-color:rgba(255,255,255,.25);background:#0f0f0f}
+body.se-mode .sp-tab.a{color:#e8e8e8!important;border-bottom-color:#e8e8e8!important;background:rgba(255,255,255,.06)!important}
+body.se-mode .sp-head{color:#e8e8e8!important}
+body.se-mode .sp-station{border-color:rgba(255,255,255,.12)!important;background:rgba(255,255,255,.03)!important}
+body.se-mode .sp-st-title{color:#e8e8e8!important}
+body.se-mode .sp-st-n{background:#666!important}
+body.se-mode .sp-st-or{background:rgba(255,255,255,.05)!important;color:#ccc!important}
+body.se-mode .sp-cite{border-left-color:rgba(180,153,99,.6)!important}
+body.se-mode .sp-intro{background:rgba(255,255,255,.04)!important;color:#bbb!important}

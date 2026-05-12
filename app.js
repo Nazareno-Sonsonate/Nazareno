@@ -4502,3 +4502,143 @@ function adjustAutoTime(delta){
   if(typeof renderLive==='function') renderLive();
 }
 
+// ============================================================
+// Menú espiritual — Vía Crucis y significado del día
+// Textos del Vía Crucis: San Alfonso María de Ligorio (dominio público)
+// Significado de cada día: Catecismo de la Iglesia Católica + Misal Romano
+// ============================================================
+var _SPIRITUAL_STATIONS = [
+  { n:1, title:"Jesús es condenado a muerte",
+    med:"Considera, alma mía, cómo Jesús, después de haber sido azotado y coronado de espinas, fue injustamente condenado por Pilato a morir en la cruz. ¡Cuántas veces yo, con mis pecados, he confirmado esa sentencia!",
+    or:"Jesús mío, abrazo tu sentencia y por amor tuyo acepto la muerte que tu Padre haya dispuesto para mí." },
+  { n:2, title:"Jesús con la cruz a cuestas",
+    med:"Considera cómo Jesús, llevando sobre sus hombros la cruz, pensaba en mí, ofreciendo a su Padre, en favor mío, la muerte que iba a sufrir.",
+    or:"Amantísimo Jesús, abrazo todas las tribulaciones que me has destinado hasta la muerte. Quiero llevarlas todas en unión con tu cruz." },
+  { n:3, title:"Jesús cae por primera vez",
+    med:"Considera esta primera caída de Jesús bajo el peso de la cruz: tan delicado era su cuerpo y tan grande el peso. La debilidad de su carne y el peso de mis pecados le hicieron caer.",
+    or:"Jesús mío, dame fortaleza para vencer las tentaciones, pues sin tu auxilio caeré también yo." },
+  { n:4, title:"Jesús encuentra a su Madre Santísima",
+    med:"Considera el encuentro de Jesús con María, su Madre, en el camino del Calvario. ¡Qué espada de dolor traspasó el corazón de María al ver a su Hijo en tal estado!",
+    or:"Madre Dolorosísima, por los méritos de tu dolor, alcánzame la gracia de amar de verdad a Jesús." },
+  { n:5, title:"El Cireneo ayuda a Jesús a llevar la cruz",
+    med:"Considera cómo los verdugos, viendo a Jesús desfallecer, obligaron a Simón Cireneo a ayudarle a llevar la cruz.",
+    or:"Dulcísimo Jesús, no rehuso la cruz como el Cireneo: la abrazo, la acepto. Acepto, en particular, la muerte que me esté destinada, con las penas que la acompañen; la uno a la tuya y te la ofrezco." },
+  { n:6, title:"La Verónica enjuga el rostro de Jesús",
+    med:"Considera cómo la santa mujer Verónica, viendo el rostro de Jesús cubierto de sudor y de sangre, le presentó un lienzo en el que quedó impresa la imagen de su santa Faz.",
+    or:"Amado Jesús, tu rostro era hermoso antes, pero esta jornada lo ha desfigurado. Imprime tu imagen en mi alma, y haz que mi corazón te ame siempre." },
+  { n:7, title:"Jesús cae por segunda vez",
+    med:"Considera esta segunda caída de Jesús bajo la cruz: caída que renueva el dolor de María, en lo profundo que sentía al ver a su Hijo de tal manera maltratado.",
+    or:"Bondadosísimo Jesús, ¡cuántas veces me has perdonado y cuántas he vuelto a caer y a ofenderte! Por los méritos de esta nueva caída, dame la fuerza necesaria para perseverar en tu gracia hasta la muerte." },
+  { n:8, title:"Jesús consuela a las mujeres de Jerusalén",
+    med:"Considera cómo las mujeres, viendo a Jesús en tal estado, lloraban llenas de compasión. Y Jesús les dijo: «No lloréis por mí, sino por vosotras y por vuestros hijos».",
+    or:"Jesús mío, lloro por las ofensas que te he hecho, por las penas que te he causado. Es tu amor, mi Jesús, el que me hace llorar más que el temor del infierno." },
+  { n:9, title:"Jesús cae por tercera vez",
+    med:"Considera la tercera caída de Jesús: era extraordinaria su debilidad, y enorme la crueldad de los verdugos, que pretendían hacerle apresurar el paso cuando apenas le quedaba aliento.",
+    or:"Oh Jesús, sufrimiento de los sufrimientos, por los méritos de tu debilidad, dame fuerzas para vencer todo respeto humano y todas mis pasiones desordenadas, que me han llevado a despreciar tu amistad." },
+  { n:10, title:"Jesús es despojado de sus vestiduras",
+    med:"Considera la violencia con que los verdugos despojaron a Jesús. Las vestiduras estaban pegadas a su carne lacerada, y al arrancárselas las despegaban, llevándose consigo parte de la piel.",
+    or:"Inocentísimo Jesús, por los méritos del dolor que sentiste, ayúdame a despojarme de todo apego a las cosas de la tierra, para poner solamente en ti mi amor y mi deseo." },
+  { n:11, title:"Jesús es clavado en la cruz",
+    med:"Considera cómo Jesús, después de ser arrojado sobre la cruz, extendió por sí mismo sus manos, y ofreció a su Padre eterno el sacrificio de su vida por nuestra salvación. Aquellos verdugos le clavaron, y luego, enarbolando la cruz, le dejaron morir de dolor sobre ella.",
+    or:"Crucificado Jesús mío, clavo en tu cruz mi corazón; allí lo dejo amando, y allí muero contigo." },
+  { n:12, title:"Jesús muere en la cruz",
+    med:"Considera cómo tu Jesús, después de tres horas de agonía sobre la cruz, consumido por el dolor, exhausto, inclina la cabeza y muere.",
+    or:"Oh Jesús, dulce amor mío, beso esa cruz en que has muerto por mí. Yo, por mis pecados, he merecido la muerte; pero tu muerte es mi esperanza." },
+  { n:13, title:"Jesús es bajado de la cruz y entregado a María",
+    med:"Considera cómo, después de muerto el Señor, dos discípulos, José y Nicodemo, lo bajaron de la cruz y lo entregaron a su Madre Santísima, que con dolor lo recibió en su regazo.",
+    or:"Madre Dolorosísima, recibe mi corazón en esos brazos en que recibiste a tu Hijo difunto; te lo doy entero, y te pido que me lo conserves siempre tuyo." },
+  { n:14, title:"Jesús es sepultado",
+    med:"Considera cómo los discípulos llevaron al sepulcro el cuerpo de Jesús; allí lo depositaron, y se cerró la piedra. ¡Cuánto dolor sintió María al separarse de su Hijo!",
+    or:"Sepultado Jesús, beso esa piedra que te cierra. Pero al tercer día has resucitado: dame la gracia de resucitar gloriosamente contigo en el día final." }
+];
+
+var _SPIRITUAL_DAYS = {
+  0: {
+    title:"Lunes Santo",
+    head:"La unción en Betania",
+    body:"En el Evangelio de san Juan (Jn 12, 1–11), seis días antes de la Pascua, en casa de Lázaro, María unge los pies de Jesús con un perfume costosísimo y los enjuga con sus cabellos. Jesús defiende ese gesto como un anticipo de su sepultura: «Déjala, lo tenía guardado para el día de mi sepultura». La Iglesia, al iniciar la Semana Santa, nos invita a contemplar el amor desinteresado de quien todo lo da por amor a Cristo, frente a la avaricia de Judas, que ya empieza a tramar la traición.<br><br>La primera lectura de hoy (Is 42, 1–7) presenta a Cristo como el Siervo elegido del Padre: «No gritará, no levantará la voz, la caña cascada no la quebrará». Es el comienzo de un camino que se hace silencioso, humilde, redentor.",
+    cite:"Misal Romano · Lunes de la Semana Santa · Jn 12, 1–11; Is 42, 1–7" },
+  1: {
+    title:"Martes Santo",
+    head:"El anuncio de la traición y de la negación",
+    body:"En la liturgia de hoy, durante la Última Cena (Jn 13, 21–33.36–38), Jesús anuncia con turbación: «Uno de vosotros me va a entregar». Predice también la negación de Pedro: «No cantará el gallo antes de que me hayas negado tres veces». La Iglesia nos invita a mirar con honestidad nuestro propio corazón: somos capaces, como Pedro, de amar al Señor y a la vez negarle por miedo; somos capaces, como Judas, de seguirle de cerca y traicionarle por interés.<br><br>Pero vemos también la paciencia del Señor, que no rechaza a ninguno de los dos: a Judas le ofrece un bocado en signo de amistad, y a Pedro, después de la negación, le mirará con misericordia (cf. Lc 22, 61). En este día, dejémonos mirar también nosotros con esa mirada que perdona.",
+    cite:"Misal Romano · Martes de la Semana Santa · Jn 13, 21–33.36–38" },
+  2: {
+    title:"Miércoles Santo",
+    head:"El pacto de Judas",
+    body:"Llamado también «Miércoles de espía», la liturgia (Mt 26, 14–25) presenta a Judas Iscariote ajustando con los sumos sacerdotes el precio de la traición: «¿Cuánto me dais y yo os lo entrego?». Le pesaron treinta monedas de plata. Desde ese momento, Judas buscaba una ocasión para entregarlo.<br><br>Frente a esa figura sombría, la primera lectura del día (Is 50, 4–9) pone en boca del Siervo del Señor una respuesta totalmente distinta: «Ofrecí la espalda a los que me golpeaban, las mejillas a los que me arrancaban la barba; no escondí el rostro ante los insultos y los salivazos». Cristo va libremente a la entrega. Hoy es día de pedir el don de la lealtad: no vender al Señor por ningún precio, por pequeño que parezca.",
+    cite:"Misal Romano · Miércoles Santo · Mt 26, 14–25; Is 50, 4–9" },
+  3: {
+    title:"Viernes Santo",
+    head:"La Pasión y muerte del Señor",
+    body:"En este día único en el año, la Iglesia no celebra la Eucaristía: contempla la Cruz desnuda y proclama la Pasión según san Juan. El Catecismo enseña que «Cristo murió por nuestros pecados, según las Escrituras» (1 Co 15, 3): su entrega libre en la Cruz es la entrega del Hijo amado al Padre, en el Espíritu, para la salvación del mundo (CIC 599–605). Jesús no fue víctima del azar: «Nadie me quita la vida; yo la doy libremente» (Jn 10, 18).<br><br>En la Pasión se cumple la voluntad amorosa del Padre, que «tanto amó al mundo, que entregó a su Hijo único» (Jn 3, 16). La Cruz no es derrota sino victoria: «Por tu santa cruz redimiste al mundo». Hoy adoramos la cruz, ayunamos y guardamos silencio, porque hoy ha muerto el Autor de la vida.",
+    cite:"Catecismo de la Iglesia Católica 599–630 · Misal Romano · Viernes Santo · Jn 18–19" },
+  4: {
+    title:"Santo Entierro de Cristo",
+    head:"Descansa en el sepulcro · El descenso a los infiernos",
+    body:"La Iglesia contempla a Cristo en el sepulcro y confiesa en el Credo: «descendió a los infiernos, al tercer día resucitó de entre los muertos». El Catecismo lo explica: «Jesús, como todos los hombres, conoció la muerte y se reunió con ellos en la morada de los muertos. Pero descendió allí como Salvador, proclamando la Buena Nueva a los espíritus que allí se encontraban» (CIC 632). «Estos justos esperaban a su Libertador en el seno de Abraham» (CIC 633).<br><br>Es la noche del silencio: María, junto al sepulcro cerrado, sostiene en su corazón la fe de toda la Iglesia, esperando la mañana de la Resurrección. El Santo Entierro es procesión de luto y de esperanza: no lloramos como los que no tienen esperanza, porque sabemos que ese cuerpo bendito, descansando, ya está venciendo a la muerte.",
+    cite:"Catecismo de la Iglesia Católica 624–637 · Símbolo Apostólico · Sábado Santo (Sabbatum Sanctum)" }
+};
+
+function openSpiritual(){
+  var modal=document.getElementById('spiritualModal');
+  if(!modal){
+    var overlay=document.createElement('div');
+    overlay.id='spiritualOverlay';
+    overlay.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:5999';
+    overlay.onclick=closeSpiritual;
+    document.body.appendChild(overlay);
+    modal=document.createElement('div');
+    modal.id='spiritualModal';
+    modal.className='spiritual-modal';
+    document.body.appendChild(modal);
+  }
+  renderSpiritual('day');
+  document.getElementById('spiritualOverlay').style.display='block';
+  modal.style.display='flex';
+}
+
+function closeSpiritual(){
+  var m=document.getElementById('spiritualModal');
+  var o=document.getElementById('spiritualOverlay');
+  if(m) m.style.display='none';
+  if(o) o.style.display='none';
+}
+
+function renderSpiritual(section){
+  var m=document.getElementById('spiritualModal');
+  if(!m) return;
+  var cd=(typeof currentDay==='number')?currentDay:0;
+  var d=_SPIRITUAL_DAYS[cd]||_SPIRITUAL_DAYS[0];
+  var bodyHTML='';
+  if(section==='day'){
+    bodyHTML='<div class="sp-block">'
+      +'<div class="sp-head">'+d.head+'</div>'
+      +'<div class="sp-body">'+d.body+'</div>'
+      +'<div class="sp-cite">📜 '+d.cite+'</div>'
+      +'</div>';
+  } else {
+    bodyHTML='<div class="sp-intro">«Te adoramos, oh Cristo, y te bendecimos: que por tu santa cruz redimiste al mundo.»<br><br>Las catorce estaciones se rezan completas cada día de la Semana Santa. Texto: san Alfonso María de Ligorio.</div>';
+    for(var i=0;i<_SPIRITUAL_STATIONS.length;i++){
+      var s=_SPIRITUAL_STATIONS[i];
+      bodyHTML+='<div class="sp-station">'
+        +'<div class="sp-st-title"><span class="sp-st-n">'+s.n+'</span> '+s.title+'</div>'
+        +'<div class="sp-st-vr"><b>V.</b> Te adoramos, oh Cristo, y te bendecimos.<br><b>R.</b> Que por tu santa cruz redimiste al mundo.</div>'
+        +'<div class="sp-st-med">'+s.med+'</div>'
+        +'<div class="sp-st-or"><i>'+s.or+'</i></div>'
+        +'<div class="sp-st-pad">Padre Nuestro · Ave María · Gloria al Padre.</div>'
+        +'</div>';
+    }
+    bodyHTML+='<div class="sp-cite">📜 Texto base: san Alfonso María de Ligorio, <i>Vía Crucis</i> (s. XVIII). De uso devocional libre.</div>';
+  }
+  m.innerHTML=
+    '<div class="sp-hdr">'
+    +'<div class="sp-tabs">'
+    +'<button class="sp-tab '+(section==='day'?'a':'')+'" onclick="renderSpiritual(\'day\')">🕊️ '+d.title+'</button>'
+    +'<button class="sp-tab '+(section==='vc'?'a':'')+'" onclick="renderSpiritual(\'vc\')">✝️ Vía Crucis</button>'
+    +'</div>'
+    +'<button class="sp-close" onclick="closeSpiritual()" aria-label="Cerrar">✕</button>'
+    +'</div>'
+    +'<div class="sp-content">'+bodyHTML+'</div>';
+}
+
