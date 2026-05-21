@@ -3240,8 +3240,17 @@ document.addEventListener('visibilitychange',function(){
       if(urnaActive.jesus&&urnaWatchIds.jesus===null) startGPSWatch('jesus');
       if(urnaActive.virgen&&urnaWatchIds.virgen===null) startGPSWatch('virgen');
     }
+    // Installed PWAs get aggressively suspended by the OS; the Firebase
+    // WebSocket can die silently and never recover, so the live cargadas stop
+    // arriving. Forcing offline→online wakes the channel and replays
+    // subscriptions. Browser tabs don't hit this because their suspension
+    // is lighter.
+    try{ db.goOffline(); db.goOnline(); }catch(e){}
   }
 });
+
+// Same fix path when the device regains network after being offline.
+window.addEventListener('online',function(){ try{ db.goOffline(); db.goOnline(); }catch(e){} });
 
 // Auto-restore GPS on page load
 setTimeout(function(){if(typeof restoreUrnaState==='function')restoreUrnaState();},3000);
