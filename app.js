@@ -1884,6 +1884,26 @@ function deleteChange(ci) {
 }
 
 // ========== TABLE ==========
+function autoCarryName(mc){
+  var total=positions.length;
+  if(!total) return '';
+  var idx=(mc.num||1)-1;
+  // Semantic labels — first/last carry of the day + Viernes cortesías
+  if(idx===0) return 'Salida';
+  if(idx===total-1) return 'Regreso';
+  if(currentDay===3 && (mc.num||idx+1)===getCortesiasChange()) return 'Cortesías';
+  // Look at the two nearest waypoints
+  var wps=getWPs();
+  if(!wps.length) return '';
+  var ranked=wps.map(function(w){return {n:w.n,d:hd(mc,w)};}).sort(function(a,b){return a.d-b.d;});
+  var a=ranked[0], b=ranked[1];
+  if(a.d<25) return a.n;                                 // basically on top of it
+  if(b && b.d<100 && b.d < a.d*2.5) return 'Entre '+a.n+' y '+b.n;  // sandwich
+  if(a.d<80) return a.n;                                  // close enough to assume
+  if(a.d<200) return 'Cerca de '+a.n;                     // far but identifiable
+  return '';                                              // nothing useful nearby
+}
+
 function getCarryRef(mc){
   var cc=cfg();
   if(cc.t===27&&window.liveGrupoData&&window.liveGrupoData.movidos){
@@ -1891,10 +1911,11 @@ function getCarryRef(mc){
     if(adjIdx>=0&&adjIdx<positions.length){
       var adjName=positions[adjIdx].n||'';
       if(adjName) return adjName;
-      return nearWP({lat:positions[adjIdx].lat,lng:positions[adjIdx].lng});
+      var adjPt={lat:positions[adjIdx].lat,lng:positions[adjIdx].lng,num:adjIdx+1};
+      return autoCarryName(adjPt)||nearWP(adjPt);
     }
   }
-  return mc.n||nearWP(mc);
+  return mc.n || autoCarryName(mc) || nearWP(mc);
 }
 
 function renderTable() {
@@ -2158,7 +2179,7 @@ function renderLiveImpl(){
     ph+='<div>';
     for(var pi=0;pi<changes.length;pi++){
       var pch=changes[pi];
-      var prefSafe=_escapeHtml(pch.n||'');
+      var prefSafe=_escapeHtml(pch.n||autoCarryName(pch)||'');
       ph+='<div class="live-carry done" style="padding:8px 10px"><div class="lc-num" style="font-size:14px;color:#888">#'+pch.num+'</div><div class="lc-info"><div class="lc-ref" style="font-size:14px">Grupo '+pch.grp+(prefSafe?' — '+prefSafe:'')+'</div><div class="lc-sub">Cambio #'+pch.num+'</div></div><div class="lc-time" style="font-size:13px;color:#aaa">'+_escapeHtml(pch.time||'')+'</div></div>';
     }
     ph+='</div>';
