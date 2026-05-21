@@ -2148,7 +2148,13 @@ function renderLiveImpl(){
     currentGrupoActual=totPD2;
     liveGrupoData={cambio:totPD2,grp:lastGrpPD2,nombre:(totPD2<=changes.length&&changes[totPD2-1])?changes[totPD2-1].n||'':'',tot:totPD2,desfase:0,movidos:0,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
     var ph='';
-    ph+='<div style="text-align:center;padding:10px;margin-bottom:8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)"><div style="font-size:13px;color:#aaa">📜 Resultado histórico · '+totPD2+' '+(totPD2===1?'cargada':'cargadas')+'</div><div style="font-size:11px;color:#888;margin-top:4px">Tu grupo configurado no corresponde a esta procesión. Cambiá el grupo o el tipo en ⚙️ Configuración para ver tus cargadas.</div></div>';
+    var cfgNow=cfg();
+    var tipoNow=cfgNow.t===27?'Mujeres (27)':'Hombres (21)';
+    ph+='<div style="padding:12px 14px;margin-bottom:10px;border-radius:10px;background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.4)">';
+    ph+='<div style="font-size:14px;font-weight:700;color:#ff9800;margin-bottom:6px">⚠️ Tu grupo no aparece en esta procesión</div>';
+    ph+='<div style="font-size:12px;color:#ddd;line-height:1.5">Estás viendo la lista completa de cargadas. Tu config actual: <b>Grupo #'+cfgNow.g+'</b> · <b>'+tipoNow+'</b>. Para ver tus cargadas personales, abrí <b>⚙️ Configuración</b> y corregí el grupo o el tipo de cargador.</div>';
+    ph+='<div style="font-size:11px;color:#aaa;margin-top:6px">📜 Resultado histórico · '+totPD2+' '+(totPD2===1?'cargada':'cargadas')+'</div>';
+    ph+='</div>';
     ph+='<div>';
     for(var pi=0;pi<changes.length;pi++){
       var pch=changes[pi];
