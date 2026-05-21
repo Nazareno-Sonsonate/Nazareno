@@ -2137,15 +2137,31 @@ function renderLiveImpl(){
   // Check if this day is in the past
   var isPastDay=isDayPast(currentDay);
 
-  // For past days with no carries, show banners only
+  // Past day + procession data exists + the user's group config doesn't land
+  // on any cargada (e.g. they're viewing a day for a different group). Instead
+  // of blanking the panel, render the full procession as a read-only list so
+  // the historical record is always visible after Semana Santa.
   if(isPastDay&&changes.length>0&&!myCarries.length){
-    _renderLiveLastHTML='<<empty>>';
-    $('livePanel').innerHTML='';
+    var sigPD=daySaca[currentDay]||17;
+    var totPD2=changes.length;
+    var lastGrpPD2=((sigPD-1+totPD2-1)%getHomCount())+1;
+    currentGrupoActual=totPD2;
+    liveGrupoData={cambio:totPD2,grp:lastGrpPD2,nombre:(totPD2<=changes.length&&changes[totPD2-1])?changes[totPD2-1].n||'':'',tot:totPD2,desfase:0,movidos:0,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
+    var ph='';
+    ph+='<div style="text-align:center;padding:10px;margin-bottom:8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)"><div style="font-size:13px;color:#aaa">📜 Resultado histórico · '+totPD2+' '+(totPD2===1?'cargada':'cargadas')+'</div><div style="font-size:11px;color:#888;margin-top:4px">Tu grupo configurado no corresponde a esta procesión. Cambiá el grupo o el tipo en ⚙️ Configuración para ver tus cargadas.</div></div>';
+    ph+='<div>';
+    for(var pi=0;pi<changes.length;pi++){
+      var pch=changes[pi];
+      var prefSafe=_escapeHtml(pch.n||'');
+      ph+='<div class="live-carry done" style="padding:8px 10px"><div class="lc-num" style="font-size:14px;color:#888">#'+pch.num+'</div><div class="lc-info"><div class="lc-ref" style="font-size:14px">Grupo '+pch.grp+(prefSafe?' — '+prefSafe:'')+'</div><div class="lc-sub">Cambio #'+pch.num+'</div></div><div class="lc-time" style="font-size:13px;color:#aaa">'+_escapeHtml(pch.time||'')+'</div></div>';
+    }
+    ph+='</div>';
+    if(ph!==_renderLiveLastHTML){ _renderLiveLastHTML=ph; $('livePanel').innerHTML=ph; }
     return;
   }
 
   if(!myCarries.length&&!isPastDay){_renderLiveLastHTML='<<no-carries>>';$('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">No hay cargadas. Verificá la configuración.</p></div>';return;}
-  
+
   var isPastDay=isDayPast(currentDay);
   
   // For past days, auto-set grupo actual to last cambio
