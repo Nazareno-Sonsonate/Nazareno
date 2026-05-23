@@ -2613,12 +2613,82 @@ setTimeout(function(){
   if(!deferredPrompt) showInstallBanner();
 },3000);
 
-// ========== SERVICE WORKER - DISABLED FOR SYNC RELIABILITY ==========
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./firebase-messaging-sw.js').then(function(reg){
-    console.log('SW registered',reg.scope);
-  }).catch(function(err){console.log('SW error',err);});
-}
+// ========== SERVICE WORKER + UPDATE FLOW ==========
+// On every load we register the SW and then aggressively check for a newer
+// version. When one is found we surface a top banner so the user knows there
+// is fresh content; tapping it wipes all caches, asks the new SW to take
+// over and reloads. That sidesteps the "phantom stale PWA" problem where the
+// installed app keeps showing old code even after a deploy.
+(function(){
+  if(!('serviceWorker' in navigator)) return;
+  var reg=null;
+  var bannerShown=false;
+  function showUpdateBanner(){
+    if(bannerShown) return; bannerShown=true;
+    var bar=document.createElement('div');
+    bar.id='swUpdateBanner';
+    bar.setAttribute('role','alert');
+    bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:10000;background:linear-gradient(90deg,#7c3aed,#a855f7);color:#fff;padding:12px 16px;text-align:center;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4);font-family:inherit;animation:swSlideIn .35s ease-out';
+    bar.innerHTML='🆕 <span style="text-decoration:underline">Hay una versión nueva — tocá para actualizar</span><div style="font-size:11px;font-weight:400;opacity:.9;margin-top:3px">Limpia caché y recarga completo</div>';
+    bar.onclick=function(){ applyUpdate(bar); };
+    // Inject the slide-in keyframe once
+    if(!document.getElementById('swUpdateStyle')){
+      var st=document.createElement('style'); st.id='swUpdateStyle';
+      st.textContent='@keyframes swSlideIn{from{transform:translateY(-100%)}to{transform:translateY(0)}}';
+      document.head.appendChild(st);
+    }
+    document.body.appendChild(bar);
+  }
+  function applyUpdate(bar){
+    if(bar){
+      bar.style.pointerEvents='none';
+      bar.innerHTML='<span style="display:inline-block;animation:swSlideIn .8s infinite alternate">⏳ Actualizando...</span>';
+    }
+    // Wipe every cache the browser holds for this origin
+    var wipe = (typeof caches!=='undefined' && caches.keys)
+      ? caches.keys().then(function(keys){ return Promise.all(keys.map(function(k){return caches.delete(k);})); })
+      : Promise.resolve();
+    wipe.then(function(){
+      // Ask the waiting SW (if any) to take over right now
+      if(reg && reg.waiting){ try{ reg.waiting.postMessage({type:'SKIP_WAITING'}); }catch(e){} }
+      // Hard reload — the new SW + clean caches should serve fresh code now
+      setTimeout(function(){ window.location.reload(); }, 400);
+    });
+  }
+  function watchForUpdate(r){
+    if(!r) return;
+    r.addEventListener('updatefound', function(){
+      var n=r.installing;
+      if(!n) return;
+      n.addEventListener('statechange', function(){
+        if(n.state==='installed' && navigator.serviceWorker.controller){
+          // A new SW is waiting to take over — surface the banner
+          showUpdateBanner();
+        }
+      });
+    });
+  }
+  navigator.serviceWorker.register('./firebase-messaging-sw.js').then(function(r){
+    reg=r;
+    watchForUpdate(r);
+    // Trigger an update check at load and then every 15 min while open
+    try{ r.update(); }catch(e){}
+    setInterval(function(){ try{ r.update(); }catch(e){} }, 15*60*1000);
+    // Also check when the tab comes back to the foreground
+    document.addEventListener('visibilitychange', function(){
+      if(document.visibilityState==='visible'){ try{ r.update(); }catch(e){} }
+    });
+    // If a SW is already waiting (e.g. installed during a previous load), prompt now
+    if(r.waiting && navigator.serviceWorker.controller) showUpdateBanner();
+  }).catch(function(err){ console.log('SW register error', err); });
+  // Reload once the active SW changes (e.g. after SKIP_WAITING)
+  var reloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    if(reloaded) return; reloaded=true;
+    // Only auto-reload if the user clicked the banner; otherwise we already
+    // call reload() in applyUpdate() which is enough.
+  });
+})();
 
 // ========== Block 2: Firebase init, auth, push, GPS ==========
 // ========== URNA GPS TRACKING ==========
