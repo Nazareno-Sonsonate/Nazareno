@@ -4607,30 +4607,76 @@ var _SPIRITUAL_STATIONS = [
 var _SPIRITUAL_DAYS = {
   0: {
     title:"Lunes Santo",
+    short:"Lunes",
     head:"La unción en Betania",
     body:"En el Evangelio de san Juan (Jn 12, 1–11), seis días antes de la Pascua, en casa de Lázaro, María unge los pies de Jesús con un perfume costosísimo y los enjuga con sus cabellos. Jesús defiende ese gesto como un anticipo de su sepultura: «Déjala, lo tenía guardado para el día de mi sepultura». La Iglesia, al iniciar la Semana Santa, nos invita a contemplar el amor desinteresado de quien todo lo da por amor a Cristo, frente a la avaricia de Judas, que ya empieza a tramar la traición.<br><br>La primera lectura de hoy (Is 42, 1–7) presenta a Cristo como el Siervo elegido del Padre: «No gritará, no levantará la voz, la caña cascada no la quebrará». Es el comienzo de un camino que se hace silencioso, humilde, redentor.",
     cite:"Misal Romano · Lunes de la Semana Santa · Jn 12, 1–11; Is 42, 1–7" },
   1: {
     title:"Martes Santo",
+    short:"Martes",
     head:"El anuncio de la traición y de la negación",
     body:"En la liturgia de hoy, durante la Última Cena (Jn 13, 21–33.36–38), Jesús anuncia con turbación: «Uno de vosotros me va a entregar». Predice también la negación de Pedro: «No cantará el gallo antes de que me hayas negado tres veces». La Iglesia nos invita a mirar con honestidad nuestro propio corazón: somos capaces, como Pedro, de amar al Señor y a la vez negarle por miedo; somos capaces, como Judas, de seguirle de cerca y traicionarle por interés.<br><br>Pero vemos también la paciencia del Señor, que no rechaza a ninguno de los dos: a Judas le ofrece un bocado en signo de amistad, y a Pedro, después de la negación, le mirará con misericordia (cf. Lc 22, 61). En este día, dejémonos mirar también nosotros con esa mirada que perdona.",
     cite:"Misal Romano · Martes de la Semana Santa · Jn 13, 21–33.36–38" },
   2: {
     title:"Miércoles Santo",
+    short:"Miércoles",
     head:"El pacto de Judas",
     body:"Llamado también «Miércoles de espía», la liturgia (Mt 26, 14–25) presenta a Judas Iscariote ajustando con los sumos sacerdotes el precio de la traición: «¿Cuánto me dais y yo os lo entrego?». Le pesaron treinta monedas de plata. Desde ese momento, Judas buscaba una ocasión para entregarlo.<br><br>Frente a esa figura sombría, la primera lectura del día (Is 50, 4–9) pone en boca del Siervo del Señor una respuesta totalmente distinta: «Ofrecí la espalda a los que me golpeaban, las mejillas a los que me arrancaban la barba; no escondí el rostro ante los insultos y los salivazos». Cristo va libremente a la entrega. Hoy es día de pedir el don de la lealtad: no vender al Señor por ningún precio, por pequeño que parezca.",
     cite:"Misal Romano · Miércoles Santo · Mt 26, 14–25; Is 50, 4–9" },
   3: {
     title:"Viernes Santo",
+    short:"Viernes",
     head:"La Pasión y muerte del Señor",
     body:"En este día único en el año, la Iglesia no celebra la Eucaristía: contempla la Cruz desnuda y proclama la Pasión según san Juan. El Catecismo enseña que «Cristo murió por nuestros pecados, según las Escrituras» (1 Co 15, 3): su entrega libre en la Cruz es la entrega del Hijo amado al Padre, en el Espíritu, para la salvación del mundo (CIC 599–605). Jesús no fue víctima del azar: «Nadie me quita la vida; yo la doy libremente» (Jn 10, 18).<br><br>En la Pasión se cumple la voluntad amorosa del Padre, que «tanto amó al mundo, que entregó a su Hijo único» (Jn 3, 16). La Cruz no es derrota sino victoria: «Por tu santa cruz redimiste al mundo». Hoy adoramos la cruz, ayunamos y guardamos silencio, porque hoy ha muerto el Autor de la vida.",
     cite:"Catecismo de la Iglesia Católica 599–630 · Misal Romano · Viernes Santo · Jn 18–19" },
   4: {
     title:"Santo Entierro de Cristo",
+    short:"S. Entierro",
     head:"Descansa en el sepulcro · El descenso a los infiernos",
     body:"La Iglesia contempla a Cristo en el sepulcro y confiesa en el Credo: «descendió a los infiernos, al tercer día resucitó de entre los muertos». El Catecismo lo explica: «Jesús, como todos los hombres, conoció la muerte y se reunió con ellos en la morada de los muertos. Pero descendió allí como Salvador, proclamando la Buena Nueva a los espíritus que allí se encontraban» (CIC 632). «Estos justos esperaban a su Libertador en el seno de Abraham» (CIC 633).<br><br>Es la noche del silencio: María, junto al sepulcro cerrado, sostiene en su corazón la fe de toda la Iglesia, esperando la mañana de la Resurrección. El Santo Entierro es procesión de luto y de esperanza: no lloramos como los que no tienen esperanza, porque sabemos que ese cuerpo bendito, descansando, ya está venciendo a la muerte.",
     cite:"Catecismo de la Iglesia Católica 624–637 · Símbolo Apostólico · Sábado Santo (Sabbatum Sanctum)" }
 };
+
+// Las Siete Palabras de Cristo en la cruz. Las frases son texto bíblico literal;
+// las meditaciones siguen la tradición devocional clásica del Tridentino al P.
+// Alonso Messía SJ (1684), de uso libre.
+var _SPIRITUAL_PALABRAS = [
+  { n:1,
+    title:"«Padre, perdónalos, porque no saben lo que hacen.»",
+    ref:"Lucas 23, 34",
+    med:"La primera palabra es perdón. Crucificado, despojado, escarnecido, el Señor no pide justicia para sí: pide perdón para los que lo ejecutan. Pide al Padre que no les tenga en cuenta esta sangre, porque no saben de Quién la derraman. Es el corazón mismo del Evangelio hecho súplica.",
+    or:"Jesús crucificado, dame un corazón capaz de perdonar como vos perdonaste, sin que nadie me lo pida y sin esperar nada a cambio." },
+  { n:2,
+    title:"«Hoy estarás conmigo en el Paraíso.»",
+    ref:"Lucas 23, 43",
+    med:"Al ladrón que en el último momento le pide ser recordado, Jesús le promete más de lo que pidió: no «te recordaré algún día», sino «hoy estarás conmigo». La salvación es don gratuito del Crucificado, no premio del que se cree justo. Nunca es tarde para volverse a Cristo en la cruz.",
+    or:"Señor, acordate de mí; aunque sea tarde, abrime las puertas de tu Reino." },
+  { n:3,
+    title:"«Mujer, ahí tienes a tu hijo... Ahí tienes a tu madre.»",
+    ref:"Juan 19, 26-27",
+    med:"Desde la cruz, Jesús entrega su Madre a Juan, y en Juan a toda la Iglesia. María se convierte en Madre de los discípulos, y los discípulos en hijos suyos. La maternidad espiritual de María nace al pie de la cruz, donde la fe parecía vencida.",
+    or:"María, Madre del Crucificado, recibime también a mí como hijo tuyo y enseñame a estar al pie de la cruz." },
+  { n:4,
+    title:"«Dios mío, Dios mío, ¿por qué me has abandonado?»",
+    ref:"Mateo 27, 46 · Marcos 15, 34 · Salmo 22, 2",
+    med:"Jesús hace suyo el grito del Salmo 22, el lamento de toda la humanidad herida. No es desesperación: es la entrega más honda a un Padre que parece silencioso, pero que está presente. Cristo asume el abandono que es consecuencia del pecado para que ningún abandonado del mundo esté ya solo.",
+    or:"Cuando me sienta solo y sin respuesta, dame, Señor, confiarte mi abandono como vos confiaste el tuyo." },
+  { n:5,
+    title:"«Tengo sed.»",
+    ref:"Juan 19, 28",
+    med:"La sed física del agonizante revela una sed más honda: la de Dios por la salvación de cada alma. «Quien tenga sed, venga a mí y beba» había dicho (Jn 7, 37). En la cruz, Cristo tiene sed de nosotros, y se cumplen las palabras del Salmo: «En mi sed me dieron a beber vinagre» (Sal 69, 22).",
+    or:"Jesús sediento, dame sed de vos; que no me sacien las aguas del mundo, sino la fuente de tu costado abierto." },
+  { n:6,
+    title:"«Todo está cumplido.»",
+    ref:"Juan 19, 30",
+    med:"No dice «todo terminó», sino «todo está consumado», cumplido. La obra que el Padre le encomendó —la redención del mundo— queda completa en la cruz. Por eso san Pablo dirá: «Cuando llegó la plenitud de los tiempos, envió Dios a su Hijo» (Gal 4, 4). La cruz no es derrota: es victoria.",
+    or:"Jesús, ayudame a cumplir hasta el final lo que mi Padre me ha encomendado, sin desviarme ni quedar a la mitad." },
+  { n:7,
+    title:"«Padre, en tus manos encomiendo mi espíritu.»",
+    ref:"Lucas 23, 46 · Salmo 31, 6",
+    med:"Última palabra y entrega total. Como hijo que vuelve a los brazos del Padre, Jesús deposita su vida con confianza filial. Es la oración de la noche, la oración del último suspiro de los justos. La Iglesia hace suya esta palabra cada noche en el Oficio de Completas.",
+    or:"Padre, en tus manos pongo lo que tengo y lo que soy; en tus manos quiero morir y resucitar con tu Hijo." }
+];
 
 function openSpiritual(){
   var modal=document.getElementById('spiritualModal');
@@ -4669,6 +4715,18 @@ function renderSpiritual(section){
       +'<div class="sp-body">'+d.body+'</div>'
       +'<div class="sp-cite">📜 '+d.cite+'</div>'
       +'</div>';
+  } else if(section==='sp'){
+    bodyHTML='<div class="sp-intro">Las Siete Palabras son las últimas frases que los Evangelios recogen de los labios de Jesús en la cruz. Se meditan tradicionalmente el Viernes Santo entre las 12 y las 3 de la tarde, pero pueden rezarse cualquier día de la Semana Santa.</div>';
+    for(var pi=0;pi<_SPIRITUAL_PALABRAS.length;pi++){
+      var p=_SPIRITUAL_PALABRAS[pi];
+      bodyHTML+='<div class="sp-station">'
+        +'<div class="sp-st-title"><span class="sp-st-n">'+p.n+'</span> '+p.title+'</div>'
+        +'<div class="sp-st-vr">📖 '+p.ref+'</div>'
+        +'<div class="sp-st-med">'+p.med+'</div>'
+        +'<div class="sp-st-or"><i>'+p.or+'</i></div>'
+        +'</div>';
+    }
+    bodyHTML+='<div class="sp-cite">📜 Evangelios sinópticos y de san Juan · Misal Romano (liturgia del Viernes Santo) · tradición devocional de las Siete Palabras (s. XVII, popularizada por el P. Alonso Messía SJ).</div>';
   } else {
     bodyHTML='<div class="sp-intro">«Te adoramos, oh Cristo, y te bendecimos: que por tu santa cruz redimiste al mundo.»<br><br>Las catorce estaciones se rezan completas cada día de la Semana Santa. Texto: san Alfonso María de Ligorio.</div>';
     for(var i=0;i<_SPIRITUAL_STATIONS.length;i++){
@@ -4686,8 +4744,9 @@ function renderSpiritual(section){
   m.innerHTML=
     '<div class="sp-hdr">'
     +'<div class="sp-tabs">'
-    +'<button class="sp-tab '+(section==='day'?'a':'')+'" onclick="renderSpiritual(\'day\')">🕊️ '+d.title+'</button>'
+    +'<button class="sp-tab '+(section==='day'?'a':'')+'" onclick="renderSpiritual(\'day\')">🕊️ '+(d.short||d.title)+'</button>'
     +'<button class="sp-tab '+(section==='vc'?'a':'')+'" onclick="renderSpiritual(\'vc\')">✝️ Vía Crucis</button>'
+    +'<button class="sp-tab '+(section==='sp'?'a':'')+'" onclick="renderSpiritual(\'sp\')">✟ 7 Palabras</button>'
     +'</div>'
     +'<button class="sp-close" onclick="closeSpiritual()" aria-label="Cerrar">✕</button>'
     +'</div>'

@@ -136,7 +136,7 @@ body.se-mode .vtab.a{color:#e8e8e8!important}
 .spiritual-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:6000;width:94%;max-width:520px;max-height:88vh;background:#1a1a2e;border:2px solid #7c3aed;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.85);flex-direction:column;overflow:hidden}
 .sp-hdr{display:flex;align-items:stretch;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.3);flex-shrink:0}
 .sp-tabs{flex:1;display:flex;min-width:0}
-.sp-tab{flex:1;background:none;border:none;color:#888;padding:12px 6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-tab{flex:1;background:none;border:none;color:#888;padding:11px 4px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sp-tab.a{color:#c084fc;border-bottom-color:#c084fc;background:rgba(124,58,237,.08)}
 .sp-close{background:none;border:none;color:#888;font-size:22px;cursor:pointer;padding:0 14px;flex-shrink:0}
 .sp-content{overflow-y:auto;padding:14px 16px 22px;-webkit-overflow-scrolling:touch;font-size:15px;line-height:1.55;color:#e0d8e8}
