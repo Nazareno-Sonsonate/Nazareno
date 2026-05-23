@@ -708,6 +708,21 @@ function openCfg(){
     var cmin=document.getElementById('cortMinutos');if(cmin) cmin.value=VIER_CORTESIAS_MIN;
   }
   updateAdminLiveControls();
+  // Lazily inject a "force update" section at the bottom of the cfg panel.
+  // Visible to everyone so users can always nudge the PWA to refresh.
+  if(!document.getElementById('cfgUpdateSection')){
+    var panel=document.getElementById('cfgP');
+    if(panel){
+      var sec=document.createElement('div');
+      sec.id='cfgUpdateSection';
+      sec.style.cssText='border-top:1px solid rgba(255,255,255,.1);margin-top:10px;padding-top:10px';
+      sec.innerHTML=
+        '<div style="font-size:12px;color:#aaa;margin-bottom:6px">🔄 Actualizar la app</div>'
+        +'<button id="forceUpdateBtn" onclick="forceUpdateApp()" style="width:100%;padding:10px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.15);color:#c084fc;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🔄 Forzar actualización ahora</button>'
+        +'<div style="font-size:10px;color:#666;margin-top:6px;line-height:1.4">Borra el caché local y descarga la versión más reciente. Útil si los cambios no aparecen automáticamente.</div>';
+      panel.appendChild(sec);
+    }
+  }
 }
 function closeCfg(){
   $('cfgP').style.display='none';
@@ -2655,6 +2670,15 @@ setTimeout(function(){
       setTimeout(function(){ window.location.reload(); }, 400);
     });
   }
+  // Expose so the ⚙️ panel can offer a manual "force update" button. Useful
+  // when the automatic banner missed an update (e.g. first deploy after we
+  // shipped the banner itself, or a slow network where the SW install raced
+  // ahead of the listener).
+  window.forceUpdateApp = function(){
+    var btn = document.getElementById('forceUpdateBtn');
+    if(btn){ btn.disabled=true; btn.textContent='⏳ Actualizando...'; }
+    applyUpdate(null);
+  };
   function watchForUpdate(r){
     if(!r) return;
     r.addEventListener('updatefound', function(){
