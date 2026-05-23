@@ -152,6 +152,7 @@ body.se-mode .vtab.a{color:#e8e8e8!important}
 .sp-st-med{font-size:14px;color:#ddd;line-height:1.65;margin-bottom:8px;text-align:justify}
 .sp-st-or{font-size:14px;color:#c8b8d8;line-height:1.55;margin-bottom:6px;padding:8px 10px;background:rgba(124,58,237,.07);border-radius:6px}
 .sp-st-pad{font-size:12px;color:#888;text-align:center;font-style:italic}
+.sp-st-img{display:block;width:100%;max-width:420px;margin:8px auto 10px;border-radius:8px;background:rgba(0,0,0,.4)}
 /* Santo Entierro: silver/luto colors for spiritual modal */
 body.se-mode .spiritual-modal{border-color:rgba(255,255,255,.25);background:#0f0f0f}
 body.se-mode .sp-tab.a{color:#e8e8e8!important;border-bottom-color:#e8e8e8!important;background:rgba(255,255,255,.06)!important}
