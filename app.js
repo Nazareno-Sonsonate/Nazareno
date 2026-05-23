@@ -4564,45 +4564,59 @@ function adjustAutoTime(delta){
 // browser, onerror la oculta y el bloque sigue funcionando sin ella.
 var _SPIRITUAL_STATIONS = [
   { n:1, title:"Jesús es condenado a muerte",
+    img:"../images/stations/station-01.jpg",
     med:"Considera, alma mía, cómo Jesús, después de haber sido azotado y coronado de espinas, fue injustamente condenado por Pilato a morir en la cruz. ¡Cuántas veces yo, con mis pecados, he confirmado esa sentencia!",
     or:"Jesús mío, abrazo tu sentencia y por amor tuyo acepto la muerte que tu Padre haya dispuesto para mí." },
   { n:2, title:"Jesús con la cruz a cuestas",
+    img:"../images/stations/station-02.jpg",
     med:"Considera cómo Jesús, llevando sobre sus hombros la cruz, pensaba en mí, ofreciendo a su Padre, en favor mío, la muerte que iba a sufrir.",
     or:"Amantísimo Jesús, abrazo todas las tribulaciones que me has destinado hasta la muerte. Quiero llevarlas todas en unión con tu cruz." },
   { n:3, title:"Jesús cae por primera vez",
+    img:"../images/stations/station-03.jpg",
     med:"Considera esta primera caída de Jesús bajo el peso de la cruz: tan delicado era su cuerpo y tan grande el peso. La debilidad de su carne y el peso de mis pecados le hicieron caer.",
     or:"Jesús mío, dame fortaleza para vencer las tentaciones, pues sin tu auxilio caeré también yo." },
   { n:4, title:"Jesús encuentra a su Madre Santísima",
+    img:"../images/stations/station-04.jpg",
     med:"Considera el encuentro de Jesús con María, su Madre, en el camino del Calvario. ¡Qué espada de dolor traspasó el corazón de María al ver a su Hijo en tal estado!",
     or:"Madre Dolorosísima, por los méritos de tu dolor, alcánzame la gracia de amar de verdad a Jesús." },
   { n:5, title:"El Cireneo ayuda a Jesús a llevar la cruz",
+    img:"../images/stations/station-05.jpg",
     med:"Considera cómo los verdugos, viendo a Jesús desfallecer, obligaron a Simón Cireneo a ayudarle a llevar la cruz.",
     or:"Dulcísimo Jesús, no rehuso la cruz como el Cireneo: la abrazo, la acepto. Acepto, en particular, la muerte que me esté destinada, con las penas que la acompañen; la uno a la tuya y te la ofrezco." },
   { n:6, title:"La Verónica enjuga el rostro de Jesús",
+    img:"../images/stations/station-06.jpg",
     med:"Considera cómo la santa mujer Verónica, viendo el rostro de Jesús cubierto de sudor y de sangre, le presentó un lienzo en el que quedó impresa la imagen de su santa Faz.",
     or:"Amado Jesús, tu rostro era hermoso antes, pero esta jornada lo ha desfigurado. Imprime tu imagen en mi alma, y haz que mi corazón te ame siempre." },
   { n:7, title:"Jesús cae por segunda vez",
+    img:"../images/stations/station-07.jpg",
     med:"Considera esta segunda caída de Jesús bajo la cruz: caída que renueva el dolor de María, en lo profundo que sentía al ver a su Hijo de tal manera maltratado.",
     or:"Bondadosísimo Jesús, ¡cuántas veces me has perdonado y cuántas he vuelto a caer y a ofenderte! Por los méritos de esta nueva caída, dame la fuerza necesaria para perseverar en tu gracia hasta la muerte." },
   { n:8, title:"Jesús consuela a las mujeres de Jerusalén",
+    img:"../images/stations/station-08.jpg",
     med:"Considera cómo las mujeres, viendo a Jesús en tal estado, lloraban llenas de compasión. Y Jesús les dijo: «No lloréis por mí, sino por vosotras y por vuestros hijos».",
     or:"Jesús mío, lloro por las ofensas que te he hecho, por las penas que te he causado. Es tu amor, mi Jesús, el que me hace llorar más que el temor del infierno." },
   { n:9, title:"Jesús cae por tercera vez",
+    img:"../images/stations/station-09.jpg",
     med:"Considera la tercera caída de Jesús: era extraordinaria su debilidad, y enorme la crueldad de los verdugos, que pretendían hacerle apresurar el paso cuando apenas le quedaba aliento.",
     or:"Oh Jesús, sufrimiento de los sufrimientos, por los méritos de tu debilidad, dame fuerzas para vencer todo respeto humano y todas mis pasiones desordenadas, que me han llevado a despreciar tu amistad." },
   { n:10, title:"Jesús es despojado de sus vestiduras",
+    img:"../images/stations/station-10.jpg",
     med:"Considera la violencia con que los verdugos despojaron a Jesús. Las vestiduras estaban pegadas a su carne lacerada, y al arrancárselas las despegaban, llevándose consigo parte de la piel.",
     or:"Inocentísimo Jesús, por los méritos del dolor que sentiste, ayúdame a despojarme de todo apego a las cosas de la tierra, para poner solamente en ti mi amor y mi deseo." },
   { n:11, title:"Jesús es clavado en la cruz",
+    img:"../images/stations/station-11.jpg",
     med:"Considera cómo Jesús, después de ser arrojado sobre la cruz, extendió por sí mismo sus manos, y ofreció a su Padre eterno el sacrificio de su vida por nuestra salvación. Aquellos verdugos le clavaron, y luego, enarbolando la cruz, le dejaron morir de dolor sobre ella.",
     or:"Crucificado Jesús mío, clavo en tu cruz mi corazón; allí lo dejo amando, y allí muero contigo." },
   { n:12, title:"Jesús muere en la cruz",
+    img:"../images/stations/station-12.jpg",
     med:"Considera cómo tu Jesús, después de tres horas de agonía sobre la cruz, consumido por el dolor, exhausto, inclina la cabeza y muere.",
     or:"Oh Jesús, dulce amor mío, beso esa cruz en que has muerto por mí. Yo, por mis pecados, he merecido la muerte; pero tu muerte es mi esperanza." },
   { n:13, title:"Jesús es bajado de la cruz y entregado a María",
+    img:"../images/stations/station-13.jpg",
     med:"Considera cómo, después de muerto el Señor, dos discípulos, José y Nicodemo, lo bajaron de la cruz y lo entregaron a su Madre Santísima, que con dolor lo recibió en su regazo.",
     or:"Madre Dolorosísima, recibe mi corazón en esos brazos en que recibiste a tu Hijo difunto; te lo doy entero, y te pido que me lo conserves siempre tuyo." },
   { n:14, title:"Jesús es sepultado",
+    img:"../images/stations/station-14.jpg",
     med:"Considera cómo los discípulos llevaron al sepulcro el cuerpo de Jesús; allí lo depositaron, y se cerró la piedra. ¡Cuánto dolor sintió María al separarse de su Hijo!",
     or:"Sepultado Jesús, beso esa piedra que te cierra. Pero al tercer día has resucitado: dame la gracia de resucitar gloriosamente contigo en el día final." }
 ];
@@ -4743,6 +4757,14 @@ function renderSpiritual(section){
         +'<div class="sp-st-pad">Padre Nuestro · Ave María · Gloria al Padre.</div>'
         +'</div>';
     }
+    // Epílogo: la Resurrección. El Vía Crucis no termina en el sepulcro; el
+    // sentido de toda la cruz se ve al tercer día. Imagen de la serie devocional.
+    bodyHTML+='<div class="sp-station" style="border-color:rgba(255,215,100,.35);background:rgba(255,215,100,.05)">'
+      +'<div class="sp-st-title" style="color:#ffd766"><span class="sp-st-n" style="background:#b89033">✟</span> Epílogo · La Resurrección</div>'
+      +'<img loading="lazy" decoding="async" class="sp-st-img" src="../images/stations/station-15-resurrection.jpg" alt="Resurrección de Cristo" onerror="this.remove()">'
+      +'<div class="sp-st-med">«¿Por qué buscáis entre los muertos al que vive? No está aquí, ha resucitado» (Lc 24, 5-6). El Vía Crucis no termina en el sepulcro: la cruz se entiende sólo a la luz de la Pascua. Por eso meditar la Pasión no es quedarnos en el dolor, sino acompañar al Señor sabiendo que el sufrimiento, ofrecido con Él, tiene la victoria asegurada.</div>'
+      +'<div class="sp-st-or"><i>Cristo resucitado, hacé que mi vida, atravesada por muchas pequeñas cruces, conozca ya el comienzo de tu Pascua.</i></div>'
+      +'</div>';
     bodyHTML+='<div class="sp-cite">📜 Texto base: san Alfonso María de Ligorio, <i>Vía Crucis</i> (s. XVIII). De uso devocional libre.</div>';
   }
   m.innerHTML=
