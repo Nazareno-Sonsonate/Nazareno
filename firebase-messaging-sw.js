@@ -35,12 +35,18 @@ self.addEventListener('notificationclick', function(event) {
   );
 });
 
-const CACHE_NAME = 'semana-santa-v61';
+const CACHE_NAME = 'semana-santa-v62';
 const URLS_TO_CACHE = ['./', './index.html', './app.js', './app.css', './routes-data.js', './icon-192.png', './icon-512.png', './se-icon-192.png', './jesus.jpg', './maria.jpg', './se-entierro.jpg', './se-virgen.jpg', './jesus-nazareno/', './jesus-nazareno/index.html', './jesus-nazareno/manifest.json', './santo-entierro/', './santo-entierro/index.html', './santo-entierro/manifest.json'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(URLS_TO_CACHE)));
   self.skipWaiting();
+});
+
+// Allow the client to fast-track activation by posting {type:'SKIP_WAITING'}.
+// Used by the in-app update banner so the new SW takes over immediately.
+self.addEventListener('message', event => {
+  if(event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
