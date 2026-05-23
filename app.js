@@ -4559,6 +4559,9 @@ function adjustAutoTime(delta){
 // Textos del Vía Crucis: San Alfonso María de Ligorio (dominio público)
 // Significado de cada día: Catecismo de la Iglesia Católica + Misal Romano
 // ============================================================
+// Las catorce estaciones del Vía Crucis. Imágenes opcionales — si `img` está
+// definido, se muestra arriba de la meditación; si la carga falla en el
+// browser, onerror la oculta y el bloque sigue funcionando sin ella.
 var _SPIRITUAL_STATIONS = [
   { n:1, title:"Jesús es condenado a muerte",
     med:"Considera, alma mía, cómo Jesús, después de haber sido azotado y coronado de espinas, fue injustamente condenado por Pilato a morir en la cruz. ¡Cuántas veces yo, con mis pecados, he confirmado esa sentencia!",
@@ -4733,6 +4736,7 @@ function renderSpiritual(section){
       var s=_SPIRITUAL_STATIONS[i];
       bodyHTML+='<div class="sp-station">'
         +'<div class="sp-st-title"><span class="sp-st-n">'+s.n+'</span> '+s.title+'</div>'
+        +(s.img?'<img loading="lazy" decoding="async" class="sp-st-img" src="'+s.img+'" alt="Estación '+s.n+'" onerror="this.remove()">':'')
         +'<div class="sp-st-vr"><b>V.</b> Te adoramos, oh Cristo, y te bendecimos.<br><b>R.</b> Que por tu santa cruz redimiste al mundo.</div>'
         +'<div class="sp-st-med">'+s.med+'</div>'
         +'<div class="sp-st-or"><i>'+s.or+'</i></div>'
