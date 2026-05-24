@@ -2253,6 +2253,11 @@ function zoomChange(i){
 // Spectator view: read-only, procession-centric. No personal group, no
 // register/undo buttons — just "what's happening now" plus the full list.
 function renderSpectatorView(){
+  // Spectator has no personal stats — clear any sticky info left over from a
+  // previous carrier-mode render (otherwise "Mi grupo" + a duplicate
+  // "Procesión completada" linger above the spectator list).
+  var siEl=document.getElementById('stickyInfo');
+  if(siEl) siEl.innerHTML='';
   if(!changes||changes.length===0){
     _renderLiveLastHTML='<<spec-loading>>';
     $('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">Esperando datos de la procesión...</p></div>';
