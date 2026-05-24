@@ -2775,26 +2775,47 @@ setTimeout(function(){
   if(!('serviceWorker' in navigator)) return;
   var reg=null;
   var bannerShown=false;
+  var countdownTimer=null;
   function showUpdateBanner(){
     if(bannerShown) return; bannerShown=true;
     var bar=document.createElement('div');
     bar.id='swUpdateBanner';
     bar.setAttribute('role','alert');
-    bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:10000;background:linear-gradient(90deg,#7c3aed,#a855f7);color:#fff;padding:12px 16px;text-align:center;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4);font-family:inherit;animation:swSlideIn .35s ease-out';
-    bar.innerHTML='🆕 <span style="text-decoration:underline">Hay una versión nueva — tocá para actualizar</span><div style="font-size:11px;font-weight:400;opacity:.9;margin-top:3px">Limpia caché y recarga completo</div>';
-    bar.onclick=function(){ applyUpdate(bar); };
+    bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:10000;background:linear-gradient(90deg,#7c3aed,#a855f7);color:#fff;padding:12px 16px;text-align:center;font-size:14px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.4);font-family:inherit;animation:swSlideIn .35s ease-out';
     // Inject the slide-in keyframe once
     if(!document.getElementById('swUpdateStyle')){
       var st=document.createElement('style'); st.id='swUpdateStyle';
       st.textContent='@keyframes swSlideIn{from{transform:translateY(-100%)}to{transform:translateY(0)}}';
       document.head.appendChild(st);
     }
+    var secs=10;
+    function paint(){
+      bar.innerHTML=
+        '🆕 Nueva versión disponible'
+        +'<div style="font-size:11px;font-weight:400;opacity:.95;margin-top:3px">Actualizando en '+secs+'s · limpia caché y reinstala</div>'
+        +'<div style="margin-top:8px;display:flex;gap:8px;justify-content:center">'
+        +'<button id="swNow" style="padding:6px 14px;border:none;border-radius:8px;background:#fff;color:#7c3aed;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Actualizar ya</button>'
+        +'<button id="swLater" style="padding:6px 14px;border:1px solid rgba(255,255,255,.6);border-radius:8px;background:transparent;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Ahora no</button>'
+        +'</div>';
+      var nowBtn=bar.querySelector('#swNow');
+      var laterBtn=bar.querySelector('#swLater');
+      if(nowBtn) nowBtn.onclick=function(e){ e.stopPropagation(); if(countdownTimer)clearInterval(countdownTimer); applyUpdate(bar); };
+      if(laterBtn) laterBtn.onclick=function(e){ e.stopPropagation(); if(countdownTimer)clearInterval(countdownTimer); bar.remove(); bannerShown=false; };
+    }
+    paint();
     document.body.appendChild(bar);
+    countdownTimer=setInterval(function(){
+      // Don't yank the app out from under an admin who is editing the map.
+      if(typeof editMode!=='undefined' && editMode) return;
+      secs--;
+      if(secs<=0){ clearInterval(countdownTimer); applyUpdate(bar); return; }
+      paint();
+    },1000);
   }
   function applyUpdate(bar){
     if(bar){
       bar.style.pointerEvents='none';
-      bar.innerHTML='<span style="display:inline-block;animation:swSlideIn .8s infinite alternate">⏳ Actualizando...</span>';
+      bar.innerHTML='<span style="display:inline-block;animation:swSlideIn .8s infinite alternate">⏳ Actualizando e instalando versión nueva...</span>';
     }
     // Wipe every cache the browser holds for this origin
     var wipe = (typeof caches!=='undefined' && caches.keys)
