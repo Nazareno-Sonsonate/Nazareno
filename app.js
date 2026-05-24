@@ -2811,10 +2811,10 @@ setTimeout(function(){
 
 // ========== SERVICE WORKER + UPDATE FLOW ==========
 // On every load we register the SW and then aggressively check for a newer
-// version. When one is found we surface a top banner so the user knows there
-// is fresh content; tapping it wipes all caches, asks the new SW to take
-// over and reloads. That sidesteps the "phantom stale PWA" problem where the
-// installed app keeps showing old code even after a deploy.
+// version. When one is found we surface a top banner; applying it hands control
+// to the new SW (which pre-caches fresh files on install and drops old caches
+// on activate) and reloads. We deliberately avoid wiping caches client-side
+// before reload, since that can leave the app unstyled if the network blips.
 (function(){
   if(!('serviceWorker' in navigator)) return;
   var reg=null;
@@ -2859,18 +2859,24 @@ setTimeout(function(){
   function applyUpdate(bar){
     if(bar){
       bar.style.pointerEvents='none';
-      bar.innerHTML='<span style="display:inline-block;animation:swSlideIn .8s infinite alternate">⏳ Actualizando e instalando versión nueva...</span>';
+      bar.innerHTML='<span style="display:inline-block;animation:swSlideIn .8s infinite alternate">⏳ Actualizando versión nueva...</span>';
     }
-    // Wipe every cache the browser holds for this origin
-    var wipe = (typeof caches!=='undefined' && caches.keys)
-      ? caches.keys().then(function(keys){ return Promise.all(keys.map(function(k){return caches.delete(k);})); })
-      : Promise.resolve();
-    wipe.then(function(){
-      // Ask the waiting SW (if any) to take over right now
-      if(reg && reg.waiting){ try{ reg.waiting.postMessage({type:'SKIP_WAITING'}); }catch(e){} }
-      // Hard reload — the new SW + clean caches should serve fresh code now
-      setTimeout(function(){ window.location.reload(); }, 400);
-    });
+    // IMPORTANT: do NOT wipe all caches client-side before reloading. Doing so
+    // leaves a window with an empty cache; if the network blips during the
+    // reload, app.css/app.js fail to fetch and the page renders unstyled.
+    // The new SW (bumped CACHE_NAME) already pre-caches the fresh files on
+    // install and deletes old caches on activate — that is enough to refresh.
+    var reloaded=false;
+    var doReload=function(){ if(reloaded) return; reloaded=true; window.location.reload(); };
+    if(reg && reg.waiting){
+      // Hand control to the freshly-installed SW, then reload once it takes over.
+      try{ navigator.serviceWorker.addEventListener('controllerchange', doReload); }catch(e){}
+      try{ reg.waiting.postMessage({type:'SKIP_WAITING'}); }catch(e){}
+      setTimeout(doReload, 2000); // safety net if controllerchange never fires
+    } else {
+      // No pending SW (manual force): network-first will pull fresh HTML/JS/CSS.
+      setTimeout(doReload, 300);
+    }
   }
   // Expose so the ⚙️ panel can offer a manual "force update" button. Useful
   // when the automatic banner missed an update (e.g. first deploy after we
