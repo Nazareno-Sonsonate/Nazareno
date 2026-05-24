@@ -107,7 +107,11 @@ function readParams(){
   // Legacy: ?saca=N sets default group
   if(p.has('saca')) $('cS').value=p.get('saca');
   // Public group picker: shown for everyone except admins (auth flips this later)
-  if(isShared){
+  if(isShared && _spectatorMode){
+    // Spectator: no group needed; use sensible defaults and skip the picker.
+    var savedSpec=localStorage.getItem(isSEMode?'sharedUserSE':'sharedUser');
+    if(savedSpec){ try{ var ss=JSON.parse(savedSpec); $('cType').value=ss.t||21; $('cG').value=ss.g||5; }catch(e){} }
+  } else if(isShared){
     var storageKey=isSEMode?'sharedUserSE':'sharedUser';
     const saved=localStorage.getItem(storageKey);
     if(saved){
@@ -132,6 +136,7 @@ function readParams(){
       }
       $('sharedModal').style.display='flex';
       $('sharedDayLabel').textContent=isSEMode?'Santo Entierro de Cristo':dayNames[currentDay];
+      ensureSpectatorButton();
     }
   }
   // Apply SE theme if day 4
@@ -152,6 +157,38 @@ function readParams(){
 let sharedPickedType=21;
 let sharedPickedColor=0;
 let sharedLastGroup=0;
+
+// Spectator mode: a viewer who only follows the procession, no group/carries.
+var _spectatorMode = (function(){ try{ return localStorage.getItem('procMode')==='espectador'; }catch(e){ return false; } })();
+function setSpectatorMode(on){
+  _spectatorMode = !!on;
+  try{ localStorage.setItem('procMode', on?'espectador':'cargador'); }catch(e){}
+}
+function pickSpectator(){
+  setSpectatorMode(true);
+  var sm=document.getElementById('sharedModal'); if(sm) sm.style.display='none';
+  if(typeof calc==='function') calc();
+}
+// Inject the "Espectador" button into step1 of the shared modal once it is
+// visible (SE mode rebuilds step1's HTML, so we append after it shows).
+function ensureSpectatorButton(){
+  var step1=document.getElementById('step1');
+  if(!step1 || document.getElementById('btnSpectator')) return;
+  var wrap=document.createElement('div');
+  wrap.id='btnSpectatorWrap';
+  wrap.style.cssText='margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12)';
+  var b=document.createElement('button');
+  b.id='btnSpectator';
+  b.onclick=pickSpectator;
+  b.style.cssText='width:100%;padding:12px;border:1px solid #888;border-radius:12px;background:rgba(255,255,255,.05);color:#ddd;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit';
+  b.innerHTML='👁️ Solo quiero seguir la procesión';
+  wrap.appendChild(b);
+  var hint=document.createElement('div');
+  hint.style.cssText='font-size:10px;color:#888;margin-top:6px;text-align:center';
+  hint.textContent='Modo espectador · sin grupo';
+  wrap.appendChild(hint);
+  step1.appendChild(wrap);
+}
 
 function pickType(t){
   sharedPickedType=t;
@@ -708,6 +745,19 @@ function openCfg(){
     var cmin=document.getElementById('cortMinutos');if(cmin) cmin.value=VIER_CORTESIAS_MIN;
   }
   updateAdminLiveControls();
+  // Lazily inject a "mode switch" section — only for public (non-admin) users.
+  if(isShared && !document.getElementById('cfgModeSection')){
+    var panelM=document.getElementById('cfgP');
+    if(panelM){
+      var msec=document.createElement('div');
+      msec.id='cfgModeSection';
+      msec.style.cssText='border-top:1px solid rgba(255,255,255,.1);margin-top:10px;padding-top:10px';
+      msec.innerHTML='<div style="font-size:12px;color:#aaa;margin-bottom:6px">👁️ Modo de uso</div><div id="cfgModeBtns"></div>'
+        +'<div style="font-size:10px;color:#666;margin-top:6px;line-height:1.4">Espectador: seguís la procesión sin grupo. Cargador: registrás tus cargadas.</div>';
+      panelM.appendChild(msec);
+    }
+  }
+  renderModeButtons();
   // Lazily inject a "force update" section at the bottom of the cfg panel.
   // Visible to everyone so users can always nudge the PWA to refresh.
   if(!document.getElementById('cfgUpdateSection')){
@@ -723,6 +773,33 @@ function openCfg(){
       panel.appendChild(sec);
     }
   }
+}
+
+function renderModeButtons(){
+  var el=document.getElementById('cfgModeBtns');
+  if(!el) return;
+  var specOn=_spectatorMode;
+  el.style.cssText='display:flex;gap:6px';
+  el.innerHTML=
+    '<button onclick="switchToCargador()" style="flex:1;padding:9px;border:1px solid '+(!specOn?'#7c3aed':'#666')+';border-radius:8px;background:'+(!specOn?'rgba(124,58,237,.2)':'rgba(255,255,255,.04)')+';color:'+(!specOn?'#c084fc':'#888')+';font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🙋 Cargador</button>'
+    +'<button onclick="switchToSpectator()" style="flex:1;padding:9px;border:1px solid '+(specOn?'#7c3aed':'#666')+';border-radius:8px;background:'+(specOn?'rgba(124,58,237,.2)':'rgba(255,255,255,.04)')+';color:'+(specOn?'#c084fc':'#888')+';font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">👁️ Espectador</button>';
+}
+function switchToSpectator(){
+  setSpectatorMode(true);
+  renderModeButtons();
+  if(typeof calc==='function') calc();
+}
+function switchToCargador(){
+  setSpectatorMode(false);
+  renderModeButtons();
+  // If no group was ever chosen, reopen the picker so they configure one.
+  var saved=localStorage.getItem(isSEMode?'sharedUserSE':'sharedUser');
+  if(!saved && isShared){
+    closeCfg();
+    var sm=document.getElementById('sharedModal'); if(sm){ sm.style.display='flex'; ensureSpectatorButton(); }
+    return;
+  }
+  if(typeof calc==='function') calc();
 }
 function closeCfg(){
   $('cfgP').style.display='none';
@@ -1640,7 +1717,10 @@ function calc() {
   $('hTitle').textContent=titleIcon+' '+titleText;
   $('hTitle').style.color=isSEMode?'#e8e8e8':'#c084fc';
   var depTimeStr=fmt(c.h*60+(c.hm||0));
-  if(isShared){
+  if(_spectatorMode){
+    var totGrp=(c.t===27)?getMujCount():getHomCount();
+    $('hSub').textContent=dateStr+' · Sale '+depTimeStr+' · '+totGrp+' grupos · 👁️ Espectador';
+  } else if(isShared){
     $('hSub').textContent=dateStr+' · Sale '+depTimeStr+' · Grupo #'+c.g;
   } else {
     $('hSub').textContent=dateStr+' · Sale '+depTimeStr+' · '+c.mn+'min · #'+c.g+' · Saca #'+c.s+' → #'+lastGrp+extra;
@@ -2152,9 +2232,66 @@ function renderLiveImmediate(){
   if(_renderLiveTimer){ clearTimeout(_renderLiveTimer); _renderLiveTimer = null; }
   renderLiveImpl();
 }
+// Center the map on a change point (used by the spectator list rows).
+function zoomChange(i){
+  if(!changes||!changes[i]) return;
+  showView(0);
+  var c=changes[i];
+  if(typeof gmap!=='undefined'&&gmap){ gmap.setCenter({lat:c.lat,lng:c.lng}); gmap.setZoom(19); }
+}
+
+// Spectator view: read-only, procession-centric. No personal group, no
+// register/undo buttons — just "what's happening now" plus the full list.
+function renderSpectatorView(){
+  if(!changes||changes.length===0){
+    _renderLiveLastHTML='<<spec-loading>>';
+    $('livePanel').innerHTML='<div class="live-card"><p style="color:#aaa">Esperando datos de la procesión...</p></div>';
+    return;
+  }
+  var total=changes.length;
+  var isPast=isDayPast(currentDay);
+  var eff=getEffCambio();
+  if(isPast) eff=total;
+  var done=Math.max(0,Math.min(eff,total));
+  var pct=total>0?Math.round(done/total*100):0;
+  var h='';
+  if(isPast || eff>=total){
+    h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3)"><div style="font-size:16px;font-weight:700;color:#4CAF50">✅ Procesión completada</div></div>';
+  } else if(eff>0){
+    var nowObj=changes[Math.min(eff,total)-1];
+    h+='<div class="live-next">';
+    h+='<div class="ln-label">Cargando ahora</div>';
+    h+='<div class="ln-num">Grupo '+nowObj.grp+'</div>';
+    h+='<div class="ln-ref">📍 '+_escapeHtml(getCarryRef(nowObj))+'</div>';
+    h+='<div class="ln-time">Cambio '+Math.min(eff,total)+' de '+total+'</div>';
+    h+='</div>';
+  } else {
+    h+='<div class="live-next"><div class="ln-label">La procesión aún no comienza</div><div class="ln-num" style="font-size:22px">⏳</div><div class="ln-ref">Seguí el avance en vivo aquí</div></div>';
+  }
+  h+='<div class="live-progress"><div class="live-progress-bar" style="width:'+pct+'%">'+done+'/'+total+'</div></div>';
+  h+='<div style="margin-top:12px">';
+  for(var i=0;i<changes.length;i++){
+    var ch=changes[i];
+    var cls=ch.num<eff?'done':(ch.num===eff?'current':'pending');
+    var icon=ch.num<eff?'✅':(ch.num===eff?'✝️':'⏳');
+    var ref=_escapeHtml(getCarryRef(ch));
+    h+='<div class="live-carry '+cls+'" onclick="zoomChange('+i+')">';
+    h+='<div class="lc-num">'+icon+'</div>';
+    h+='<div class="lc-info"><div class="lc-ref">Grupo '+ch.grp+(ref?' — '+ref:'')+'</div><div class="lc-sub">Cambio #'+ch.num+'</div></div>';
+    h+='<div class="lc-time">'+_escapeHtml(ch.time||'')+'</div>';
+    h+='</div>';
+  }
+  h+='</div>';
+  if(h===_renderLiveLastHTML) return;
+  _renderLiveLastHTML=h;
+  $('livePanel').innerHTML=h;
+}
+
 function renderLiveImpl(){
   // Always update banners first
   updateBanners();
+  // Spectator mode has its own simplified read-only view.
+  if(_spectatorMode){ renderSpectatorView(); return; }
   // Wait for changes to be calculated
   if(!changes||changes.length===0){
     _renderLiveLastHTML='<<loading>>';
