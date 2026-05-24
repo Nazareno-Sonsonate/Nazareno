@@ -4995,6 +4995,44 @@ var _SPIRITUAL_PALABRAS = [
     or:"Padre, en tus manos pongo lo que tengo y lo que soy; en tus manos quiero morir y resucitar con tu Hijo." }
 ];
 
+// ========== MAIN MENU (replaces the cryptic header icon row) ==========
+function openAlerts(){
+  var ap=document.getElementById('alertPanel');
+  var ao=document.getElementById('alertOverlay');
+  if(!ap||!ao) return;
+  ap.style.display='block'; ao.style.display='block';
+  if(typeof populateAlertSelects==='function') populateAlertSelects();
+  if(typeof updatePushUI==='function') updatePushUI();
+}
+function openMainMenu(){
+  var ov=document.getElementById('mainMenuOverlay');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='mainMenuOverlay';
+    ov.className='mm-overlay';
+    ov.onclick=function(e){ if(e.target===ov) closeMainMenu(); };
+    document.body.appendChild(ov);
+  }
+  var row=function(ic,title,desc,fn){
+    return '<button class="mm-row" onclick="closeMainMenu();'+fn+'"><span class="mm-ic">'+ic+'</span>'
+      +'<span class="mm-tx"><b>'+title+'</b><small>'+desc+'</small></span><span class="mm-arrow">›</span></button>';
+  };
+  var adminRow = isAdmin
+    ? row('🚪','Cerrar sesión de editor','Salir del modo administrador','logoutAdmin()')
+    : row('🔑','Acceso administrador','Solo para editores autorizados','loginAsAdmin()');
+  ov.innerHTML='<div class="mm-sheet">'
+    +'<div class="mm-handle"></div>'
+    +'<div class="mm-title">MENÚ</div>'
+    +row('📖','Vía Crucis y oraciones','Estaciones, significado del día, 7 Palabras','openSpiritual()')
+    +row('⚙️','Configuración','Tu grupo, modo de uso, tamaño de letra','openCfg()')
+    +row('🔔','Alertas y avisos','Notificaciones cuando se acerca tu grupo','openAlerts()')
+    +row('📤','Compartir','Enviar la app por WhatsApp','shareWhatsApp()')
+    +adminRow
+    +'</div>';
+  ov.style.display='flex';
+}
+function closeMainMenu(){ var ov=document.getElementById('mainMenuOverlay'); if(ov) ov.style.display='none'; }
+
 function openSpiritual(){
   var modal=document.getElementById('spiritualModal');
   if(!modal){

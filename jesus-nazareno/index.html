@@ -33,16 +33,11 @@ if(new URLSearchParams(window.location.search).has('se')){
 <div class="hdr">
   <div style="display:flex;align-items:center;justify-content:space-between">
     <h1 id="hTitle" style="font-size:15px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">✝️ Lunes Santo</h1>
-    <div style="display:flex;gap:3px;align-items:center;flex-shrink:0">
-      <select id="daySelector" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:3px 5px;border-radius:5px;font-size:10px;font-weight:700;font-family:inherit">
+    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+      <select id="daySelector" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:4px 6px;border-radius:5px;font-size:11px;font-weight:700;font-family:inherit">
         <option value="0">Lun</option><option value="1">Mar</option><option value="2">Mié</option><option value="3">Vie</option><option value="4" id="seOpt">SE</option>
       </select>
-      <button class="btn" onclick="var ap=document.getElementById('alertPanel');var ao=document.getElementById('alertOverlay');var vis=ap.style.display==='none';ap.style.display=vis?'block':'none';ao.style.display=vis?'block':'none';if(vis&&typeof populateAlertSelects==='function')populateAlertSelects();if(vis&&typeof updatePushUI==='function')updatePushUI()" style="padding:4px 7px;font-size:11px" id="btnAlert">🔔</button>
-      <button class="btn" onclick="openCfg()" style="padding:4px 7px;font-size:11px" id="btnConfig">⚙️</button>
-      <button class="btn" onclick="shareWhatsApp()" style="padding:4px 7px;font-size:11px">📤</button>
-      <button class="btn" onclick="openSpiritual()" style="padding:4px 7px;font-size:11px" id="btnSpiritual" title="Vía Crucis y significado del día">📖</button>
-      <button class="btn" onclick="loginAsAdmin()" style="padding:4px 7px;font-size:11px" id="btnAdminLogin" title="Acceso administrador">🔑</button>
-      <button class="btn adminOnly" onclick="logoutAdmin()" style="padding:4px 7px;font-size:11px;display:none" id="btnAdminLogout" title="Cerrar sesión administrador">🚪</button>
+      <button class="btn" onclick="openMainMenu()" style="padding:5px 10px;font-size:17px;line-height:1" id="btnMenu" title="Menú" aria-label="Menú">☰</button>
     </div>
   </div>
   <div id="hSub" style="font-size:11px;color:#aaa;overflow-x:auto;white-space:nowrap;padding:1px 0"></div>
