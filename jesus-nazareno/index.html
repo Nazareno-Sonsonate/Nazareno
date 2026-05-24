@@ -80,7 +80,7 @@ if(new URLSearchParams(window.location.search).has('se')){
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
     <div><label style="font-size:13px;color:#ccc;display:block;margin-bottom:2px">Cargadores de</label><select id="cType" onchange="onTypeChange()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;font-size:14px"><option value="21">Hombres (21)</option><option value="27">Mujeres (27)</option></select></div>
-    <div><label style="font-size:13px;color:#ccc;display:block;margin-bottom:2px">Tu grupo</label><input type="number" id="cG" value="5" min="1" max="50" onchange="calc();closeCfg()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;text-align:center;font-size:18px"></div>
+    <div><label style="font-size:13px;color:#ccc;display:block;margin-bottom:2px">Tu grupo</label><input type="number" id="cG" value="5" min="1" max="50" onchange="onGroupChange()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;text-align:center;font-size:18px"></div>
   </div>
   <div id="colorDiv" style="display:none;margin-bottom:10px"><label style="font-size:13px;color:#ccc;display:block;margin-bottom:2px">Tu color</label><select id="cColor" onchange="calc()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:8px;border-radius:6px;width:100%;font-size:14px"><option value="0">🟡 Amarillo</option><option value="1">🔴 Rojo</option><option value="2">🔵 Azul</option></select></div>
   <!-- Admin controls -->

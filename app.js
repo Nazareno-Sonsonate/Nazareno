@@ -223,6 +223,8 @@ function showGroupGrid(t){
 }
 
 function pickGroup(g){
+  // Choosing a group means the user is a carrier, not a spectator.
+  setSpectatorMode(false);
   $('cType').value=sharedPickedType;
   $('cG').value=g;
   if(sharedPickedType===27) $('cColor').value=sharedPickedColor;
@@ -902,10 +904,18 @@ function changeCortesias(delta){
   if(typeof renderLive==='function') renderLive();
 }
 function onTypeChange(){
+  // Touching the carrier type means the user is a carrier, not a spectator.
+  if(_spectatorMode){ setSpectatorMode(false); if(typeof renderModeButtons==='function') renderModeButtons(); }
   $('colorDiv').style.display=(+$('cType').value===27)?'block':'none';
   const isM=(+$('cType').value===27);
   $('cS').value=isM?(daySacaMuj[currentDay]||defaultSacaM[currentDay]):(daySaca[currentDay]||defaultSacaH[currentDay]);
   calc();
+}
+// Called from the cfg "Tu grupo" input so editing the group exits spectator mode.
+function onGroupChange(){
+  if(_spectatorMode){ setSpectatorMode(false); if(typeof renderModeButtons==='function') renderModeButtons(); }
+  calc();
+  if(typeof closeCfg==='function') closeCfg();
 }
 function fmt(min) {
   let h=Math.floor(min/60), m=Math.round(min%60);
