@@ -760,6 +760,19 @@ function openCfg(){
     }
   }
   renderModeButtons();
+  // Lazily inject the "reading size" toggle.
+  if(!document.getElementById('cfgTextSection')){
+    var panelT=document.getElementById('cfgP');
+    if(panelT){
+      var tsec=document.createElement('div');
+      tsec.id='cfgTextSection';
+      tsec.style.cssText='border-top:1px solid rgba(255,255,255,.1);margin-top:10px;padding-top:10px';
+      tsec.innerHTML='<div style="font-size:12px;color:#aaa;margin-bottom:6px">🔠 Tamaño de letra</div><div id="cfgTextBtns"></div>'
+        +'<div style="font-size:10px;color:#666;margin-top:6px;line-height:1.4">Agranda los textos de cargadas y oraciones para leerlos más fácil.</div>';
+      panelT.appendChild(tsec);
+    }
+  }
+  renderTextSizeButtons();
   // Lazily inject a "force update" section at the bottom of the cfg panel.
   // Visible to everyone so users can always nudge the PWA to refresh.
   if(!document.getElementById('cfgUpdateSection')){
@@ -785,6 +798,22 @@ function renderModeButtons(){
   el.innerHTML=
     '<button onclick="switchToCargador()" style="flex:1;padding:9px;border:1px solid '+(!specOn?'#7c3aed':'#666')+';border-radius:8px;background:'+(!specOn?'rgba(124,58,237,.2)':'rgba(255,255,255,.04)')+';color:'+(!specOn?'#c084fc':'#888')+';font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🙋 Cargador</button>'
     +'<button onclick="switchToSpectator()" style="flex:1;padding:9px;border:1px solid '+(specOn?'#7c3aed':'#666')+';border-radius:8px;background:'+(specOn?'rgba(124,58,237,.2)':'rgba(255,255,255,.04)')+';color:'+(specOn?'#c084fc':'#888')+';font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">👁️ Espectador</button>';
+}
+var _bigText=(function(){ try{ return localStorage.getItem('bigText')==='1'; }catch(e){ return false; } })();
+function applyBigText(){ document.body.classList.toggle('big-text', _bigText); }
+function setBigText(on){
+  _bigText=!!on;
+  try{ localStorage.setItem('bigText', on?'1':'0'); }catch(e){}
+  applyBigText();
+  renderTextSizeButtons();
+}
+function renderTextSizeButtons(){
+  var el=document.getElementById('cfgTextBtns');
+  if(!el) return;
+  el.style.cssText='display:flex;gap:6px';
+  el.innerHTML=
+    '<button onclick="setBigText(false)" style="flex:1;padding:9px;border:1px solid '+(!_bigText?'#7c3aed':'#666')+';border-radius:8px;background:'+(!_bigText?'rgba(124,58,237,.2)':'rgba(255,255,255,.04)')+';color:'+(!_bigText?'#c084fc':'#888')+';font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Normal</button>'
+    +'<button onclick="setBigText(true)" style="flex:1;padding:9px;border:1px solid '+(_bigText?'#7c3aed':'#666')+';border-radius:8px;background:'+(_bigText?'rgba(124,58,237,.2)':'rgba(255,255,255,.04)')+';color:'+(_bigText?'#c084fc':'#888')+';font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">Grande</button>';
 }
 function switchToSpectator(){
   setSpectatorMode(true);
@@ -5050,3 +5079,6 @@ function renderSpiritual(section){
     +'<div class="sp-content">'+bodyHTML+'</div>';
 }
 
+
+// Apply the saved reading-size preference as soon as the body is available.
+try{ if(document.body){ applyBigText(); } else { document.addEventListener('DOMContentLoaded', applyBigText); } }catch(e){}

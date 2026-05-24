@@ -163,3 +163,23 @@ body.se-mode .sp-st-n{background:#666!important}
 body.se-mode .sp-st-or{background:rgba(255,255,255,.05)!important;color:#ccc!important}
 body.se-mode .sp-cite{border-left-color:rgba(180,153,99,.6)!important}
 body.se-mode .sp-intro{background:rgba(255,255,255,.04)!important;color:#bbb!important}
+/* Modo lectura grande — sube el tamaño de los textos más leídos para fieles mayores */
+body.big-text .lc-ref{font-size:20px}
+body.big-text .lc-sub{font-size:15px}
+body.big-text .lc-time{font-size:20px}
+body.big-text .live-carry.done .lc-ref{font-size:18px}
+body.big-text .live-carry.done .lc-time{font-size:17px}
+body.big-text .live-next .ln-num{font-size:56px}
+body.big-text .live-next .ln-ref{font-size:21px}
+body.big-text .live-next .ln-time{font-size:23px}
+body.big-text .bar .v{font-size:20px}
+body.big-text .bar .l{font-size:14px}
+body.big-text .sp-head{font-size:21px}
+body.big-text .sp-body{font-size:18px;line-height:1.7}
+body.big-text .sp-st-title{font-size:19px}
+body.big-text .sp-st-med{font-size:17px;line-height:1.7}
+body.big-text .sp-st-or{font-size:17px}
+body.big-text .sp-st-vr{font-size:15px}
+body.big-text .sp-intro{font-size:16px}
+body.big-text #grupoActualText{font-size:26px}
+body.big-text #hSub{font-size:13px}
