@@ -4262,6 +4262,10 @@ function updateBanners(){
   var tot=positions.length||changes.length||147;
   var isMuj=(+$('cType').value===27);
   var isPast=isDayPast(currentDay);
+  // A past day is complete by definition. Pin the banner to the final cambio
+  // so it doesn't flicker between the stale remote value (Firebase listener)
+  // and the computed total (past-day render fallback).
+  if(isPast && tot>0) cambio=tot;
   var procDone=(cambio>=tot&&tot>0)||isPast;
   
   // Create banner HTML if not exists or mode changed
