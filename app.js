@@ -1887,6 +1887,35 @@ async function editHora(ci){
   if(typeof syncPositions==='function') syncPositions();
 }
 
+// Open a point's info window. Used by the marker click and by the ◀/▶ buttons,
+// so in edit mode you can step through points without closing/reopening each.
+function openPointInfo(ci){
+  if(ci<0||ci>=positions.length) return;
+  var ch=(changes&&changes[ci])?changes[ci]:null;
+  var p=positions[ci];
+  var grp=ch?ch.grp:'';
+  var num=ch?ch.num:(ci+1);
+  var timeTxt=ch?('<br><b>~'+ch.time+'</b>'):'';
+  var mc3=(ch&&ch.mine)?myCarries.find(function(x){return x.num===ch.num;}):null;
+  var tag=(ch&&ch.mine)?'<br><b style="color:#7c3aed">✝️ Tu cargada'+(mc3?(' #'+mc3.ci):'')+'</b>':'';
+  var colorTag=(mc3&&mc3.carryLabel)?'<br><span style="font-size:12px">'+_escapeHtml(mc3.carryLabel)+'</span>':'';
+  var refName=ch?ch.n:(p.n||'');
+  var ref=refName?'<br><span style="font-size:12px;color:#555">'+_escapeHtml(refName)+'</span>':'';
+  var bs='margin-top:4px;padding:6px 12px;border:none;border-radius:5px;color:#fff;font-size:12px;font-weight:600;cursor:pointer';
+  var nav=editMode?('<div style="margin-top:8px;display:flex;gap:6px;justify-content:center">'
+    +'<button onclick="openPointInfo('+(ci-1)+')"'+(ci<=0?' disabled':'')+' style="'+bs+';margin-top:0;flex:1;background:'+(ci<=0?'#bbb':'#444')+'">◀ Anterior</button>'
+    +'<button onclick="openPointInfo('+(ci+1)+')"'+(ci>=positions.length-1?' disabled':'')+' style="'+bs+';margin-top:0;flex:1;background:'+(ci>=positions.length-1?'#bbb':'#444')+'">Siguiente ▶</button>'
+    +'</div>'):'';
+  var ren=editMode?'<br><button onclick="renameChange('+ci+')" style="'+bs+';background:#7c3aed">✏️ Renombrar</button>':'';
+  var hora=editMode?'<br><button onclick="editHora('+ci+')" style="'+bs+';background:#ff9800">🕐 Hora oficial</button>':'';
+  var del=editMode?'<br><button onclick="deleteChange('+ci+')" style="'+bs+';background:#c0392b">🗑️ Eliminar</button>':'';
+  var sv='<br><button onclick="openStreetView('+p.lat+','+p.lng+')" style="'+bs+';background:#1a73e8">🛣️ Street View</button>';
+  infoWin.setContent('<div style="text-align:center;font-family:Georgia;min-width:180px;color:#111;font-size:13px"><b style="font-size:15px">Grupo #'+grp+'</b><br>Cambio #'+num+timeTxt+tag+colorTag+ref+nav+ren+hora+del+sv+'</div>');
+  if(gmap) gmap.panTo({lat:p.lat,lng:p.lng});
+  infoWin.setPosition({lat:p.lat,lng:p.lng});
+  infoWin.open(gmap);
+}
+
 function exportPoints(){
   // Generate JSON of current day's positions
   const day=dayNames[currentDay];
@@ -1979,15 +2008,7 @@ function renderMarkers() {
       (function(mk2,ch2,ci2,m2){
         mk2.addListener('click',function(){
           if(isZoom())return;
-          var tag=m2?'<br><b style="color:#7c3aed">✝️ Tu cargada #'+ch2.ci+'</b>':'';
-          var colorTag='';if(m2){var mc3=myCarries.find(function(x){return x.num===ch2.num});if(mc3&&mc3.carryLabel) colorTag='<br><span style="font-size:12px">'+_escapeHtml(mc3.carryLabel)+'</span>';}
-          var ref=ch2.n?'<br><span style="font-size:12px;color:#555">'+_escapeHtml(ch2.n)+'</span>':'';
-          var svBtn2='<br><button onclick="openStreetView('+positions[ci2].lat+','+positions[ci2].lng+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#1a73e8;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🛣️ Street View</button>';
-          var ren=editMode?'<br><button onclick="renameChange('+ci2+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#7c3aed;color:#fff;font-size:12px;font-weight:600;cursor:pointer">✏️ Renombrar</button>':'';
-          var hora=editMode?'<br><button onclick="editHora('+ci2+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#ff9800;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🕐 Hora oficial</button>':'';
-          var del=editMode?'<br><button onclick="deleteChange('+ci2+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🗑️ Eliminar</button>':'';
-          infoWin.setContent('<div style="text-align:center;font-family:Georgia;min-width:150px;color:#111;font-size:13px"><b style="font-size:15px">Grupo #'+ch2.grp+'</b><br>Cambio #'+ch2.num+'<br><b>~'+ch2.time+'</b>'+tag+colorTag+ref+ren+hora+del+svBtn2+'</div>');
-          infoWin.open(gmap,mk2);
+          openPointInfo(ci2);
         });
         mk2.addListener('dragstart',function(){ pushMapHistory(); });
         mk2.addListener('drag',function(){
