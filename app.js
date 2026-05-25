@@ -2317,10 +2317,9 @@ function renderSpectatorView(){
   for(var i=0;i<changes.length;i++){
     var ch=changes[i];
     var cls=ch.num<eff?'done':(ch.num===eff?'current':'pending');
-    var icon=ch.num<eff?'✅':(ch.num===eff?'✝️':'⏳');
     var ref=_escapeHtml(getCarryRef(ch));
     h+='<div class="live-carry '+cls+'" onclick="zoomChange('+i+')">';
-    h+='<div class="lc-num">'+icon+'</div>';
+    h+='<div class="lc-num"></div>';
     h+='<div class="lc-info"><div class="lc-ref">Grupo '+ch.grp+(ref?' — '+ref:'')+'</div><div class="lc-sub">Cambio #'+ch.num+'</div></div>';
     h+='<div class="lc-time">'+_escapeHtml(ch.time||'')+'</div>';
     h+='</div>';
@@ -2376,7 +2375,7 @@ function renderLiveImpl(){
     for(var pi=0;pi<changes.length;pi++){
       var pch=changes[pi];
       var prefSafe=_escapeHtml(pch.n||autoCarryName(pch)||'');
-      ph+='<div class="live-carry done" style="padding:8px 10px"><div class="lc-num" style="font-size:14px;color:#888">#'+pch.num+'</div><div class="lc-info"><div class="lc-ref" style="font-size:14px">Grupo '+pch.grp+(prefSafe?' — '+prefSafe:'')+'</div><div class="lc-sub">Cambio #'+pch.num+'</div></div><div class="lc-time" style="font-size:13px;color:#aaa">'+_escapeHtml(pch.time||'')+'</div></div>';
+      ph+='<div class="live-carry done" style="padding:8px 10px"><div class="lc-num"></div><div class="lc-info"><div class="lc-ref" style="font-size:14px">Grupo '+pch.grp+(prefSafe?' — '+prefSafe:'')+'</div><div class="lc-sub">Cambio #'+pch.num+'</div></div><div class="lc-time" style="font-size:13px;color:#aaa">'+_escapeHtml(pch.time||'')+'</div></div>';
     }
     ph+='</div>';
     if(ph!==_renderLiveLastHTML){ _renderLiveLastHTML=ph; $('livePanel').innerHTML=ph; }
@@ -2523,14 +2522,13 @@ function renderLiveImpl(){
     const cls=mcDone?'done':(passedByGrupo?'done':(isCurrent?'current':'pending'));
     const ref=_escapeHtml(getCarryRef(mc));
     const label=_escapeHtml(mc.carryLabel||'');
-    const icon=mcDone?'✅':(passedByGrupo?'☑️':(isCurrent?'✝️':'⏳'));
     const entry=getEntry(mc.ci);
     const realT=entry?_escapeHtml(fmtClock(entry.t)):'';
     const estT=_escapeHtml(mcDone?realT:getEstimate(mc));
     const colorHexSafe=/^#[0-9a-fA-F]{3,8}$/.test(mc.colorHex||'')?mc.colorHex:'#c084fc';
     const borderColor=mc.colorHex&&isCurrent?'border-color:'+colorHexSafe:'';
     h+='<div class="live-carry '+cls+'" style="'+borderColor+'" onclick="zoomTo('+(mc.ci-1)+')">';
-    h+='<div class="lc-num">'+icon+'</div>';
+    h+='<div class="lc-num"></div>';
     h+='<div class="lc-info"><div class="lc-ref">Cargada #'+mc.ci+' — '+ref+'</div><div class="lc-sub">Cambio #'+mc.num+(label?' · '+label:'')+(realT?' · '+realT:'')+'</div></div>';
     h+='<div class="lc-time" style="color:'+(mcDone?'#4CAF50':colorHexSafe)+';'+(isSEMode?'font-size:11px;':'')+'">'+estT+'</div>';
     h+='</div>';
