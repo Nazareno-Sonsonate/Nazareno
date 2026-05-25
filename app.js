@@ -1705,7 +1705,7 @@ function calc() {
   const c=cfg();
   const tot=positions.length;
   // Keep shared user prefs updated
-  if(isShared) localStorage.setItem('sharedUser',JSON.stringify({t:c.t,g:c.g,color:c.color}));
+  if(isShared) localStorage.setItem(isSEMode?'sharedUserSE':'sharedUser',JSON.stringify({t:c.t,g:c.g,color:c.color}));
 
   changes=positions.map((p,i)=>{
     const num=i+1;
