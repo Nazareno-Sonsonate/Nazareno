@@ -1793,11 +1793,11 @@ function renderWPmarkers() {
     var isG=!!wp.g;
     const mk=new google.maps.Marker({
       position:{lat:wp.lat,lng:wp.lng}, map:gmap,
-      icon:{path:google.maps.SymbolPath.CIRCLE,scale:(dragMode&&editMode)?16:11,
-        fillColor:isG?'#0ea5e9':'#7c3aed',fillOpacity:.95,
-        strokeColor:'#fff',strokeWeight:2},
+      icon:{path:google.maps.SymbolPath.CIRCLE,scale:(dragMode&&editMode)?16:9,
+        fillColor:isG?'#0ea5e9':'#7c3aed',fillOpacity:.85,
+        strokeColor:'#fff',strokeWeight:1.5},
       title:(wp.n||'Referencia')+(isG?' · general':''),
-      zIndex:5000, draggable:dragMode&&editMode,
+      zIndex:(dragMode&&editMode)?6000:40, draggable:dragMode&&editMode,
       optimized:!(dragMode&&editMode)
     });
     mk.addListener('click',function(){
