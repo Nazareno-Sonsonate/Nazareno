@@ -4233,8 +4233,12 @@ if(_isSE){
 db.ref('refs_global').on('value',function(snap){
   if(typeof GLOBAL_WP_REF==='undefined') return;
   var d=snap.val();
+  // Empty/null server value (never written, or the write was blocked by rules,
+  // or Firebase's optimistic revert): keep whatever we have locally instead of
+  // wiping it — otherwise a just-added "general" reference would disappear.
+  if(!d || !d.length) return;
   GLOBAL_WP_REF.length=0;
-  if(d&&d.length){ d.forEach(function(w){ if(w&&w.lat&&w.lng) GLOBAL_WP_REF.push({n:w.n||'',lat:w.lat,lng:w.lng,g:1}); }); }
+  d.forEach(function(w){ if(w&&w.lat&&w.lng) GLOBAL_WP_REF.push({n:w.n||'',lat:w.lat,lng:w.lng,g:1}); });
   try{ if(typeof gmap!=='undefined'&&gmap&&typeof renderWPmarkers==='function') renderWPmarkers(); }catch(e){_logErr('refs_global render',e);}
   try{ if(typeof renderLiveImmediate==='function') renderLiveImmediate(); }catch(e){}
   try{ if(typeof renderTable==='function') renderTable(); }catch(e){}
