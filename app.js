@@ -1868,6 +1868,25 @@ async function renameChange(ci){
   if(typeof syncPositions==='function') syncPositions();
 }
 
+// Edit only the official-time parenthetical (e.g. "5:00 p.m.") embedded in a
+// point's name, leaving the rest of the name intact. Works in both apps; in
+// Nazareno it lets you add an official time to a point that didn't have one.
+async function editHora(ci){
+  if(ci<0||ci>=positions.length) return;
+  var cur=positions[ci].n||'';
+  var m=cur.match(/\(\s*(\d{1,2}:\d{2}[^)]*)\)/);
+  var curTime=m?m[1].trim():'';
+  var val=await customPrompt('Hora oficial de este punto (ej. 5:00 p.m.). Dejala vacía para quitarla:',curTime);
+  if(val===null) return;
+  pushMapHistory();
+  var base=cur.replace(/\s*\(\s*\d{1,2}:\d{2}[^)]*\)\s*/g,' ').trim();
+  val=val.trim();
+  positions[ci].n = val ? (base ? base+' ('+val+')' : '('+val+')') : base;
+  infoWin.close();
+  calc();
+  if(typeof syncPositions==='function') syncPositions();
+}
+
 function exportPoints(){
   // Generate JSON of current day's positions
   const day=dayNames[currentDay];
@@ -1965,8 +1984,9 @@ function renderMarkers() {
           var ref=ch2.n?'<br><span style="font-size:12px;color:#555">'+_escapeHtml(ch2.n)+'</span>':'';
           var svBtn2='<br><button onclick="openStreetView('+positions[ci2].lat+','+positions[ci2].lng+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#1a73e8;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🛣️ Street View</button>';
           var ren=editMode?'<br><button onclick="renameChange('+ci2+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#7c3aed;color:#fff;font-size:12px;font-weight:600;cursor:pointer">✏️ Renombrar</button>':'';
+          var hora=editMode?'<br><button onclick="editHora('+ci2+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#ff9800;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🕐 Hora oficial</button>':'';
           var del=editMode?'<br><button onclick="deleteChange('+ci2+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🗑️ Eliminar</button>':'';
-          infoWin.setContent('<div style="text-align:center;font-family:Georgia;min-width:150px;color:#111;font-size:13px"><b style="font-size:15px">Grupo #'+ch2.grp+'</b><br>Cambio #'+ch2.num+'<br><b>~'+ch2.time+'</b>'+tag+colorTag+ref+ren+del+svBtn2+'</div>');
+          infoWin.setContent('<div style="text-align:center;font-family:Georgia;min-width:150px;color:#111;font-size:13px"><b style="font-size:15px">Grupo #'+ch2.grp+'</b><br>Cambio #'+ch2.num+'<br><b>~'+ch2.time+'</b>'+tag+colorTag+ref+ren+hora+del+svBtn2+'</div>');
           infoWin.open(gmap,mk2);
         });
         mk2.addListener('dragstart',function(){ pushMapHistory(); });
