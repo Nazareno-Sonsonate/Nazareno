@@ -293,6 +293,9 @@ var SE_WP_REF=[
 {n:'Catedral',lat:13.7205,lng:-89.7272},
 {n:'Sto Domingo',lat:13.7212,lng:-89.7266}
 ];
+// References shared across ALL maps/days (synced via Firebase 'refs_global').
+// Each entry is {n,lat,lng,g:1}; per-day references stay in the *_WP_REF arrays.
+var GLOBAL_WP_REF=[];
 
 // ========== STATE ==========
 var gmap, infoWin, routeLine, routeClickLine;
