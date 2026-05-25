@@ -856,7 +856,7 @@ function updateAdminLiveControls(){
   h+='</div>';
   // GPS + Auto toggles
   h+='<div style="display:flex;gap:6px;margin-bottom:8px;justify-content:center">';
-  h+='<button onclick="autoAdvanceGPS=!autoAdvanceGPS;updateAdminLiveControls();if(typeof renderLive===\'function\')renderLive();" style="flex:1;padding:8px;border:1px solid '+(autoAdvanceGPS?'#4CAF50':'#666')+';border-radius:8px;background:'+(autoAdvanceGPS?'rgba(76,175,80,.15)':'rgba(255,255,255,.05)')+';color:'+(autoAdvanceGPS?'#4CAF50':'#888')+';font-size:13px;cursor:pointer;font-family:inherit">'+(autoAdvanceGPS?'📡 GPS: ON':'📡 GPS: OFF')+'</button>';
+  h+='<button onclick="toggleAutoGPS()" style="flex:1;padding:8px;border:1px solid '+(autoAdvanceGPS?'#4CAF50':'#666')+';border-radius:8px;background:'+(autoAdvanceGPS?'rgba(76,175,80,.15)':'rgba(255,255,255,.05)')+';color:'+(autoAdvanceGPS?'#4CAF50':'#888')+';font-size:13px;cursor:pointer;font-family:inherit">'+(autoAdvanceGPS?'📡 GPS: ON':'📡 GPS: OFF')+'</button>';
   var autoLabel=window._autoTimeRunning?(window._autoRemote?'⏱ Auto: ON 📡':'⏱ Auto: ON'):'⏱ Auto: OFF';
   h+='<button onclick="toggleAutoTime();updateAdminLiveControls();" style="flex:1;padding:8px;border:1px solid '+(window._autoTimeRunning?'#f44336':'#666')+';border-radius:8px;background:'+(window._autoTimeRunning?'rgba(244,67,54,.15)':'rgba(255,255,255,.05)')+';color:'+(window._autoTimeRunning?'#f44336':'#888')+';font-size:13px;cursor:pointer;font-family:inherit">'+autoLabel+'</button>';
   h+='</div>';
@@ -3144,7 +3144,19 @@ function applyAuthMode(){
     if(logoutBtn) logoutBtn.style.display='none';
   }
   applyDayFilter();
+  syncHeaderPad();
 }
+
+// The header is position:fixed and the body offsets content with a fixed
+// padding-top. Editor-only rows (like the AHSEC GPS status) make the header
+// taller, so the first banner would slide underneath. Keep the body padding in
+// sync with the header's real height instead of a hard-coded value.
+function syncHeaderPad(){
+  var hdr=document.querySelector('.hdr');
+  if(hdr) document.body.style.paddingTop=hdr.offsetHeight+'px';
+}
+window.addEventListener('resize', syncHeaderPad);
+window.addEventListener('load', syncHeaderPad);
 
 // ========== ADMIN LIST MANAGEMENT (super-admin only) ==========
 function renderAdminList(){
@@ -3615,7 +3627,13 @@ function buscarAnda(tipo){
 }
 
 // ========== GPS AUTO-ADVANCE ==========
-var autoAdvanceGPS=false;
+var autoAdvanceGPS=(function(){ try{ return localStorage.getItem('autoAdvanceGPS')==='1'; }catch(e){ return false; } })();
+function toggleAutoGPS(){
+  autoAdvanceGPS=!autoAdvanceGPS;
+  try{ localStorage.setItem('autoAdvanceGPS', autoAdvanceGPS?'1':'0'); }catch(e){}
+  updateAdminLiveControls();
+  if(typeof renderLive==='function') renderLive();
+}
 
 // Track progress along the route as a "rail"
 var railProgress=0;
@@ -3922,6 +3940,23 @@ if(_isSE){
     }
   }
 
+  // The AHSEC feed exposes only lat/lng with no timestamp, and the official app
+  // leaves the last coordinates in place after the procession ends — a frozen,
+  // non-zero coordinate would otherwise read as "en vivo" forever. We infer
+  // freshness from movement: if the position hasn't changed in a few minutes the
+  // feed is treated as inactive. Persisted so a frozen position is detected as
+  // stale on the next app open instead of after a fresh grace window each time.
+  var AHSEC_STALE_MS = 5*60*1000;
+  var _ahsecMove;
+  try{ _ahsecMove = JSON.parse(localStorage.getItem('ahsecMove')) || {}; }catch(e){ _ahsecMove = {}; }
+  function _ahsecLive(key, lat, lng){
+    var now = Date.now();
+    var p = _ahsecMove[key];
+    var moved = !p || Math.abs(p.lat-lat)>0.00004 || Math.abs(p.lng-lng)>0.00004; // ~4-5 m
+    if(moved){ _ahsecMove[key] = {lat:lat, lng:lng, t:now}; try{ localStorage.setItem('ahsecMove', JSON.stringify(_ahsecMove)); }catch(e){} }
+    return (now - _ahsecMove[key].t) < AHSEC_STALE_MS;
+  }
+
   async function fetchAHSECGPS(){
     var statusParts = [];
 
@@ -3934,7 +3969,8 @@ if(_isSE){
         var lng = await _fetchAHSECValue('longitud.json');
         if(lng != null){
           var ll = {lat:+lat, lng:+lng};
-          statusParts.push('Jesús 🟢 en vivo');
+          var jLive = _ahsecLive('j', +lat, +lng);
+          statusParts.push('Jesús '+(jLive?'🟢 en vivo':'⚪ inactivo'));
           if(gmap){
             if(!urnaMarkers.jesus){
               urnaMarkers.jesus=new google.maps.Marker({position:ll,map:gmap,zIndex:10000,icon:{url:_asset('se-entierro-marker.png'),scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)}});
@@ -4014,7 +4050,8 @@ if(_isSE){
         var lngV = await _fetchAHSECValue('longitud_V.json');
         if(lngV != null){
           var llV = {lat:+latV, lng:+lngV};
-          statusParts.push('Virgen 🟢 en vivo');
+          var vLive = _ahsecLive('v', +latV, +lngV);
+          statusParts.push('Virgen '+(vLive?'🟢 en vivo':'⚪ inactivo'));
           if(gmap){
             if(!urnaMarkers.virgen){
               urnaMarkers.virgen=new google.maps.Marker({position:llV,map:gmap,zIndex:9998,icon:{url:_asset('se-virgen-marker.png'),scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)}});
@@ -4072,6 +4109,7 @@ if(_isSE){
       var live = statusParts.some(function(s){return s.indexOf('🟢')>-1;});
       el.textContent = '📡 GPS oficial — ' + (statusParts.length?statusParts.join(' · '):'sin señal');
       el.classList.toggle('ahsec-live', live);
+      if(typeof syncHeaderPad==='function') syncHeaderPad();
     }
   }
   fetchAHSECGPS();
