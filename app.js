@@ -3902,7 +3902,7 @@ document.addEventListener('click',function _reqNot(){
   document.removeEventListener('click',_reqNot);
 },{once:true});
 
-var _isSE=new URLSearchParams(window.location.search).has('se');
+var _isSE=(typeof window!=='undefined'&&window._forceSE===true)||new URLSearchParams(window.location.search).has('se');
 if(_isSE){
   // Fetch a single number from the AHSEC realtime DB. Returns null on
   // any failure (HTTP error, timeout, parse error, missing/zero value).
