@@ -2064,19 +2064,24 @@ function getCarryRef(mc){
   return _displayRef(mc.n||'', mc);
 }
 
-// The imported point names are often the placeholder "Grupo 5 (5:00 p.m.)",
-// where the "(5:00 p.m.)" is the official published estimate for the year. Keep
-// that time but swap the redundant "Grupo N" label for an approximate location
-// taken from the map (nearest named waypoint). Real street names pass through.
+// Decide what to show as a point's reference. Placeholder labels ("Grupo N",
+// "Punto N") get replaced by the nearest named map reference; an embedded
+// landmark in parens ("Grupo 7 (Caja de Crédito)") becomes the name; a real
+// name passes through; and the Santo Entierro "(5:00 p.m.)" official time is
+// preserved while its "Grupo N" prefix is swapped for the nearest reference.
 function _displayRef(raw, mc){
   raw = raw ? String(raw).trim() : '';
-  var m = raw.match(/^grupo\s*\d+\s*(\([^)]*\))?\s*$/i);
-  if(!raw || m){
-    var time = (m && m[1]) ? (' '+m[1].replace(/\s+/g,' ')) : '';
-    var place = (autoCarryName(mc) || nearWP(mc) || '');
-    return (place + time).trim();
+  if(!raw) return autoCarryName(mc) || nearWP(mc) || '';
+  var paren='', timePart='';
+  var pm = raw.match(/\(([^)]*)\)/);
+  if(pm){
+    paren = pm[1].trim();
+    if(/^\d{1,2}:\d{2}/.test(paren)) timePart = '('+paren.replace(/\s+/g,' ')+')';
   }
-  return raw;
+  var base = raw.replace(/\([^)]*\)/g,'').replace(/^\s*(grupo|punto)\s*#?\s*\d+\s*[-–—:]?\s*/i,'').trim();
+  if(!base && paren && !timePart) base = paren;
+  if(!base || /^(grupo|punto)\s*#?\s*\d+$/i.test(base)) base = autoCarryName(mc) || nearWP(mc) || '';
+  return (base + (timePart?(' '+timePart):'')).trim();
 }
 
 function renderTable() {
