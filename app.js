@@ -131,7 +131,7 @@ function readParams(){
       if(isSEMode){
         var step1El=document.getElementById('step1');
         if(step1El){
-          step1El.innerHTML='<div style="font-size:20px;margin-bottom:4px">⚰️</div><div style="font-size:16px;color:#e8e8e8;font-weight:700;margin-bottom:4px;letter-spacing:1px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#aaa;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div style="display:flex;gap:12px;justify-content:center"><div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#000;border:2px solid #444;border-radius:14px;padding:12px;text-align:center"><img src="'+_asset('se-entierro.jpg')+'" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#e8e8e8;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">22 grupos</div></div><div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#000;border:2px solid #444;border-radius:14px;padding:12px;text-align:center"><img src="'+_asset('se-virgen.jpg')+'" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#e8e8e8;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">23 grupos</div></div></div><div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12)"><button id="btnSpectator" onclick="pickSpectator()" style="width:100%;padding:12px;border:1px solid #888;border-radius:12px;background:rgba(255,255,255,.05);color:#ddd;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">👁️ Solo quiero seguir la procesión</button><div style="font-size:10px;color:#888;margin-top:6px;text-align:center">Modo espectador · sin grupo</div></div>';
+          step1El.innerHTML='<div style="font-size:20px;margin-bottom:4px">✝️</div><div style="font-size:16px;color:#e8e8e8;font-weight:700;margin-bottom:4px;letter-spacing:1px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#aaa;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div style="display:flex;gap:12px;justify-content:center"><div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#000;border:2px solid #444;border-radius:14px;padding:12px;text-align:center"><img src="'+_asset('se-entierro.jpg')+'" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#e8e8e8;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">22 grupos</div></div><div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#000;border:2px solid #444;border-radius:14px;padding:12px;text-align:center"><img src="'+_asset('se-virgen.jpg')+'" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#e8e8e8;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">23 grupos</div></div></div><div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12)"><button id="btnSpectator" onclick="pickSpectator()" style="width:100%;padding:12px;border:1px solid #888;border-radius:12px;background:rgba(255,255,255,.05);color:#ddd;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">👁️ Solo quiero seguir la procesión</button><div style="font-size:10px;color:#888;margin-top:6px;text-align:center">Modo espectador · sin grupo</div></div>';
         }
       }
       $('sharedModal').style.display='flex';
@@ -141,7 +141,7 @@ function readParams(){
   }
   // Apply SE theme if day 4
   if(isSEMode){
-    $('hTitle').textContent='⚰️ Santo Entierro';
+    $('hTitle').textContent='✝️ Santo Entierro';
     $('hTitle').style.color='#e8e8e8';
     document.body.classList.add('se-mode');
     var opts=$('cType').options;
@@ -256,7 +256,7 @@ function shareWhatsApp(){
   if(!pn.endsWith('/')) pn += '/';
   const root = window.location.origin + pn;
   const link = root + (isSE ? 'santo-entierro/' : 'jesus-nazareno/');
-  const msg=(isSE?'⚰️ *Santo Entierro de Cristo · Sonsonate*\n\n':'✝️ *Jesús Nazareno · Sonsonate*\n\n')
+  const msg=(isSE?'✝️ *Santo Entierro de Cristo · Sonsonate*\n\n':'✝️ *Jesús Nazareno · Sonsonate*\n\n')
     +'Rastreo en vivo de la procesión\n'
     +'Abrí el link, elegí tu grupo y mirá tus cargadas:\n'+link;
   if(navigator.share){
@@ -1033,7 +1033,7 @@ function initMap() {
   // Apply SE theme if needed
   if(currentDay===4){
     isSEMode=true;
-    $('hTitle').textContent='⚰️ Santo Entierro';
+    $('hTitle').textContent='✝️ Santo Entierro';
     $('hTitle').style.color='#e8e8e8';
     document.body.classList.add('se-mode');
     var optsInit=$('cType').options;
@@ -1132,7 +1132,7 @@ function switchDay(d) {
 
   // Apply/remove SE theme
   if(isSEMode){
-    $('hTitle').textContent='⚰️ Santo Entierro';
+    $('hTitle').textContent='✝️ Santo Entierro';
     $('hTitle').style.color='#e8e8e8';
     document.body.classList.add('se-mode');
     // Update group count labels
@@ -1751,7 +1751,7 @@ function calc() {
 
   let extra=currentDay===3?' · ✝️ Cortesías ~11:30-12:00':'';
   const dateStr=dayDates[currentDay]?dayDates[currentDay].slice(5).replace('-','/'):'';
-  var titleIcon=isSEMode?'⚰️':'✝️';
+  var titleIcon=isSEMode?'✝️':'✝️';
   var titleText=isSEMode?'Santo Entierro de Cristo':dayNames[currentDay];
   $('hTitle').textContent=titleIcon+' '+titleText;
   $('hTitle').style.color=isSEMode?'#e8e8e8':'#c084fc';
@@ -3929,12 +3929,12 @@ if(_isSE){
     try {
       var lat = await _fetchAHSECValue('latitud.json');
       if(lat == null){
-        statusParts.push('⚰️ SE: sin señal GPS');
+        statusParts.push('✝️ SE: sin señal GPS');
       } else {
         var lng = await _fetchAHSECValue('longitud.json');
         if(lng != null){
           var ll = {lat:+lat, lng:+lng};
-          statusParts.push('⚰️ SE: '+lat.toFixed(4)+','+lng.toFixed(4));
+          statusParts.push('✝️ SE: '+lat.toFixed(4)+','+lng.toFixed(4));
           if(gmap){
             if(!urnaMarkers.jesus){
               urnaMarkers.jesus=new google.maps.Marker({position:ll,map:gmap,zIndex:10000,icon:{url:_asset('se-entierro-marker.png'),scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)}});
@@ -4347,6 +4347,7 @@ function updateBanners(){
   // Pill + next-change helpers
   function _setPill(el,txt,kind){ if(!el)return; el.textContent=txt||''; el.className='gb-pill '+(kind||''); }
   function _nextChange(n){ var nx=(changes&&changes[n])?changes[n]:null; return nx?('Próximo cambio ~'+nx.time):''; }
+  function _animNum(el,val){ if(!el||el.textContent===val)return; el.textContent=val; el.classList.remove('gb-num-flip'); void el.offsetWidth; el.classList.add('gb-num-flip'); }
 
   // Jesus/SE banner
   var jEl=document.getElementById('grupoActualText');
@@ -4357,19 +4358,19 @@ function updateBanners(){
     var sacaJ=daySaca[currentDay]||16;
     if(procDone){
       var lastJ=((sacaJ-1+Math.min(cambio,tot)-1)%getHomCount()+1);
-      jEl.textContent='Grupo #'+lastJ;
+      _animNum(jEl,'Grupo #'+lastJ);
       if(jProg) jProg.textContent=(currentDay>=3)?((isSEMode)?'Hasta el próximo año, Santo Entierro de Cristo':'Hasta el próximo año, Jesús Nazareno'):'Procesión completada';
       _setPill(jState,'ASENTÓ','done');
       if(jBanner){jBanner.style.background='rgba(76,175,80,.12)';jBanner.style.borderColor='rgba(76,175,80,.4)';}
     } else if(cambio>0){
-      jEl.textContent='Grupo #'+((sacaJ-1+cambio-1)%getHomCount()+1);
+      _animNum(jEl,'Grupo #'+((sacaJ-1+cambio-1)%getHomCount()+1));
       var streetJ=(liveGrupoData&&liveGrupoData.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
       var nxJ=_nextChange(cambio);
       if(jProg) jProg.textContent=[streetJ?('📍 '+streetJ):'',nxJ].filter(Boolean).join(' · ')||'En recorrido';
       _setPill(jState,'EN VIVO','live');
       if(jBanner){jBanner.style.background='rgba(192,132,252,.12)';jBanner.style.borderColor='rgba(192,132,252,.3)';}
     } else {
-      jEl.textContent='Grupo #'+sacaJ;
+      _animNum(jEl,'Grupo #'+sacaJ);
       var depJ=(changes&&changes[0])?changes[0].time:'';
       if(jProg) jProg.textContent=depJ?('Sale ~'+depJ):'Esperando inicio';
       _setPill(jState,'POR SALIR','soon');
@@ -4386,7 +4387,7 @@ function updateBanners(){
       var sacaM2=liveGrupoData?liveGrupoData.sacaMuj||daySacaMuj[currentDay]:daySacaMuj[currentDay]||22;
       var mov2=liveGrupoData?liveGrupoData.movidos||0:0;
       var lastM2=(((sacaM2-1+Math.min(cambio,tot)-1-mov2)%getMujCount())+getMujCount())%getMujCount()+1;
-      vEl.textContent='Grupo #'+lastM2;
+      _animNum(vEl,'Grupo #'+lastM2);
       if(vProg2) vProg2.textContent=(currentDay>=3)?'Hasta el próximo año':'Procesión completada';
       _setPill(vState,'ASENTÓ','done');
       if(vBanner){vBanner.style.background='rgba(76,175,80,.12)';vBanner.style.borderColor='rgba(76,175,80,.4)';}
@@ -4398,19 +4399,19 @@ function updateBanners(){
       var vCambioGrp=Math.max(1,vCambio-mov);
       if(vCambio>=tot){
         var lastM=(((sacaM-1+tot-1-mov)%getMujCount())+getMujCount())%getMujCount()+1;
-        vEl.textContent='Grupo #'+lastM;
+        _animNum(vEl,'Grupo #'+lastM);
         if(vProg2) vProg2.textContent=(currentDay>=3)?'Hasta el próximo año':'Procesión completada';
         _setPill(vState,'ASENTÓ','done');
         if(vBanner){vBanner.style.background='rgba(76,175,80,.12)';vBanner.style.borderColor='rgba(76,175,80,.4)';}
       } else {
         var grpM=(((sacaM-1+vCambioGrp-1)%getMujCount())+getMujCount())%getMujCount()+1;
-        vEl.textContent='Grupo #'+grpM;
+        _animNum(vEl,'Grupo #'+grpM);
         if(vProg2) vProg2.textContent='Posición estimada';
         _setPill(vState,'EST.','est');
         if(vBanner){vBanner.style.background='rgba(59,130,246,.08)';vBanner.style.borderColor='rgba(59,130,246,.3)';}
       }
     } else {
-      vEl.textContent='Grupo #'+(daySacaMuj[currentDay]||22);
+      _animNum(vEl,'Grupo #'+(daySacaMuj[currentDay]||22));
       if(vProg2) vProg2.textContent='Esperando inicio';
       _setPill(vState,'POR SALIR','soon');
       if(vBanner){vBanner.style.background='rgba(59,130,246,.08)';vBanner.style.borderColor='rgba(59,130,246,.3)';}

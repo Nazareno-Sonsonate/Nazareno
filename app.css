@@ -212,3 +212,12 @@ body.big-text .mm-tx small{font-size:14px}
 .gb-maphint{font-size:10px;color:#9aa;white-space:nowrap;flex-shrink:0;opacity:.85}
 body.big-text .gb-pill{font-size:12px}
 body.big-text .gb-maphint{font-size:12px}
+/* Banner UX polish: press feedback, smooth number change, clearer map hint */
+#bannersContainer > div{transition:transform .12s ease,background .2s ease,border-color .2s ease;-webkit-tap-highlight-color:transparent}
+#bannersContainer > div:active{transform:scale(.985);filter:brightness(1.08)}
+#grupoActualText,#grupoVirgenText{transition:color .25s ease}
+.gb-num-flip{animation:gbFlip .4s cubic-bezier(.2,.8,.2,1)}
+@keyframes gbFlip{0%{opacity:0;transform:translateY(-7px)}100%{opacity:1;transform:translateY(0)}}
+.gb-maphint{display:inline-flex;align-items:center;gap:2px;background:rgba(255,255,255,.07);padding:2px 8px;border-radius:11px;color:#cbb8e8;opacity:.9;transition:transform .12s ease}
+#bannersContainer > div:active .gb-maphint{transform:translateX(2px)}
+body.se-mode .gb-maphint{color:#d8d2c0}
