@@ -93,10 +93,10 @@ let explicitDay = isSEMode;
 if(isSEMode) currentDay = 4;
 // Mode-aware accent: green for Jesús Nazareno, muted gold for the Santo Entierro
 // mourning theme. Called at render time so it tracks the current procession.
-function seAccent(){ return isSEMode?'#b49963':'#4CAF50'; }
-function seAccentTxt(){ return isSEMode?'#d4c08a':'#4CAF50'; }
-function seAccentBg(a){ return (isSEMode?'rgba(180,153,99,':'rgba(76,175,80,')+a+')'; }
-function seCheck(){ return isSEMode?'':'✅ '; }
+function seAccent(){ return isSEMode?'#b49963':'#a855f7'; }
+function seAccentTxt(){ return isSEMode?'#d4c08a':'#c084fc'; }
+function seAccentBg(a){ return (isSEMode?'rgba(180,153,99,':'rgba(168,85,247,')+a+')'; }
+function seCheck(){ return ''; }
 function readParams(){
   const p = new URLSearchParams(window.location.search);
   // Legacy: ?se=1 → day 4 + SE theme (kept for backward compatibility with
@@ -2126,7 +2126,7 @@ function markDoneWithTime(ci){
     +'<select id="tpAP" style="background:#222;color:#fff;border:1px solid #666;border-radius:6px;padding:10px;font-size:18px;font-family:inherit"><option>AM</option><option>PM</option></select>'
     +'</div>'
     +'<div style="display:flex;gap:8px;justify-content:center">'
-    +'<button onclick="confirmTimePick('+ci+')" style="background:'+seAccent()+';color:#fff;border:none;border-radius:8px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✅ Confirmar</button>'
+    +'<button onclick="confirmTimePick('+ci+')" style="background:'+seAccent()+';color:#fff;border:none;border-radius:8px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">'+seCheck()+'Confirmar</button>'
     +'<button onclick="document.getElementById(\'timePicker\').remove()" style="background:rgba(255,255,255,.1);color:#ccc;border:1px solid #666;border-radius:8px;padding:12px 16px;font-size:14px;cursor:pointer;font-family:inherit">Cancelar</button>'
     +'</div>';
 
@@ -2306,9 +2306,7 @@ function renderSpectatorView(){
   var pct=total>0?Math.round(done/total*100):0;
   var h='';
   if(isPast || eff>=total){
-    h+=isSEMode
-      ? '<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:rgba(180,153,99,.12);border:1px solid rgba(180,153,99,.35)"><div style="font-size:16px;font-weight:700;color:#d4c08a">Procesión completada</div></div>'
-      : '<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3)"><div style="font-size:16px;font-weight:700;color:#4CAF50">✅ Procesión completada</div></div>';
+    h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:'+seAccentBg('.1')+';border:1px solid '+seAccentBg('.3')+'"><div style="font-size:16px;font-weight:700;color:'+seAccentTxt()+'">'+seCheck()+'Procesión completada</div></div>';
   } else if(eff>0){
     var nowObj=changes[Math.min(eff,total)-1];
     h+='<div class="live-next">';
@@ -2447,7 +2445,7 @@ function renderLiveImpl(){
       var cortGrp=((sacaCort-1+cortChangeNum-1)%getHomCount())+1;
       var cortDone=cortChangeNum<=Math.max.apply(null,myCarries.filter(function(mc2){return isDone(mc2.ci);}).map(function(mc2){return mc2.num;}).concat([0]));
       var cortTime=cortChangeObj.time;
-      var cortStatus=cortDone?'✅ Cortesías completadas':'✝️ Cortesías · Grupo #'+cortGrp+' (~'+cortTime+')';
+      var cortStatus=cortDone?(seCheck()+'Cortesías completadas'):'✝️ Cortesías · Grupo #'+cortGrp+' (~'+cortTime+')';
       h+='<div style="text-align:center;padding:8px;margin-bottom:8px;border-radius:8px;background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.3)"><span style="font-size:13px;color:#ff9800;font-weight:700">'+cortStatus+'</span><br><span style="font-size:11px;color:#ccc">Encuentro de las imágenes · ~'+VIER_CORTESIAS_MIN+' min pausa</span>';
       if(isMuj) h+='<br><span style="font-size:10px;color:#f59e0b">⚠️ Cargadoras: las cortesías aplican al Nazareno</span>';
       h+='</div>';
@@ -2504,7 +2502,7 @@ function renderLiveImpl(){
 
     // Compact register buttons
     h+='<div style="display:flex;gap:4px;margin-bottom:4px">';
-    h+='<button onclick="markDone('+nextCarry.ci+')" style="flex:3;padding:8px;border:none;border-radius:8px;background:'+seAccent()+';color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">✅ Registrar #'+nextCarry.ci+'</button>';
+    h+='<button onclick="markDone('+nextCarry.ci+')" style="flex:3;padding:8px;border:none;border-radius:8px;background:'+seAccent()+';color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">'+seCheck()+'Registrar #'+nextCarry.ci+'</button>';
     h+='<button onclick="markDoneWithTime('+nextCarry.ci+')" style="flex:1;padding:6px;border:1px solid #555;border-radius:8px;background:none;color:#888;font-size:9px;font-family:inherit;cursor:pointer">🕐</button>';
     h+='</div>';
   }
@@ -4398,8 +4396,8 @@ function updateBanners(){
   function _nextChange(n){ var nx=(changes&&changes[n])?changes[n]:null; return nx?('Próximo cambio ~'+nx.time):''; }
   function _animNum(el,val){ if(!el||el.textContent===val)return; el.textContent=val; el.classList.remove('gb-num-flip'); void el.offsetWidth; el.classList.add('gb-num-flip'); }
   // "Asentó" tint: green for Jesús, muted gold for the Santo Entierro mourning theme
-  var _doneBg=isSEMode?'rgba(180,153,99,.14)':'rgba(76,175,80,.12)';
-  var _doneBorder=isSEMode?'rgba(180,153,99,.45)':'rgba(76,175,80,.4)';
+  var _doneBg=isSEMode?'rgba(180,153,99,.14)':'rgba(124,58,237,.2)';
+  var _doneBorder=isSEMode?'rgba(180,153,99,.45)':'rgba(124,58,237,.5)';
 
   // Jesus/SE banner
   var jEl=document.getElementById('grupoActualText');
