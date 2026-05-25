@@ -116,6 +116,11 @@ body.se-mode .live-carry.done .lc-ref{color:#888!important}
 body.se-mode .live-carry.done .lc-time{color:#aaa!important}
 /* Completed-cargada row in SE: switch the green wash for muted gold */
 body.se-mode .live-carry.done{background:rgba(180,153,99,.08)!important;border-color:rgba(180,153,99,.22)!important}
+/* SE mourning theme: no green anywhere — recolor class-based green accents to gold */
+body.se-mode .btn.on{background:rgba(180,153,99,.28)!important;border-color:#b49963!important;color:#e3d4ac!important}
+body.se-mode .live-btn-done{background:#b49963!important;color:#15110a!important}
+body.se-mode .day.today{border-color:#b49963!important}
+body.se-mode .day.today::after{background:#b49963!important;color:#15110a!important}
 /* Off-season banner: solemnize */
 body.se-mode #offSeasonBanner{background:rgba(255,255,255,.04)!important;color:#aaa!important;border-bottom-color:rgba(255,255,255,.1)!important}
 /* Catch any inline purple colors used by dynamic renderers */
