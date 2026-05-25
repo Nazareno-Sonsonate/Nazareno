@@ -221,3 +221,6 @@ body.big-text .gb-maphint{font-size:12px}
 .gb-maphint{display:inline-flex;align-items:center;gap:2px;background:rgba(255,255,255,.07);padding:2px 8px;border-radius:11px;color:#cbb8e8;opacity:.9;transition:transform .12s ease}
 #bannersContainer > div:active .gb-maphint{transform:translateX(2px)}
 body.se-mode .gb-maphint{color:#d8d2c0}
+/* AHSEC official-GPS status (editor only) */
+#ahsecStatus{font-size:10px;font-weight:700;margin-top:3px;padding:3px 8px;border-radius:8px;background:rgba(255,152,0,.14);color:#ffb74d;border:1px solid rgba(255,152,0,.3)}
+#ahsecStatus.ahsec-live{background:rgba(76,175,80,.16);color:#7bdc82;border-color:rgba(76,175,80,.4)}

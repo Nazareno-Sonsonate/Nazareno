@@ -35,7 +35,7 @@ self.addEventListener('notificationclick', function(event) {
   );
 });
 
-const CACHE_NAME = 'semana-santa-v76';
+const CACHE_NAME = 'semana-santa-v77';
 const URLS_TO_CACHE = ['./', './index.html', './app.js', './app.css', './routes-data.js', './icon-192.png', './icon-512.png', './se-icon-192.png', './jesus.jpg', './maria.jpg', './se-entierro.jpg', './se-virgen.jpg', './jesus-nazareno/', './jesus-nazareno/index.html', './jesus-nazareno/manifest.json', './santo-entierro/', './santo-entierro/index.html', './santo-entierro/manifest.json'];
 
 self.addEventListener('install', event => {

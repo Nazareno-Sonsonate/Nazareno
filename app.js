@@ -3929,12 +3929,12 @@ if(_isSE){
     try {
       var lat = await _fetchAHSECValue('latitud.json');
       if(lat == null){
-        statusParts.push('✝️ SE: sin señal GPS');
+        statusParts.push('Jesús ⚠️ sin señal');
       } else {
         var lng = await _fetchAHSECValue('longitud.json');
         if(lng != null){
           var ll = {lat:+lat, lng:+lng};
-          statusParts.push('✝️ SE: '+lat.toFixed(4)+','+lng.toFixed(4));
+          statusParts.push('Jesús 🟢 en vivo');
           if(gmap){
             if(!urnaMarkers.jesus){
               urnaMarkers.jesus=new google.maps.Marker({position:ll,map:gmap,zIndex:10000,icon:{url:_asset('se-entierro-marker.png'),scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)}});
@@ -4014,7 +4014,7 @@ if(_isSE){
         var lngV = await _fetchAHSECValue('longitud_V.json');
         if(lngV != null){
           var llV = {lat:+latV, lng:+lngV};
-          statusParts.push('👑 V: '+latV.toFixed(4)+','+lngV.toFixed(4));
+          statusParts.push('Virgen 🟢 en vivo');
           if(gmap){
             if(!urnaMarkers.virgen){
               urnaMarkers.virgen=new google.maps.Marker({position:llV,map:gmap,zIndex:9998,icon:{url:_asset('se-virgen-marker.png'),scaledSize:new google.maps.Size(54,66),anchor:new google.maps.Point(27,66)}});
@@ -4068,9 +4068,12 @@ if(_isSE){
     } catch(err){ _logErr('virgen AHSEC', err); }
 
     var el = document.getElementById('ahsecStatus');
-    if(el) el.textContent = statusParts.join(' · ');
+    if(el){
+      var live = statusParts.some(function(s){return s.indexOf('🟢')>-1;});
+      el.textContent = '📡 GPS oficial — ' + (statusParts.length?statusParts.join(' · '):'sin señal');
+      el.classList.toggle('ahsec-live', live);
+    }
   }
-  var ahsEl=document.getElementById('ahsecStatus');if(ahsEl)ahsEl.style.display='block';
   fetchAHSECGPS();
   setInterval(fetchAHSECGPS,10000);
 }
