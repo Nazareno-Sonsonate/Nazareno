@@ -1810,6 +1810,8 @@ function renderWPmarkers() {
         const p=mk.getPosition();
         wps[i].lat=p.lat(); wps[i].lng=p.lng();
         saveAll();
+        if(typeof renderLiveImmediate==='function') renderLiveImmediate();
+        if(typeof renderTable==='function') renderTable();
       });
     }
     wpMarkers.push(mk);
@@ -1825,6 +1827,8 @@ async function addRef(){
   wps.push({n:name,lat:center.lat(),lng:center.lng()});
   renderWPmarkers();
   saveAll();
+  if(typeof renderLiveImmediate==='function') renderLiveImmediate();
+  if(typeof renderTable==='function') renderTable();
 }
 
 function deleteRef(i){
@@ -1835,6 +1839,8 @@ function deleteRef(i){
   infoWin.close();
   renderWPmarkers();
   saveAll();
+  if(typeof renderLiveImmediate==='function') renderLiveImmediate();
+  if(typeof renderTable==='function') renderTable();
 }
 
 async function renameRef(i){
@@ -1847,6 +1853,8 @@ async function renameRef(i){
   infoWin.close();
   renderWPmarkers();
   saveAll();
+  if(typeof renderLiveImmediate==='function') renderLiveImmediate();
+  if(typeof renderTable==='function') renderTable();
 }
 
 async function renameChange(ci){
