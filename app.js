@@ -91,6 +91,12 @@ let isShared = true;
 let isSEMode = (typeof window!=='undefined' && window._forceSE === true);
 let explicitDay = isSEMode;
 if(isSEMode) currentDay = 4;
+// Mode-aware accent: green for Jesús Nazareno, muted gold for the Santo Entierro
+// mourning theme. Called at render time so it tracks the current procession.
+function seAccent(){ return isSEMode?'#b49963':'#4CAF50'; }
+function seAccentTxt(){ return isSEMode?'#d4c08a':'#4CAF50'; }
+function seAccentBg(a){ return (isSEMode?'rgba(180,153,99,':'rgba(76,175,80,')+a+')'; }
+function seCheck(){ return isSEMode?'':'✅ '; }
 function readParams(){
   const p = new URLSearchParams(window.location.search);
   // Legacy: ?se=1 → day 4 + SE theme (kept for backward compatibility with
@@ -360,7 +366,7 @@ function showOffSeasonBanner(){
     ind.style.height=h+'px';
     if(distance>THRESHOLD){
       ind.innerHTML='↑ Soltá para refrescar';
-      ind.style.color='#4CAF50';
+      ind.style.color=seAccent();
     } else {
       ind.innerHTML='↓ Tirá para refrescar';
       ind.style.color='#aaa';
@@ -856,7 +862,7 @@ function updateAdminLiveControls(){
   h+='</div>';
   // GPS + Auto toggles
   h+='<div style="display:flex;gap:6px;margin-bottom:8px;justify-content:center">';
-  h+='<button onclick="toggleAutoGPS()" style="flex:1;padding:8px;border:1px solid '+(autoAdvanceGPS?'#4CAF50':'#666')+';border-radius:8px;background:'+(autoAdvanceGPS?'rgba(76,175,80,.15)':'rgba(255,255,255,.05)')+';color:'+(autoAdvanceGPS?'#4CAF50':'#888')+';font-size:13px;cursor:pointer;font-family:inherit">'+(autoAdvanceGPS?'📡 GPS: ON':'📡 GPS: OFF')+'</button>';
+  h+='<button onclick="toggleAutoGPS()" style="flex:1;padding:8px;border:1px solid '+(autoAdvanceGPS?seAccent():'#666')+';border-radius:8px;background:'+(autoAdvanceGPS?seAccentBg('.15'):'rgba(255,255,255,.05)')+';color:'+(autoAdvanceGPS?seAccent():'#888')+';font-size:13px;cursor:pointer;font-family:inherit">'+(autoAdvanceGPS?'📡 GPS: ON':'📡 GPS: OFF')+'</button>';
   var autoLabel=window._autoTimeRunning?(window._autoRemote?'⏱ Auto: ON 📡':'⏱ Auto: ON'):'⏱ Auto: OFF';
   h+='<button onclick="toggleAutoTime();updateAdminLiveControls();" style="flex:1;padding:8px;border:1px solid '+(window._autoTimeRunning?'#f44336':'#666')+';border-radius:8px;background:'+(window._autoTimeRunning?'rgba(244,67,54,.15)':'rgba(255,255,255,.05)')+';color:'+(window._autoTimeRunning?'#f44336':'#888')+';font-size:13px;cursor:pointer;font-family:inherit">'+autoLabel+'</button>';
   h+='</div>';
@@ -873,7 +879,7 @@ function updateAdminLiveControls(){
   }
   // Show real rhythm from GPS (info only)
   if(window._realRhythm){
-    h+='<div style="text-align:center;margin-bottom:6px;padding:4px;background:rgba(76,175,80,.08);border-radius:6px;font-size:12px;color:#4CAF50">📡 Ritmo real GPS: <b>'+window._realRhythm+' min/cambio</b> (config: '+($('cMn').value||6)+' min)</div>';
+    h+='<div style="text-align:center;margin-bottom:6px;padding:4px;background:'+seAccentBg('.08')+';border-radius:6px;font-size:12px;color:'+seAccentTxt()+'">📡 Ritmo real GPS: <b>'+window._realRhythm+' min/cambio</b> (config: '+($('cMn').value||6)+' min)</div>';
   }
   // Desfase Virgen
   h+='<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;justify-content:center">';
@@ -1321,7 +1327,7 @@ function toggleMapLock(){
   var btn=document.getElementById('mapLockBtn');
   if(btn){
     btn.textContent=mapLocked[currentDay]?'🔒 Mapa fijo':'🔓 Mapa libre';
-    btn.style.background=mapLocked[currentDay]?'rgba(76,175,80,.85)':'rgba(0,0,0,.6)';
+    btn.style.background=mapLocked[currentDay]?seAccentBg('.85'):'rgba(0,0,0,.6)';
   }
   try{localStorage.setItem('mapLocks',JSON.stringify({l:mapLocked,v:mapSavedView}));}catch(e){_logErr("swallow",e);}
   if(typeof syncConfig==='function') syncConfig();
@@ -1344,7 +1350,7 @@ function restoreMapView(){
   var btn=document.getElementById('mapLockBtn');
   if(btn){
     btn.textContent=mapLocked[currentDay]?'🔒 Mapa fijo':'🔓 Mapa libre';
-    btn.style.background=mapLocked[currentDay]?'rgba(76,175,80,.85)':'rgba(0,0,0,.6)';
+    btn.style.background=mapLocked[currentDay]?seAccentBg('.85'):'rgba(0,0,0,.6)';
   }
 }
 // Load saved locks
@@ -1439,7 +1445,7 @@ function _showUndoToast(remaining){
   if(!t){
     t=document.createElement('div');
     t.id='undoToast';
-    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(76,175,80,.95);color:#fff;padding:10px 18px;border-radius:24px;font-size:14px;font-weight:600;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,.4);transition:opacity .3s;pointer-events:none';
+    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:'+seAccentBg('.95')+';color:#fff;padding:10px 18px;border-radius:24px;font-size:14px;font-weight:600;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,.4);transition:opacity .3s;pointer-events:none';
     document.body.appendChild(t);
   }
   t.textContent='↩️ Deshecho · '+remaining+' paso'+(remaining===1?'':'s')+' restante'+(remaining===1?'':'s');
@@ -2120,7 +2126,7 @@ function markDoneWithTime(ci){
     +'<select id="tpAP" style="background:#222;color:#fff;border:1px solid #666;border-radius:6px;padding:10px;font-size:18px;font-family:inherit"><option>AM</option><option>PM</option></select>'
     +'</div>'
     +'<div style="display:flex;gap:8px;justify-content:center">'
-    +'<button onclick="confirmTimePick('+ci+')" style="background:#4CAF50;color:#fff;border:none;border-radius:8px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✅ Confirmar</button>'
+    +'<button onclick="confirmTimePick('+ci+')" style="background:'+seAccent()+';color:#fff;border:none;border-radius:8px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✅ Confirmar</button>'
     +'<button onclick="document.getElementById(\'timePicker\').remove()" style="background:rgba(255,255,255,.1);color:#ccc;border:1px solid #666;border-radius:8px;padding:12px 16px;font-size:14px;cursor:pointer;font-family:inherit">Cancelar</button>'
     +'</div>';
 
@@ -2451,8 +2457,8 @@ function renderLiveImpl(){
   if(procComplete&&!isPastDay){
     // Your carries are done
     if(!(liveGrupoData&&liveGrupoData.cambio>0&&liveGrupoData.cambio>=(positions.length||changes.length))){
-      h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3)">';
-      h+='<div style="font-size:16px;font-weight:700;color:#4CAF50">✅ ¡Completaste todas tus cargadas!</div>';
+      h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:'+seAccentBg('.1')+';border:1px solid '+seAccentBg('.3')+'">';
+      h+='<div style="font-size:16px;font-weight:700;color:'+seAccentTxt()+'">'+seCheck()+'¡Completaste todas tus cargadas!</div>';
       h+='</div>';
     }
     const times=[];
@@ -2466,10 +2472,10 @@ function renderLiveImpl(){
       let durs='';
       for(let i=1;i<times.length;i++){
         const dur=((times[i].t-times[i-1].t)/60000).toFixed(1);
-        durs+='<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span>'+times[i-1].colorIcon+' #'+times[i-1].ci+' → #'+times[i].ci+'</span><span style="color:#4CAF50;font-weight:700">'+dur+' min</span></div>';
+        durs+='<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span>'+times[i-1].colorIcon+' #'+times[i-1].ci+' → #'+times[i].ci+'</span><span style="color:'+seAccentTxt()+';font-weight:700">'+dur+' min</span></div>';
       }
-      h+='<div style="background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.2);border-radius:10px;padding:12px;margin-bottom:10px">';
-      h+='<div style="text-align:center;font-size:14px;font-weight:700;color:#4CAF50;margin-bottom:8px">📊 Resumen Final</div>';
+      h+='<div style="background:'+seAccentBg('.08')+';border:1px solid '+seAccentBg('.2')+';border-radius:10px;padding:12px;margin-bottom:10px">';
+      h+='<div style="text-align:center;font-size:14px;font-weight:700;color:'+seAccentTxt()+';margin-bottom:8px">📊 Resumen Final</div>';
       h+='<div style="display:flex;justify-content:space-around;margin-bottom:10px">';
       h+='<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:#fff">'+totalHrs+'h '+totalMins+'m</div><div style="font-size:10px;color:#aaa">Tiempo total</div></div>';
       if(avg) h+='<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:#fff">'+avg.toFixed(1)+'</div><div style="font-size:10px;color:#aaa">Min/cambio</div></div>';
@@ -2492,13 +2498,13 @@ function renderLiveImpl(){
     h+='<div class="ln-ref">📍 '+ref+'</div>';
     h+='<div class="ln-time">~'+estTime+'</div>';
     h+='<div id="countdownText" style="font-size:13px;margin-top:4px"></div>';
-    if(realAvg) h+='<div style="font-size:11px;color:#4CAF50;margin-top:2px">⏱ Ritmo real: '+realAvg.toFixed(1)+' min/cambio</div>';
+    if(realAvg) h+='<div style="font-size:11px;color:'+seAccentTxt()+';margin-top:2px">⏱ Ritmo real: '+realAvg.toFixed(1)+' min/cambio</div>';
     h+='<div style="font-size:10px;color:#aaa;margin-top:2px">Cambio #'+nextCarry.num+'</div>';
     h+='</div>';
 
     // Compact register buttons
     h+='<div style="display:flex;gap:4px;margin-bottom:4px">';
-    h+='<button onclick="markDone('+nextCarry.ci+')" style="flex:3;padding:8px;border:none;border-radius:8px;background:#4CAF50;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">✅ Registrar #'+nextCarry.ci+'</button>';
+    h+='<button onclick="markDone('+nextCarry.ci+')" style="flex:3;padding:8px;border:none;border-radius:8px;background:'+seAccent()+';color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">✅ Registrar #'+nextCarry.ci+'</button>';
     h+='<button onclick="markDoneWithTime('+nextCarry.ci+')" style="flex:1;padding:6px;border:1px solid #555;border-radius:8px;background:none;color:#888;font-size:9px;font-family:inherit;cursor:pointer">🕐</button>';
     h+='</div>';
   }
@@ -2532,7 +2538,7 @@ function renderLiveImpl(){
     h+='<div class="live-carry '+cls+'" style="'+borderColor+'" onclick="zoomTo('+(mc.ci-1)+')">';
     h+='<div class="lc-num"></div>';
     h+='<div class="lc-info"><div class="lc-ref">Cargada #'+mc.ci+' — '+ref+'</div><div class="lc-sub">Cambio #'+mc.num+(label?' · '+label:'')+(realT?' · '+realT:'')+'</div></div>';
-    h+='<div class="lc-time" style="color:'+(mcDone?'#4CAF50':colorHexSafe)+';'+(isSEMode?'font-size:11px;':'')+'">'+estT+'</div>';
+    h+='<div class="lc-time" style="color:'+(mcDone?seAccent():colorHexSafe)+';'+(isSEMode?'font-size:11px;':'')+'">'+estT+'</div>';
     h+='</div>';
   });
   h+='</div>';
@@ -2550,7 +2556,7 @@ function renderLiveImpl(){
   si+='<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#c084fc">'+grupoInfo+'</div><div style="font-size:10px;color:#888">Mi grupo</div></div>';
   si+='<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#fff">'+cargaInfo+'</div><div style="font-size:10px;color:#888">'+cargaLabel+'</div></div>';
   si+='<div style="text-align:center"><div style="font-size:16px;font-weight:700;color:#fff">#'+lastGrpLive+'</div><div style="font-size:10px;color:#888">Asienta</div></div>';
-  si+='<div style="text-align:center"><div style="font-size:16px;font-weight:700;color:'+(done>=total?'#4CAF50':'#ff9800')+'">'+done+'/'+total+'</div><div style="font-size:10px;color:#888">Avance</div></div>';
+  si+='<div style="text-align:center"><div style="font-size:16px;font-weight:700;color:'+(done>=total?seAccent():'#ff9800')+'">'+done+'/'+total+'</div><div style="font-size:10px;color:#888">Avance</div></div>';
   si+='</div>';
   // Grupo +/- for editor
   if(!isShared&&!isPastDay){
@@ -2579,7 +2585,7 @@ function renderLiveImpl(){
     si+='<span id="stickyCountdown" style="font-size:11px;color:#ff9800;min-width:40px;text-align:right"></span>';
     si+='</div>';
   } else if(procComplete){
-    si+='<div style="text-align:center;padding:4px;font-size:13px;color:#4CAF50;font-weight:700">✅ Procesión completada</div>';
+    si+='<div style="text-align:center;padding:4px;font-size:13px;color:'+seAccentTxt()+';font-weight:700">'+seCheck()+'Procesión completada</div>';
   }
   var stickyEl=$('stickyInfo');
   if(stickyEl) stickyEl.innerHTML=si;
@@ -2618,12 +2624,12 @@ function toggleEdit(){
 }
 function toggleDrag(){
   dragMode=!dragMode;
-  $('bDrag').style.background=dragMode?'rgba(76,175,80,.8)':'rgba(0,0,0,.7)';
-  $('bDrag').style.borderColor=dragMode?'#4CAF50':'#666';
+  $('bDrag').style.background=dragMode?seAccentBg('.8'):'rgba(0,0,0,.7)';
+  $('bDrag').style.borderColor=dragMode?seAccent():'#666';
   if(editingWomen){renderMarkersW();}else{renderMarkers();}
   renderWPmarkers();
 }
-function toggleAll(){showAll=!showAll;$('bAll').textContent=showAll?'👥 Ver otros grupos':'👤 Solo mis cargadas';$('bAll').style.background=showAll?'rgba(0,0,0,.75)':'rgba(76,175,80,.8)';renderMarkers();}
+function toggleAll(){showAll=!showAll;$('bAll').textContent=showAll?'👥 Ver otros grupos':'👤 Solo mis cargadas';$('bAll').style.background=showAll?'rgba(0,0,0,.75)':seAccentBg('.8');renderMarkers();}
 function showView(n){document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('a',i===n));document.querySelectorAll('.pnl').forEach((p,i)=>p.classList.toggle('a',i===n));}
 
 // ========== GPS TRACKING ==========
@@ -3558,7 +3564,7 @@ function showBlackScreenBtn(){
   var btn=document.createElement('div');
   btn.id='blackScreenBtn';
   btn.innerHTML='🌑 Pantalla negra';
-  btn.style.cssText='position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:3002;background:rgba(0,0,0,.9);color:#4CAF50;font-size:13px;font-weight:700;padding:10px 20px;border-radius:22px;border:2px solid #4CAF50;cursor:pointer';
+  btn.style.cssText='position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:3002;background:rgba(0,0,0,.9);color:'+seAccent()+';font-size:13px;font-weight:700;padding:10px 20px;border-radius:22px;border:2px solid '+seAccent()+';cursor:pointer';
   btn.onclick=toggleBlackScreen;
   document.body.appendChild(btn);
 }
