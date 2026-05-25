@@ -4496,28 +4496,41 @@ function updateBanners(){
 }
 // ========== STREET VIEW ==========
 var streetViewPano=null;
+var _svService=null;
 function openStreetView(lat,lng){
   var sv=document.getElementById('streetView');
   var mapEl=document.getElementById('map');
   var btn=document.getElementById('bStreet');
   if(!sv||!mapEl) return;
-  mapEl.style.display='none';
-  sv.style.display='block';
-  btn.style.display='block';
-  if(!streetViewPano){
-    streetViewPano=new google.maps.StreetViewPanorama(sv,{
-      position:{lat:lat,lng:lng},
-      pov:{heading:0,pitch:0},
-      zoom:1,
-      addressControl:false,
-      fullscreenControl:true,
-      motionTracking:false,
-      motionTrackingControl:false
-    });
-  } else {
-    streetViewPano.setPosition({lat:lat,lng:lng});
+  if(!(window.google&&google.maps&&google.maps.StreetViewService)){
+    alert('El mapa todavía se está cargando. Probá de nuevo en un momento.');
+    return;
   }
-  infoWin.close();
+  if(typeof infoWin!=='undefined'&&infoWin) infoWin.close();
+  if(!_svService) _svService=new google.maps.StreetViewService();
+  // Look up the nearest real panorama instead of forcing the exact (often
+  // off-road) coordinate, which is what made Street View show a broken/blank
+  // screen. Widen the search, and fall back to a clear message if there is no
+  // coverage near this point.
+  _svService.getPanorama({location:{lat:lat,lng:lng},radius:200},function(data,status){
+    if(status==='OK'&&data&&data.location){
+      mapEl.style.display='none';
+      sv.style.display='block';
+      if(btn) btn.style.display='block';
+      if(!streetViewPano){
+        streetViewPano=new google.maps.StreetViewPanorama(sv,{
+          addressControl:false,fullscreenControl:true,
+          motionTracking:false,motionTrackingControl:false
+        });
+      }
+      streetViewPano.setPano(data.location.pano);
+      streetViewPano.setPov({heading:0,pitch:0});
+      streetViewPano.setZoom(1);
+      streetViewPano.setVisible(true);
+    } else {
+      alert('📷 No hay Street View disponible cerca de este punto.');
+    }
+  });
 }
 function closeStreetView(){
   var sv=document.getElementById('streetView');
