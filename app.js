@@ -1825,10 +1825,14 @@ function renderWPmarkers() {
   });
 }
 
-// Cross-device sync disabled (see GLOBAL REFERENCES note): writing to a blocked
-// Firebase node triggered a revert that deleted local refs. Global references are
-// kept in localStorage only for now. No-op kept so callers don't need changes.
-function syncGlobalRefs(){ /* intentionally disabled until Firebase rules allow refs_global */ }
+// Sync global references via the already-permitted "positions" path (rules let
+// the app write positions/*), so they share across devices without a rules
+// change. The listener below keeps local refs if the server value is empty, so
+// even if this path were blocked the refs never disappear.
+function syncGlobalRefs(){
+  if(isShared) return;
+  try{ db.ref('positions/refsGlobal').set(GLOBAL_WP_REF.map(function(w){return{lat:w.lat,lng:w.lng,n:w.n||''};})); }catch(e){_logErr('syncGlobalRefs',e);}
+}
 function _afterRefChange(){
   renderWPmarkers();
   saveAll();
@@ -4227,11 +4231,19 @@ if(_isSE){
 }
 
 // ========== GLOBAL REFERENCES (shared across all maps/days) ==========
-// Stored locally (localStorage 'gr') and applied to every day via getAllRefs().
-// Cross-device sync is intentionally OFF: writing to a Firebase node the security
-// rules don't allow made Firebase fire an optimistic-revert that wiped freshly
-// added "general" references. Re-enable a listener + syncGlobalRefs only once the
-// rules permit writing to 'refs_global'.
+// Cached in localStorage ('gr') and synced via positions/refsGlobal (a path the
+// rules already permit). The listener ignores empty/null server values so a
+// just-added "general" reference is never wiped by an optimistic revert.
+db.ref('positions/refsGlobal').on('value',function(snap){
+  if(typeof GLOBAL_WP_REF==='undefined') return;
+  var d=snap.val();
+  if(!d || !d.length) return; // keep local refs if the server has nothing
+  GLOBAL_WP_REF.length=0;
+  d.forEach(function(w){ if(w&&w.lat&&w.lng) GLOBAL_WP_REF.push({n:w.n||'',lat:w.lat,lng:w.lng,g:1}); });
+  try{ if(typeof gmap!=='undefined'&&gmap&&typeof renderWPmarkers==='function') renderWPmarkers(); }catch(e){_logErr('refsGlobal render',e);}
+  try{ if(typeof renderLiveImmediate==='function') renderLiveImmediate(); }catch(e){}
+  try{ if(typeof renderTable==='function') renderTable(); }catch(e){}
+});
 
 // ========== ONLINE COUNTER ==========
 // Register presence with heartbeat
