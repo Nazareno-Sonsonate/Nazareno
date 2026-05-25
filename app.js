@@ -2058,10 +2058,22 @@ function getCarryRef(mc){
   return mc.n || autoCarryName(mc) || nearWP(mc);
 }
 
+// Strip redundancy from a carry reference: a leading "Grupo N" (already shown
+// separately) and a "(5:00 p.m.)" time parenthetical (already shown on the
+// right). Leaves a real place name, or empty if nothing meaningful remains.
+function _cleanRef(ref){
+  if(!ref) return '';
+  var r=String(ref).trim();
+  r=r.replace(/\(\s*\d{1,2}:\d{2}\s*[ap]\.?\s*m?\.?\s*\)/ig,'').trim();
+  r=r.replace(/^grupo\s*\d+\s*[-–—:]?\s*/i,'').trim();
+  if(!r || /^grupo\s*\d+$/i.test(r)) return '';
+  return r;
+}
+
 function renderTable() {
   let h='<div class="th"><span>#</span><span>Ubicación / Referencia</span><span style="text-align:right">Hora</span></div>';
   myCarries.forEach((mc,i)=>{
-    const ref=_escapeHtml(getCarryRef(mc));
+    const ref=_escapeHtml(_cleanRef(getCarryRef(mc)))||('Grupo '+mc.grp);
     const label=_escapeHtml(mc.carryLabel||'');
     h+='<div class="tr" onclick="zoomTo('+i+')"><span class="rn">'+mc.ci+'</span><div><div style="font-weight:600">'+ref+'</div><div class="rs">Cambio #'+mc.num+(label?' · '+label:'')+'</div></div><div class="rt">'+_escapeHtml(mc.time)+'</div></div>';
   });
@@ -2312,7 +2324,8 @@ function renderSpectatorView(){
     h+='<div class="live-next">';
     h+='<div class="ln-label">Cargando ahora</div>';
     h+='<div class="ln-num">Grupo '+nowObj.grp+'</div>';
-    h+='<div class="ln-ref">📍 '+_escapeHtml(getCarryRef(nowObj))+'</div>';
+    var nowRef=_cleanRef(getCarryRef(nowObj));
+    h+='<div class="ln-ref">📍 '+_escapeHtml(nowRef||('Grupo '+nowObj.grp))+'</div>';
     h+='<div class="ln-time">Cambio '+Math.min(eff,total)+' de '+total+'</div>';
     h+='</div>';
   } else {
@@ -2323,7 +2336,7 @@ function renderSpectatorView(){
   for(var i=0;i<changes.length;i++){
     var ch=changes[i];
     var cls=ch.num<eff?'done':(ch.num===eff?'current':'pending');
-    var ref=_escapeHtml(getCarryRef(ch));
+    var ref=_escapeHtml(_cleanRef(getCarryRef(ch)));
     h+='<div class="live-carry '+cls+'" onclick="zoomChange('+i+')">';
     h+='<div class="lc-num"></div>';
     h+='<div class="lc-info"><div class="lc-ref">Grupo '+ch.grp+(ref?' — '+ref:'')+'</div><div class="lc-sub">Cambio #'+ch.num+'</div></div>';
@@ -2380,7 +2393,7 @@ function renderLiveImpl(){
     ph+='<div>';
     for(var pi=0;pi<changes.length;pi++){
       var pch=changes[pi];
-      var prefSafe=_escapeHtml(pch.n||autoCarryName(pch)||'');
+      var prefSafe=_escapeHtml(_cleanRef(pch.n||autoCarryName(pch)||''));
       ph+='<div class="live-carry done" style="padding:8px 10px"><div class="lc-num"></div><div class="lc-info"><div class="lc-ref" style="font-size:14px">Grupo '+pch.grp+(prefSafe?' — '+prefSafe:'')+'</div><div class="lc-sub">Cambio #'+pch.num+'</div></div><div class="lc-time" style="font-size:13px;color:#aaa">'+_escapeHtml(pch.time||'')+'</div></div>';
     }
     ph+='</div>';
@@ -2485,7 +2498,7 @@ function renderLiveImpl(){
       h+='</div>';
     }
   } else if(nextCarry) {
-    const ref=nextCarry.n||nearWP(nextCarry);
+    const ref=_cleanRef(nextCarry.n||nearWP(nextCarry))||('Grupo '+nextCarry.grp);
     const estTime=getEstimate(nextCarry);
     const realAvg=getRealAvg();
 
@@ -2526,7 +2539,7 @@ function renderLiveImpl(){
     const passedByGrupo=!mcDone&&effCambio>0&&mc.num<=effCambio;
     const isCurrent=nextCarry&&mc.ci===nextCarry.ci;
     const cls=mcDone?'done':(passedByGrupo?'done':(isCurrent?'current':'pending'));
-    const ref=_escapeHtml(getCarryRef(mc));
+    const ref=_escapeHtml(_cleanRef(getCarryRef(mc)));
     const label=_escapeHtml(mc.carryLabel||'');
     const entry=getEntry(mc.ci);
     const realT=entry?_escapeHtml(fmtClock(entry.t)):'';
@@ -2535,7 +2548,7 @@ function renderLiveImpl(){
     const borderColor=mc.colorHex&&isCurrent?'border-color:'+colorHexSafe:'';
     h+='<div class="live-carry '+cls+'" style="'+borderColor+'" onclick="zoomTo('+(mc.ci-1)+')">';
     h+='<div class="lc-num"></div>';
-    h+='<div class="lc-info"><div class="lc-ref">Cargada #'+mc.ci+' — '+ref+'</div><div class="lc-sub">Cambio #'+mc.num+(label?' · '+label:'')+(realT?' · '+realT:'')+'</div></div>';
+    h+='<div class="lc-info"><div class="lc-ref">Cargada #'+mc.ci+(ref?' — '+ref:'')+'</div><div class="lc-sub">Cambio #'+mc.num+(label?' · '+label:'')+(realT?' · '+realT:'')+'</div></div>';
     h+='<div class="lc-time" style="color:'+(mcDone?seAccent():colorHexSafe)+';'+(isSEMode?'font-size:11px;':'')+'">'+estT+'</div>';
     h+='</div>';
   });
@@ -2574,7 +2587,7 @@ function renderLiveImpl(){
   }
   // Compact próxima cargada
   if(nextCarry&&!procComplete){
-    var ref2=nextCarry.n||nearWP(nextCarry);
+    var ref2=_cleanRef(nextCarry.n||nearWP(nextCarry))||('Grupo '+nextCarry.grp);
     var est2=getEstimate(nextCarry);
     si+='<div onclick="zoomTo('+(nextCarry.ci-1)+')" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:6px 8px;background:rgba(192,132,252,.08);border:1px solid rgba(192,132,252,.2);border-radius:8px;margin-bottom:2px">';
     si+='<span style="font-size:20px;font-weight:700;color:#c084fc">#'+nextCarry.ci+'</span>';
