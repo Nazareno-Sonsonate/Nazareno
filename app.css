@@ -208,6 +208,10 @@ body.big-text .mm-tx small{font-size:14px}
 .gb-pill.soon{background:rgba(192,132,252,.25);color:#e9d5ff}
 .gb-pill.done{background:#16a34a;color:#fff}
 .gb-pill.est{background:rgba(59,130,246,.22);color:#bfdbfe}
+/* Santo Entierro is a mourning procession — swap the green/purple accents for muted gold */
+body.se-mode .gb-pill.done{background:#b49963;color:#15110a}
+body.se-mode .gb-pill.soon{background:rgba(180,153,99,.22);color:#e3d4ac}
+body.se-mode .gb-pill.est{background:rgba(180,153,99,.16);color:#cdbb8e}
 @keyframes gbPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(.7)}}
 .gb-maphint{font-size:10px;color:#9aa;white-space:nowrap;flex-shrink:0;opacity:.85}
 body.big-text .gb-pill{font-size:12px}
