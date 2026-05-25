@@ -3,6 +3,8 @@
 // ========== LOCAL STORAGE ==========
 const SAVE_KEY = 'semanaSanta_v47';
 function getWPs(){return currentDay===0?LUN_WP_REF:currentDay===1?MART_WP_REF:currentDay===2?MIER_WP_REF:currentDay===3?VIER_WP_REF:currentDay===4?SE_WP_REF:[];}
+// All references visible on the current map = global pool + this day's own.
+function getAllRefs(){var g=(typeof GLOBAL_WP_REF!=='undefined'&&GLOBAL_WP_REF)?GLOBAL_WP_REF:[];return g.concat(getWPs());}
 function saveAll() {
   try {
     savedPositions[currentDay] = positions.map(p=>({lat:p.lat,lng:p.lng,n:p.n||''}));
@@ -10,6 +12,7 @@ function saveAll() {
     savedRefs[currentDay] = getWPs().map(w=>({lat:w.lat,lng:w.lng,n:w.n}));
     const data = {
       sp: savedPositions, sr: savedRefs, spw: savedPositionsW,
+      gr: (typeof GLOBAL_WP_REF!=='undefined'?GLOBAL_WP_REF.map(function(w){return{lat:w.lat,lng:w.lng,n:w.n||''};}):[]),
       sc: daySaca, sh: dayHours, sm: daySacaManual, sd: dayDates, smj: daySacaMuj,
       cfg: {g:+$('cG').value,t:+$('cType').value,mn:+$('cMn').value,color:+($('cColor')?$('cColor').value:0),cortH:VIER_CORTESIAS_CHANGE,cortM:VIER_CORTESIAS_CHANGE_M,cortMin:VIER_CORTESIAS_MIN},
       cd: currentDay,
@@ -43,6 +46,7 @@ function loadSaved() {
     if(d.spw) savedPositionsW = d.spw;
     // Only load refs if user added custom ones
     if(d.sr) savedRefs = d.sr;
+    if(d.gr && typeof GLOBAL_WP_REF!=='undefined'){ GLOBAL_WP_REF.length=0; d.gr.forEach(function(r){ if(r&&r.lat&&r.lng) GLOBAL_WP_REF.push({n:r.n||'',lat:r.lat,lng:r.lng,g:1}); }); }
     if(d.sc) daySaca = d.sc;
     if(d.sh) dayHours = d.sh;
     if(d.sm) daySacaManual = d.sm;
@@ -1784,14 +1788,15 @@ function calc() {
 function renderWPmarkers() {
   wpMarkers.forEach(m=>m.setMap(null));
   wpMarkers=[];
-  const wps = getWPs();
+  const wps = getAllRefs();
   wps.forEach((wp,i)=>{
+    var isG=!!wp.g;
     const mk=new google.maps.Marker({
       position:{lat:wp.lat,lng:wp.lng}, map:gmap,
       icon:{path:google.maps.SymbolPath.CIRCLE,scale:(dragMode&&editMode)?16:11,
-        fillColor:'#7c3aed',fillOpacity:.95,
+        fillColor:isG?'#0ea5e9':'#7c3aed',fillOpacity:.95,
         strokeColor:'#fff',strokeWeight:2},
-      title:wp.n||'Referencia',
+      title:(wp.n||'Referencia')+(isG?' · general':''),
       zIndex:5000, draggable:dragMode&&editMode,
       optimized:!(dragMode&&editMode)
     });
@@ -1799,17 +1804,19 @@ function renderWPmarkers() {
       if(isZoom())return;
       const ren=editMode?'<br><button onclick="renameRef('+i+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#7c3aed;color:#fff;font-size:12px;font-weight:600;cursor:pointer">✏️ Renombrar</button>':'';
       const del=editMode?'<br><button onclick="deleteRef('+i+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🗑️ Eliminar</button>':'';
+      const scope=editMode?'<br><button onclick="toggleRefScope('+i+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#0ea5e9;color:#fff;font-size:12px;font-weight:600;cursor:pointer">'+(isG?'📍 Hacer solo este mapa':'🌐 Hacer general')+'</button>':'';
       const drag=(dragMode&&editMode)?'<br><i style="font-size:11px;color:#777">Arrastrá para mover</i>':'';
       const svBtn='<br><button onclick="openStreetView('+wp.lat+','+wp.lng+')" style="margin-top:4px;padding:6px 12px;border:none;border-radius:5px;background:#1a73e8;color:#fff;font-size:12px;font-weight:600;cursor:pointer">🛣️ Street View</button>';
-      infoWin.setContent('<div style="text-align:center;font-family:Georgia;color:#111;font-size:13px"><b style="font-size:15px">'+_escapeHtml(wp.n)+'</b><br><span style="font-size:12px;color:#555">Referencia</span>'+drag+ren+del+svBtn+'</div>');
+      infoWin.setContent('<div style="text-align:center;font-family:Georgia;color:#111;font-size:13px"><b style="font-size:15px">'+_escapeHtml(wp.n)+'</b><br><span style="font-size:11px;color:'+(isG?'#0284c7':'#7c3aed')+';font-weight:700">'+(isG?'🌐 Referencia general':'📍 Referencia de este mapa')+'</span>'+drag+ren+scope+del+svBtn+'</div>');
       infoWin.open(gmap,mk);
     });
     if(dragMode&&editMode){
       mk.addListener('dragstart',function(){ pushMapHistory(); });
       mk.addListener('dragend',function(){
         const p=mk.getPosition();
-        wps[i].lat=p.lat(); wps[i].lng=p.lng();
+        wp.lat=p.lat(); wp.lng=p.lng();
         saveAll();
+        if(isG&&typeof syncGlobalRefs==='function') syncGlobalRefs();
         if(typeof renderLiveImmediate==='function') renderLiveImmediate();
         if(typeof renderTable==='function') renderTable();
       });
@@ -1818,43 +1825,73 @@ function renderWPmarkers() {
   });
 }
 
+// Push global references to Firebase so every device/map sees them.
+function syncGlobalRefs(){
+  if(isShared) return;
+  try{ db.ref('refs_global').set(GLOBAL_WP_REF.map(function(w){return{lat:w.lat,lng:w.lng,n:w.n||''};})); }catch(e){_logErr('syncGlobalRefs',e);}
+}
+function _afterRefChange(){
+  renderWPmarkers();
+  saveAll();
+  if(typeof renderLiveImmediate==='function') renderLiveImmediate();
+  if(typeof renderTable==='function') renderTable();
+}
+
 async function addRef(){
   const name=await customPrompt('Nombre de la referencia:');
   if(!name) return;
+  const general=await customConfirm('¿Esta referencia sirve para TODOS los mapas?\n\nAceptar = General (todos los días)\nCancelar = Solo este mapa');
   pushMapHistory();
   const center=gmap.getCenter();
-  const wps=getWPs();
-  wps.push({n:name,lat:center.lat(),lng:center.lng()});
-  renderWPmarkers();
-  saveAll();
-  if(typeof renderLiveImmediate==='function') renderLiveImmediate();
-  if(typeof renderTable==='function') renderTable();
+  const wp={n:name,lat:center.lat(),lng:center.lng()};
+  if(general){ wp.g=1; GLOBAL_WP_REF.push(wp); } else { getWPs().push(wp); }
+  _afterRefChange();
+  if(general) syncGlobalRefs();
 }
 
 function deleteRef(i){
-  const wps=getWPs();
-  if(i<0||i>=wps.length) return;
+  const all=getAllRefs();
+  if(i<0||i>=all.length) return;
+  const wp=all[i];
   pushMapHistory();
-  wps.splice(i,1);
+  const g=GLOBAL_WP_REF.indexOf(wp);
+  if(g>=0){ GLOBAL_WP_REF.splice(g,1); }
+  else { const day=getWPs(); const j=day.indexOf(wp); if(j>=0) day.splice(j,1); }
   infoWin.close();
-  renderWPmarkers();
-  saveAll();
-  if(typeof renderLiveImmediate==='function') renderLiveImmediate();
-  if(typeof renderTable==='function') renderTable();
+  _afterRefChange();
+  if(wp.g) syncGlobalRefs();
 }
 
 async function renameRef(i){
-  const wps=getWPs();
-  if(i<0||i>=wps.length) return;
-  const name=await customPrompt('Nuevo nombre para referencia:',wps[i].n);
+  const all=getAllRefs();
+  if(i<0||i>=all.length) return;
+  const wp=all[i];
+  const name=await customPrompt('Nuevo nombre para referencia:',wp.n);
   if(name===null) return;
   pushMapHistory();
-  wps[i].n=name;
+  wp.n=name;
   infoWin.close();
-  renderWPmarkers();
-  saveAll();
-  if(typeof renderLiveImmediate==='function') renderLiveImmediate();
-  if(typeof renderTable==='function') renderTable();
+  _afterRefChange();
+  if(wp.g) syncGlobalRefs();
+}
+
+// Move a reference between the global pool and this map's own list.
+function toggleRefScope(i){
+  const all=getAllRefs();
+  if(i<0||i>=all.length) return;
+  const wp=all[i];
+  pushMapHistory();
+  if(wp.g){
+    const g=GLOBAL_WP_REF.indexOf(wp); if(g>=0) GLOBAL_WP_REF.splice(g,1);
+    delete wp.g; getWPs().push(wp);
+    syncGlobalRefs();
+  } else {
+    const day=getWPs(); const j=day.indexOf(wp); if(j>=0) day.splice(j,1);
+    wp.g=1; GLOBAL_WP_REF.push(wp);
+    syncGlobalRefs();
+  }
+  infoWin.close();
+  _afterRefChange();
 }
 
 async function renameChange(ci){
@@ -2082,7 +2119,7 @@ function autoCarryName(mc){
   if(idx===total-1) return 'Regreso';
   if(currentDay===3 && (mc.num||idx+1)===getCortesiasChange()) return 'Cortesías';
   // Look at the two nearest waypoints
-  var wps=getWPs();
+  var wps=getAllRefs();
   if(!wps.length) return '';
   var ranked=wps.map(function(w){return {n:w.n,d:hd(mc,w)};}).sort(function(a,b){return a.d-b.d;});
   var a=ranked[0], b=ranked[1];
@@ -2660,7 +2697,7 @@ function renderLiveImpl(){
   if(typeof startCrono==='function') startCrono();
 }
 function nearWP(p){
-  const wps = getWPs();
+  const wps = getAllRefs();
   let b='Punto',bd=1e9;
   wps.forEach(w=>{const d=hd(p,w);if(d<bd){bd=d;b=w.n;}});
   return b;
@@ -4189,6 +4226,19 @@ if(_isSE){
   fetchAHSECGPS();
   setInterval(fetchAHSECGPS,10000);
 }
+
+// ========== GLOBAL REFERENCES (shared across all maps/days) ==========
+// One pool synced for everyone, day-independent, so a "general" reference shows
+// and names points on every map.
+db.ref('refs_global').on('value',function(snap){
+  if(typeof GLOBAL_WP_REF==='undefined') return;
+  var d=snap.val();
+  GLOBAL_WP_REF.length=0;
+  if(d&&d.length){ d.forEach(function(w){ if(w&&w.lat&&w.lng) GLOBAL_WP_REF.push({n:w.n||'',lat:w.lat,lng:w.lng,g:1}); }); }
+  try{ if(typeof gmap!=='undefined'&&gmap&&typeof renderWPmarkers==='function') renderWPmarkers(); }catch(e){_logErr('refs_global render',e);}
+  try{ if(typeof renderLiveImmediate==='function') renderLiveImmediate(); }catch(e){}
+  try{ if(typeof renderTable==='function') renderTable(); }catch(e){}
+});
 
 // ========== ONLINE COUNTER ==========
 // Register presence with heartbeat
