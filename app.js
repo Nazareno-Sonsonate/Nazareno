@@ -2049,31 +2049,32 @@ function getCarryRef(mc){
   if(cc.t===27&&window.liveGrupoData&&window.liveGrupoData.movidos){
     var adjIdx=mc.num-1-window.liveGrupoData.movidos;
     if(adjIdx>=0&&adjIdx<positions.length){
-      var adjName=positions[adjIdx].n||'';
-      if(adjName) return adjName;
       var adjPt={lat:positions[adjIdx].lat,lng:positions[adjIdx].lng,num:adjIdx+1};
-      return autoCarryName(adjPt)||nearWP(adjPt);
+      return _displayRef(positions[adjIdx].n||'', adjPt);
     }
   }
-  return mc.n || autoCarryName(mc) || nearWP(mc);
+  return _displayRef(mc.n||'', mc);
 }
 
-// Strip redundancy from a carry reference: a leading "Grupo N" (already shown
-// separately) and a "(5:00 p.m.)" time parenthetical (already shown on the
-// right). Leaves a real place name, or empty if nothing meaningful remains.
-function _cleanRef(ref){
-  if(!ref) return '';
-  var r=String(ref).trim();
-  r=r.replace(/\(\s*\d{1,2}:\d{2}\s*[ap]\.?\s*m?\.?\s*\)/ig,'').trim();
-  r=r.replace(/^grupo\s*\d+\s*[-–—:]?\s*/i,'').trim();
-  if(!r || /^grupo\s*\d+$/i.test(r)) return '';
-  return r;
+// The imported point names are often the placeholder "Grupo 5 (5:00 p.m.)",
+// where the "(5:00 p.m.)" is the official published estimate for the year. Keep
+// that time but swap the redundant "Grupo N" label for an approximate location
+// taken from the map (nearest named waypoint). Real street names pass through.
+function _displayRef(raw, mc){
+  raw = raw ? String(raw).trim() : '';
+  var m = raw.match(/^grupo\s*\d+\s*(\([^)]*\))?\s*$/i);
+  if(!raw || m){
+    var time = (m && m[1]) ? (' '+m[1].replace(/\s+/g,' ')) : '';
+    var place = (autoCarryName(mc) || nearWP(mc) || '');
+    return (place + time).trim();
+  }
+  return raw;
 }
 
 function renderTable() {
   let h='<div class="th"><span>#</span><span>Ubicación / Referencia</span><span style="text-align:right">Hora</span></div>';
   myCarries.forEach((mc,i)=>{
-    const ref=_escapeHtml(_cleanRef(getCarryRef(mc)))||('Grupo '+mc.grp);
+    const ref=_escapeHtml(getCarryRef(mc))||('Grupo '+mc.grp);
     const label=_escapeHtml(mc.carryLabel||'');
     h+='<div class="tr" onclick="zoomTo('+i+')"><span class="rn">'+mc.ci+'</span><div><div style="font-weight:600">'+ref+'</div><div class="rs">Cambio #'+mc.num+(label?' · '+label:'')+'</div></div><div class="rt">'+_escapeHtml(mc.time)+'</div></div>';
   });
@@ -2324,7 +2325,7 @@ function renderSpectatorView(){
     h+='<div class="live-next">';
     h+='<div class="ln-label">Cargando ahora</div>';
     h+='<div class="ln-num">Grupo '+nowObj.grp+'</div>';
-    var nowRef=_cleanRef(getCarryRef(nowObj));
+    var nowRef=getCarryRef(nowObj);
     h+='<div class="ln-ref">📍 '+_escapeHtml(nowRef||('Grupo '+nowObj.grp))+'</div>';
     h+='<div class="ln-time">Cambio '+Math.min(eff,total)+' de '+total+'</div>';
     h+='</div>';
@@ -2336,7 +2337,7 @@ function renderSpectatorView(){
   for(var i=0;i<changes.length;i++){
     var ch=changes[i];
     var cls=ch.num<eff?'done':(ch.num===eff?'current':'pending');
-    var ref=_escapeHtml(_cleanRef(getCarryRef(ch)));
+    var ref=_escapeHtml(getCarryRef(ch));
     h+='<div class="live-carry '+cls+'" onclick="zoomChange('+i+')">';
     h+='<div class="lc-num"></div>';
     h+='<div class="lc-info"><div class="lc-ref">Grupo '+ch.grp+(ref?' — '+ref:'')+'</div><div class="lc-sub">Cambio #'+ch.num+'</div></div>';
@@ -2393,7 +2394,7 @@ function renderLiveImpl(){
     ph+='<div>';
     for(var pi=0;pi<changes.length;pi++){
       var pch=changes[pi];
-      var prefSafe=_escapeHtml(_cleanRef(pch.n||autoCarryName(pch)||''));
+      var prefSafe=_escapeHtml(getCarryRef(pch));
       ph+='<div class="live-carry done" style="padding:8px 10px"><div class="lc-num"></div><div class="lc-info"><div class="lc-ref" style="font-size:14px">Grupo '+pch.grp+(prefSafe?' — '+prefSafe:'')+'</div><div class="lc-sub">Cambio #'+pch.num+'</div></div><div class="lc-time" style="font-size:13px;color:#aaa">'+_escapeHtml(pch.time||'')+'</div></div>';
     }
     ph+='</div>';
@@ -2498,7 +2499,7 @@ function renderLiveImpl(){
       h+='</div>';
     }
   } else if(nextCarry) {
-    const ref=_cleanRef(nextCarry.n||nearWP(nextCarry))||('Grupo '+nextCarry.grp);
+    const ref=getCarryRef(nextCarry)||('Grupo '+nextCarry.grp);
     const estTime=getEstimate(nextCarry);
     const realAvg=getRealAvg();
 
@@ -2539,7 +2540,7 @@ function renderLiveImpl(){
     const passedByGrupo=!mcDone&&effCambio>0&&mc.num<=effCambio;
     const isCurrent=nextCarry&&mc.ci===nextCarry.ci;
     const cls=mcDone?'done':(passedByGrupo?'done':(isCurrent?'current':'pending'));
-    const ref=_escapeHtml(_cleanRef(getCarryRef(mc)));
+    const ref=_escapeHtml(getCarryRef(mc));
     const label=_escapeHtml(mc.carryLabel||'');
     const entry=getEntry(mc.ci);
     const realT=entry?_escapeHtml(fmtClock(entry.t)):'';
@@ -2587,7 +2588,7 @@ function renderLiveImpl(){
   }
   // Compact próxima cargada
   if(nextCarry&&!procComplete){
-    var ref2=_cleanRef(nextCarry.n||nearWP(nextCarry))||('Grupo '+nextCarry.grp);
+    var ref2=getCarryRef(nextCarry)||('Grupo '+nextCarry.grp);
     var est2=getEstimate(nextCarry);
     si+='<div onclick="zoomTo('+(nextCarry.ci-1)+')" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:6px 8px;background:rgba(192,132,252,.08);border:1px solid rgba(192,132,252,.2);border-radius:8px;margin-bottom:2px">';
     si+='<span style="font-size:20px;font-weight:700;color:#c084fc">#'+nextCarry.ci+'</span>';
