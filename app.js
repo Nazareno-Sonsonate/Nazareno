@@ -1788,10 +1788,10 @@ function renderWPmarkers() {
   wps.forEach((wp,i)=>{
     const mk=new google.maps.Marker({
       position:{lat:wp.lat,lng:wp.lng}, map:gmap,
-      label:{text:'◆',color:'#c084fc',fontWeight:'bold',fontSize:'12px'},
-      icon:{path:google.maps.SymbolPath.CIRCLE,scale:(dragMode&&editMode)?16:12,
-        fillColor:'#222',fillOpacity:.9,
-        strokeColor:'#7c3aed',strokeWeight:2},
+      icon:{path:google.maps.SymbolPath.CIRCLE,scale:(dragMode&&editMode)?16:11,
+        fillColor:'#7c3aed',fillOpacity:.95,
+        strokeColor:'#fff',strokeWeight:2},
+      title:wp.n||'Referencia',
       zIndex:5000, draggable:dragMode&&editMode,
       optimized:!(dragMode&&editMode)
     });
