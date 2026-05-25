@@ -2300,7 +2300,9 @@ function renderSpectatorView(){
   var pct=total>0?Math.round(done/total*100):0;
   var h='';
   if(isPast || eff>=total){
-    h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3)"><div style="font-size:16px;font-weight:700;color:#4CAF50">✅ Procesión completada</div></div>';
+    h+=isSEMode
+      ? '<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:rgba(180,153,99,.12);border:1px solid rgba(180,153,99,.35)"><div style="font-size:16px;font-weight:700;color:#d4c08a">Procesión completada</div></div>'
+      : '<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3)"><div style="font-size:16px;font-weight:700;color:#4CAF50">✅ Procesión completada</div></div>';
   } else if(eff>0){
     var nowObj=changes[Math.min(eff,total)-1];
     h+='<div class="live-next">';
@@ -4389,6 +4391,9 @@ function updateBanners(){
   function _setPill(el,txt,kind){ if(!el)return; el.textContent=txt||''; el.className='gb-pill '+(kind||''); }
   function _nextChange(n){ var nx=(changes&&changes[n])?changes[n]:null; return nx?('Próximo cambio ~'+nx.time):''; }
   function _animNum(el,val){ if(!el||el.textContent===val)return; el.textContent=val; el.classList.remove('gb-num-flip'); void el.offsetWidth; el.classList.add('gb-num-flip'); }
+  // "Asentó" tint: green for Jesús, muted gold for the Santo Entierro mourning theme
+  var _doneBg=isSEMode?'rgba(180,153,99,.14)':'rgba(76,175,80,.12)';
+  var _doneBorder=isSEMode?'rgba(180,153,99,.45)':'rgba(76,175,80,.4)';
 
   // Jesus/SE banner
   var jEl=document.getElementById('grupoActualText');
@@ -4402,7 +4407,7 @@ function updateBanners(){
       _animNum(jEl,'Grupo #'+lastJ);
       if(jProg) jProg.textContent=(currentDay>=3)?((isSEMode)?'Hasta el próximo año, Santo Entierro de Cristo':'Hasta el próximo año, Jesús Nazareno'):'Procesión completada';
       _setPill(jState,'ASENTÓ','done');
-      if(jBanner){jBanner.style.background='rgba(76,175,80,.12)';jBanner.style.borderColor='rgba(76,175,80,.4)';}
+      if(jBanner){jBanner.style.background=_doneBg;jBanner.style.borderColor=_doneBorder;}
     } else if(cambio>0){
       _animNum(jEl,'Grupo #'+((sacaJ-1+cambio-1)%getHomCount()+1));
       var streetJ=(liveGrupoData&&liveGrupoData.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
@@ -4431,7 +4436,7 @@ function updateBanners(){
       _animNum(vEl,'Grupo #'+lastM2);
       if(vProg2) vProg2.textContent=(currentDay>=3)?'Hasta el próximo año':'Procesión completada';
       _setPill(vState,'ASENTÓ','done');
-      if(vBanner){vBanner.style.background='rgba(76,175,80,.12)';vBanner.style.borderColor='rgba(76,175,80,.4)';}
+      if(vBanner){vBanner.style.background=_doneBg;vBanner.style.borderColor=_doneBorder;}
     } else if(cambio>0&&liveGrupoData){
       var desf=liveGrupoData.desfase||0;
       var sacaM=liveGrupoData.sacaMuj||daySacaMuj[currentDay]||6;
@@ -4443,7 +4448,7 @@ function updateBanners(){
         _animNum(vEl,'Grupo #'+lastM);
         if(vProg2) vProg2.textContent=(currentDay>=3)?'Hasta el próximo año':'Procesión completada';
         _setPill(vState,'ASENTÓ','done');
-        if(vBanner){vBanner.style.background='rgba(76,175,80,.12)';vBanner.style.borderColor='rgba(76,175,80,.4)';}
+        if(vBanner){vBanner.style.background=_doneBg;vBanner.style.borderColor=_doneBorder;}
       } else {
         var grpM=(((sacaM-1+vCambioGrp-1)%getMujCount())+getMujCount())%getMujCount()+1;
         _animNum(vEl,'Grupo #'+grpM);
