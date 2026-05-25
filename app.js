@@ -4330,60 +4330,67 @@ function updateBanners(){
     var secLabel=isMuj?jLabel1:vLabel;
     var secIcon=isMuj?'\u271d\ufe0f':'\ud83d\udc51';
     var secColor=isMuj?'#c084fc':'#93c5fd';
-    var mainHtml='<div id="grupo'+mainId+'Banner" onclick="buscarAnda(\''+(isMuj?'virgen':'jesus')+'\'" style="cursor:pointer;display:flex;align-items:stretch;border-radius:8px;overflow:hidden;background:rgba('+mainColor+',.12);border:1px solid rgba('+mainColor+',.3);margin-bottom:3px">'
-      +'<img src="'+mainImg+'" style="width:50px;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'">'
-      +'<div style="flex:1;padding:4px 8px;display:flex;flex-direction:column;justify-content:center">'
-      +'<div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:#aaa">'+mainLabel+'</span></div>'
-      +'<div style="display:flex;align-items:baseline;gap:4px"><div id="grupo'+mainId+'Text" style="font-size:22px;font-weight:700;color:'+mainTextColor+';line-height:1.1"></div><span id="grupo'+mainId+'Status" style="font-size:10px;color:#aaa"></span></div>'
-      +'<div id="grupo'+mainId+'Progress" style="font-size:10px;color:#aaa"></div>'
+    var mainHtml='<div id="grupo'+mainId+'Banner" onclick="buscarAnda(\''+(isMuj?'virgen':'jesus')+'\')" style="cursor:pointer;display:flex;align-items:stretch;border-radius:10px;overflow:hidden;background:rgba('+mainColor+',.12);border:1px solid rgba('+mainColor+',.3);margin-bottom:4px">'
+      +'<img src="'+mainImg+'" style="width:54px;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'">'
+      +'<div style="flex:1;min-width:0;padding:5px 10px;display:flex;flex-direction:column;justify-content:center;gap:1px">'
+      +'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;color:#aaa;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+mainLabel+'</span><span id="grupo'+mainId+'State" class="gb-pill"></span></div>'
+      +'<div id="grupo'+mainId+'Text" style="font-size:23px;font-weight:800;color:'+mainTextColor+';line-height:1.05"></div>'
+      +'<div style="display:flex;align-items:center;gap:6px"><span id="grupo'+mainId+'Progress" style="font-size:11px;color:#bbb;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span><span class="gb-maphint">Ver mapa &rsaquo;</span></div>'
       +'</div></div>';
-    var secHtml='<div id="grupo'+secId+'Banner" onclick="buscarAnda(\''+(isMuj?'jesus':'virgen')+'\'" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)">'
-      +'<span style="font-size:11px;color:'+secColor+'">'+secIcon+' '+secLabel+'</span>'
-      +'<span id="grupo'+secId+'Status" style="font-size:10px;color:#888"></span>'
-      +'<span id="grupo'+secId+'Text" style="font-size:15px;font-weight:700;color:'+secColor+'"></span>'
-      +'<span id="grupo'+secId+'Progress" style="font-size:9px;color:#666;flex:1;text-align:right"></span>'
+    var secHtml='<div id="grupo'+secId+'Banner" onclick="buscarAnda(\''+(isMuj?'jesus':'virgen')+'\')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)">'
+      +'<span style="font-size:12px;color:'+secColor+';white-space:nowrap;flex-shrink:0">'+secIcon+' '+secLabel+'</span>'
+      +'<span id="grupo'+secId+'Text" style="font-size:16px;font-weight:800;color:'+secColor+';white-space:nowrap;flex-shrink:0"></span>'
+      +'<span id="grupo'+secId+'Progress" style="font-size:10px;color:#777;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>'
+      +'<span id="grupo'+secId+'State" class="gb-pill" style="margin-left:auto"></span>'
       +'</div>';
     container.innerHTML=mainHtml+secHtml;
   }
   
+  // Pill + next-change helpers
+  function _setPill(el,txt,kind){ if(!el)return; el.textContent=txt||''; el.className='gb-pill '+(kind||''); }
+  function _nextChange(n){ var nx=(changes&&changes[n])?changes[n]:null; return nx?('Próximo cambio ~'+nx.time):''; }
+
   // Jesus/SE banner
   var jEl=document.getElementById('grupoActualText');
   var jProg=document.getElementById('grupoActualProgress');
-  var jLabel2=document.getElementById('grupoActualStatus');
+  var jState=document.getElementById('grupoActualState');
   var jBanner=document.getElementById('grupoActualBanner');
   if(jEl){
     var sacaJ=daySaca[currentDay]||16;
     if(procDone){
       var lastJ=((sacaJ-1+Math.min(cambio,tot)-1)%getHomCount()+1);
-      jEl.textContent='✅ Asentó Grupo #'+lastJ;
+      jEl.textContent='Grupo #'+lastJ;
       if(jProg) jProg.textContent=(currentDay>=3)?((isSEMode)?'Hasta el próximo año, Santo Entierro de Cristo':'Hasta el próximo año, Jesús Nazareno'):'Procesión completada';
-      if(jLabel2) jLabel2.textContent='✅ Asentó';
+      _setPill(jState,'ASENTÓ','done');
       if(jBanner){jBanner.style.background='rgba(76,175,80,.12)';jBanner.style.borderColor='rgba(76,175,80,.4)';}
     } else if(cambio>0){
       jEl.textContent='Grupo #'+((sacaJ-1+cambio-1)%getHomCount()+1);
-      if(jProg) jProg.textContent=(liveGrupoData&&liveGrupoData.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
-      if(jLabel2) jLabel2.textContent='· carga ahora';
+      var streetJ=(liveGrupoData&&liveGrupoData.nombre||'').replace(/^Grupo\s*\d+\s*/i,'');
+      var nxJ=_nextChange(cambio);
+      if(jProg) jProg.textContent=[streetJ?('📍 '+streetJ):'',nxJ].filter(Boolean).join(' · ')||'En recorrido';
+      _setPill(jState,'EN VIVO','live');
       if(jBanner){jBanner.style.background='rgba(192,132,252,.12)';jBanner.style.borderColor='rgba(192,132,252,.3)';}
     } else {
       jEl.textContent='Grupo #'+sacaJ;
-      if(jProg) jProg.textContent='Esperando inicio';
-      if(jLabel2) jLabel2.textContent='· saca';
+      var depJ=(changes&&changes[0])?changes[0].time:'';
+      if(jProg) jProg.textContent=depJ?('Sale ~'+depJ):'Esperando inicio';
+      _setPill(jState,'POR SALIR','soon');
       if(jBanner){jBanner.style.background='rgba(192,132,252,.12)';jBanner.style.borderColor='rgba(192,132,252,.3)';}
     }
   }
   // Virgen banner
   var vEl=document.getElementById('grupoVirgenText');
   var vProg2=document.getElementById('grupoVirgenProgress');
+  var vState=document.getElementById('grupoVirgenState');
   var vBanner=document.getElementById('grupoVirgenBanner');
-  var vLabel2=document.getElementById('grupoVirgenStatus');
   if(vEl){
     if(procDone){
       var sacaM2=liveGrupoData?liveGrupoData.sacaMuj||daySacaMuj[currentDay]:daySacaMuj[currentDay]||22;
       var mov2=liveGrupoData?liveGrupoData.movidos||0:0;
       var lastM2=(((sacaM2-1+Math.min(cambio,tot)-1-mov2)%getMujCount())+getMujCount())%getMujCount()+1;
-      vEl.textContent='✅ Asentó Grupo #'+lastM2;
+      vEl.textContent='Grupo #'+lastM2;
       if(vProg2) vProg2.textContent=(currentDay>=3)?'Hasta el próximo año':'Procesión completada';
-      if(vLabel2) vLabel2.textContent='✅';
+      _setPill(vState,'ASENTÓ','done');
       if(vBanner){vBanner.style.background='rgba(76,175,80,.12)';vBanner.style.borderColor='rgba(76,175,80,.4)';}
     } else if(cambio>0&&liveGrupoData){
       var desf=liveGrupoData.desfase||0;
@@ -4393,21 +4400,21 @@ function updateBanners(){
       var vCambioGrp=Math.max(1,vCambio-mov);
       if(vCambio>=tot){
         var lastM=(((sacaM-1+tot-1-mov)%getMujCount())+getMujCount())%getMujCount()+1;
-        vEl.textContent='✅ Asentó Grupo #'+lastM;
+        vEl.textContent='Grupo #'+lastM;
         if(vProg2) vProg2.textContent=(currentDay>=3)?'Hasta el próximo año':'Procesión completada';
-        if(vLabel2) vLabel2.textContent='✅';
+        _setPill(vState,'ASENTÓ','done');
         if(vBanner){vBanner.style.background='rgba(76,175,80,.12)';vBanner.style.borderColor='rgba(76,175,80,.4)';}
       } else {
         var grpM=(((sacaM-1+vCambioGrp-1)%getMujCount())+getMujCount())%getMujCount()+1;
         vEl.textContent='Grupo #'+grpM;
-        if(vProg2) vProg2.textContent='⚠️ Estimado';
-        if(vLabel2) vLabel2.textContent='·';
+        if(vProg2) vProg2.textContent='Posición estimada';
+        _setPill(vState,'EST.','est');
         if(vBanner){vBanner.style.background='rgba(59,130,246,.08)';vBanner.style.borderColor='rgba(59,130,246,.3)';}
       }
     } else {
       vEl.textContent='Grupo #'+(daySacaMuj[currentDay]||22);
       if(vProg2) vProg2.textContent='Esperando inicio';
-      if(vLabel2) vLabel2.textContent='Saca';
+      _setPill(vState,'POR SALIR','soon');
       if(vBanner){vBanner.style.background='rgba(59,130,246,.08)';vBanner.style.borderColor='rgba(59,130,246,.3)';}
     }
   }
