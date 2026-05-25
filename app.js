@@ -1825,11 +1825,10 @@ function renderWPmarkers() {
   });
 }
 
-// Push global references to Firebase so every device/map sees them.
-function syncGlobalRefs(){
-  if(isShared) return;
-  try{ db.ref('refs_global').set(GLOBAL_WP_REF.map(function(w){return{lat:w.lat,lng:w.lng,n:w.n||''};})); }catch(e){_logErr('syncGlobalRefs',e);}
-}
+// Cross-device sync disabled (see GLOBAL REFERENCES note): writing to a blocked
+// Firebase node triggered a revert that deleted local refs. Global references are
+// kept in localStorage only for now. No-op kept so callers don't need changes.
+function syncGlobalRefs(){ /* intentionally disabled until Firebase rules allow refs_global */ }
 function _afterRefChange(){
   renderWPmarkers();
   saveAll();
@@ -4228,21 +4227,11 @@ if(_isSE){
 }
 
 // ========== GLOBAL REFERENCES (shared across all maps/days) ==========
-// One pool synced for everyone, day-independent, so a "general" reference shows
-// and names points on every map.
-db.ref('refs_global').on('value',function(snap){
-  if(typeof GLOBAL_WP_REF==='undefined') return;
-  var d=snap.val();
-  // Empty/null server value (never written, or the write was blocked by rules,
-  // or Firebase's optimistic revert): keep whatever we have locally instead of
-  // wiping it — otherwise a just-added "general" reference would disappear.
-  if(!d || !d.length) return;
-  GLOBAL_WP_REF.length=0;
-  d.forEach(function(w){ if(w&&w.lat&&w.lng) GLOBAL_WP_REF.push({n:w.n||'',lat:w.lat,lng:w.lng,g:1}); });
-  try{ if(typeof gmap!=='undefined'&&gmap&&typeof renderWPmarkers==='function') renderWPmarkers(); }catch(e){_logErr('refs_global render',e);}
-  try{ if(typeof renderLiveImmediate==='function') renderLiveImmediate(); }catch(e){}
-  try{ if(typeof renderTable==='function') renderTable(); }catch(e){}
-});
+// Stored locally (localStorage 'gr') and applied to every day via getAllRefs().
+// Cross-device sync is intentionally OFF: writing to a Firebase node the security
+// rules don't allow made Firebase fire an optimistic-revert that wiped freshly
+// added "general" references. Re-enable a listener + syncGlobalRefs only once the
+// rules permit writing to 'refs_global'.
 
 // ========== ONLINE COUNTER ==========
 // Register presence with heartbeat
