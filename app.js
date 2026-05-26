@@ -1853,34 +1853,54 @@ function _landmarkFromName(raw){
   return name;
 }
 
-// One-tap bootstrap: turn the landmark names embedded in THIS map's route points
-// (Catedral, Hospital, Mercado, UMA, ...) into references for this map. Skips
-// route annotations (Esquina/Poste/Salida/…) and placeholders. Idempotent.
-function generateRefsFromNames(){
-  if(!positions||!positions.length){ customAlert('No hay puntos en este mapa.'); return; }
+// Reduce a point name to its placeholder ("Grupo N"/"Punto N") + official time,
+// dropping any embedded landmark so the displayed name comes from references.
+function _stripLandmark(raw){
+  if(!raw) return '';
+  var s=String(raw).trim();
+  var prefix=(s.match(/^(grupo|punto)\s*#?\s*\d+/i)||[''])[0];
+  var time=(s.match(/\(\s*\d{1,2}:\d{2}[^)]*\)/i)||[''])[0];
+  return (prefix+(time?(' '+time):'')).trim();
+}
+
+// One click: (1) build GENERAL references — one per unique place across ALL
+// processions (deduped by name, route annotations skipped); (2) strip the
+// embedded landmark names from THIS map's points so their name now comes from
+// the references. Confirmed because step 2 edits the shared route data.
+async function generateRefsFromNames(){
+  var ok=await customConfirm('Esto va a:\n\n1) Crear referencias GENERALES (una por lugar, sin repetir entre procesiones) desde los nombres de todos los recorridos.\n\n2) Borrar los nombres dentro de los puntos de ESTE mapa (el nombre pasará a venir de las referencias).\n\n¿Continuar?');
+  if(!ok) return;
+  var arrays=[];
+  try{ arrays=[LUN_PTS,MART_PTS,MIER_PTS,VIER_PTS,SE_PTS]; }catch(e){ arrays=[]; }
   var skip=/^(esquina|poste|cruz|cruza|cruzona|giro|salida|entra|entrada|bajada|intersecci[oó]n|tornamesa|mitad|parada|v[ií]a|primer|segunda|levanta|saca|ida|altar|donde|alfombra|minuto|cortes[ií]as|regreso)\b/i;
   var seen={};
-  getAllRefs().forEach(function(w){ seen[(w.n||'').toLowerCase().trim()]=true; });
-  var day=getWPs();
-  var added=0;
-  positions.forEach(function(p){
-    if(!p||!p.lat||!p.lng) return;
-    var name=_landmarkFromName(p.n);
-    if(!name || skip.test(name)) return;
-    var key=name.toLowerCase().trim();
-    if(seen[key]) return;
-    seen[key]=true;
-    day.push({n:name,lat:p.lat,lng:p.lng});
-    added++;
+  GLOBAL_WP_REF.forEach(function(w){ seen[(w.n||'').toLowerCase().trim()]=true; });
+  var addedRefs=0;
+  arrays.forEach(function(arr){
+    if(!arr||!arr.length) return;
+    arr.forEach(function(p){
+      if(!p||!p.lat||!p.lng) return;
+      var name=_landmarkFromName(p.n);
+      if(!name || skip.test(name)) return;
+      var key=name.toLowerCase().trim();
+      if(seen[key]) return;
+      seen[key]=true;
+      GLOBAL_WP_REF.push({n:name,lat:p.lat,lng:p.lng,g:1});
+      addedRefs++;
+    });
   });
-  if(added>0){
-    renderWPmarkers(); saveAll();
-    if(typeof renderLiveImmediate==='function') renderLiveImmediate();
-    if(typeof renderTable==='function') renderTable();
+  var clearedNames=0;
+  if(positions&&positions.length){
+    pushMapHistory();
+    positions.forEach(function(p){
+      var stripped=_stripLandmark(p.n);
+      if(stripped!==(p.n||'')){ p.n=stripped; clearedNames++; }
+    });
   }
-  customAlert(added>0
-    ? ('Se crearon '+added+' referencias en este mapa desde los nombres de los puntos. Revisalas y borrá las que no sirvan; para que una sirva en todos los mapas usá "🌐 Hacer general".')
-    : 'No había nombres de lugar nuevos para convertir en referencia en este mapa.');
+  renderWPmarkers(); calc(); saveAll();
+  if(addedRefs>0) syncGlobalRefs();
+  if(clearedNames>0 && typeof syncPositions==='function') syncPositions();
+  customAlert('Listo. Referencias generales nuevas: '+addedRefs+'. Nombres limpiados en este mapa: '+clearedNames+'. Ahora el nombre de cada punto viene de la referencia más cercana.');
 }
 
 async function addRef(){
