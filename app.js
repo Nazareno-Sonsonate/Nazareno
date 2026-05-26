@@ -5,6 +5,31 @@ const SAVE_KEY = 'semanaSanta_v47';
 function getWPs(){return currentDay===0?LUN_WP_REF:currentDay===1?MART_WP_REF:currentDay===2?MIER_WP_REF:currentDay===3?VIER_WP_REF:currentDay===4?SE_WP_REF:[];}
 // All references visible on the current map = global pool + this day's own.
 function getAllRefs(){var g=(typeof GLOBAL_WP_REF!=='undefined'&&GLOBAL_WP_REF)?GLOBAL_WP_REF:[];return g.concat(getWPs());}
+
+// Distance (m) within which a reference counts as "on this route".
+var REF_NEAR = 130;
+// Bumped whenever any reference is added/removed/renamed so caches refresh.
+var _refVer = 0;
+var _activeRefsCache=null, _activeRefsSig='';
+function _refSig(){
+  var rh=positions.length;
+  for(var r=0;r<positions.length;r++){ rh += positions[r].lat + positions[r].lng; }
+  return currentDay+'|'+_refVer+'|'+positions.length+'|'+rh.toFixed(2);
+}
+// References relevant to THIS map: day-specific ones plus the general ones that
+// fall near the current route. Cached so naming/render stay cheap on live ticks.
+function getActiveRefs(){
+  var sig=_refSig();
+  if(sig===_activeRefsSig && _activeRefsCache) return _activeRefsCache;
+  var all=getAllRefs(), route=positions||[], out=[];
+  for(var a=0;a<all.length;a++){
+    var wp=all[a];
+    if(!wp.g || !route.length){ out.push(wp); continue; }
+    for(var k=0;k<route.length;k++){ if(hd(wp,route[k])<REF_NEAR){ out.push(wp); break; } }
+  }
+  _activeRefsCache=out; _activeRefsSig=sig;
+  return out;
+}
 function saveAll() {
   try {
     savedPositions[currentDay] = positions.map(_serPt);
@@ -1785,12 +1810,28 @@ function calc() {
 }
 
 // ========== WAYPOINT REFERENCE MARKERS ==========
+var _wpSig='';
 function renderWPmarkers() {
+  var em=(dragMode&&editMode)?1:0;
+  var sig=_refSig()+'|'+em;
+  // Skip the full rebuild when nothing relevant changed (e.g. live ticks) —
+  // recreating every reference marker each calc() was the main slowdown.
+  if(sig===_wpSig && wpMarkers.length){ return; }
+  _wpSig=sig;
   wpMarkers.forEach(m=>m.setMap(null));
   wpMarkers=[];
   const wps = getAllRefs();
+  var route=positions||[];
+  function nearRoute(wp){
+    if(!route.length) return true;
+    for(var k=0;k<route.length;k++){ if(hd(wp,route[k])<REF_NEAR) return true; }
+    return false;
+  }
   wps.forEach((wp,i)=>{
     var isG=!!wp.g;
+    // Only general references near THIS route are drawn; far ones (from other
+    // processions) stay hidden for speed and clarity. Day-specific refs always show.
+    if(isG && !nearRoute(wp)) return;
     const mk=new google.maps.Marker({
       position:{lat:wp.lat,lng:wp.lng}, map:gmap,
       icon:{path:google.maps.SymbolPath.CIRCLE,scale:(dragMode&&editMode)?16:9,
@@ -1834,6 +1875,7 @@ function syncGlobalRefs(){
   try{ db.ref('positions/refsGlobal').set(GLOBAL_WP_REF.map(function(w){return{lat:w.lat,lng:w.lng,n:w.n||''};})); }catch(e){_logErr('syncGlobalRefs',e);}
 }
 function _afterRefChange(){
+  _refVer++;
   renderWPmarkers();
   saveAll();
   if(typeof renderLiveImmediate==='function') renderLiveImmediate();
@@ -1858,32 +1900,38 @@ function _landmarkFromName(raw){
 // of every point then comes automatically from the nearest reference, so no
 // need to touch the point names. Additive and idempotent.
 async function generateRefsFromNames(){
-  var ok=await customConfirm('Crear referencias GENERALES automáticas: una por cada lugar único de TODAS las procesiones (sin repetir).\n\nEl nombre de cada punto pasará a venir solo de la referencia más cercana. ¿Continuar?');
+  var ok=await customConfirm('Ordenar referencias automáticamente:\n\n• Unifica las que estén casi encima de otra (duplicadas).\n• Agrega una nueva solo donde la ruta no tenga ninguna cerca.\n\nAsí quedan pocas y repartidas a lo largo de los recorridos. ¿Continuar?');
   if(!ok) return;
+  var DUP=40;   // refs closer than this are the same place → keep one
+  // 1) Collapse near-duplicate general references.
+  var kept=[];
+  GLOBAL_WP_REF.forEach(function(w){
+    if(!w||!w.lat||!w.lng) return;
+    for(var j=0;j<kept.length;j++){ if(hd(w,kept[j])<DUP) return; }
+    kept.push(w);
+  });
+  var removed=GLOBAL_WP_REF.length-kept.length;
+  GLOBAL_WP_REF.length=0; kept.forEach(function(w){ GLOBAL_WP_REF.push(w); });
+  // 2) Fill gaps: walk every procession's route and add a named reference only
+  //    where there is no reference within REF_NEAR yet.
   var arrays=[];
   try{ arrays=[LUN_PTS,MART_PTS,MIER_PTS,VIER_PTS,SE_PTS]; }catch(e){ arrays=[]; }
   var skip=/^(esquina|poste|cruz|cruza|cruzona|giro|salida|entra|entrada|bajada|intersecci[oó]n|tornamesa|mitad|parada|v[ií]a|primer|segunda|levanta|saca|ida|altar|donde|alfombra|minuto|cortes[ií]as|regreso)\b/i;
-  var seen={};
-  GLOBAL_WP_REF.forEach(function(w){ seen[(w.n||'').toLowerCase().trim()]=true; });
-  var addedRefs=0;
+  var added=0;
   arrays.forEach(function(arr){
     if(!arr||!arr.length) return;
     arr.forEach(function(p){
       if(!p||!p.lat||!p.lng) return;
       var name=_landmarkFromName(p.n);
       if(!name || skip.test(name)) return;
-      var key=name.toLowerCase().trim();
-      if(seen[key]) return;
-      seen[key]=true;
+      for(var j=0;j<GLOBAL_WP_REF.length;j++){ if(hd(p,GLOBAL_WP_REF[j])<REF_NEAR) return; }
       GLOBAL_WP_REF.push({n:name,lat:p.lat,lng:p.lng,g:1});
-      addedRefs++;
+      added++;
     });
   });
-  renderWPmarkers(); calc(); saveAll();
-  if(addedRefs>0) syncGlobalRefs();
-  customAlert(addedRefs>0
-    ? ('Listo: '+addedRefs+' referencias generales nuevas. El nombre de cada punto ahora viene de la referencia más cercana. Si alguna está mal, editala con ✏️ Renombrar en la referencia.')
-    : 'No había lugares nuevos para agregar (ya estaban todas las referencias generales).');
+  _refVer++;
+  renderWPmarkers(); calc(); saveAll(); syncGlobalRefs();
+  customAlert('Listo. Se quitaron '+removed+' referencias repetidas y se agregaron '+added+' donde faltaban. El nombre de cada punto viene de la referencia más cercana de su ruta.');
 }
 
 async function addRef(){
@@ -2174,7 +2222,7 @@ function autoCarryName(mc){
   if(idx===total-1) return 'Regreso';
   if(currentDay===3 && (mc.num||idx+1)===getCortesiasChange()) return 'Cortesías';
   // Look at the two nearest waypoints
-  var wps=getAllRefs();
+  var wps=getActiveRefs();
   if(!wps.length) return '';
   var ranked=wps.map(function(w){return {n:w.n,d:hd(mc,w)};}).sort(function(a,b){return a.d-b.d;});
   var a=ranked[0], b=ranked[1];
@@ -2757,7 +2805,7 @@ function renderLiveImpl(){
   if(typeof startCrono==='function') startCrono();
 }
 function nearWP(p){
-  const wps = getAllRefs();
+  const wps = getActiveRefs();
   let b='Punto',bd=1e9;
   wps.forEach(w=>{const d=hd(p,w);if(d<bd){bd=d;b=w.n;}});
   return b;
@@ -4297,6 +4345,7 @@ db.ref('positions/refsGlobal').on('value',function(snap){
   if(!d || !d.length) return; // keep local refs if the server has nothing
   GLOBAL_WP_REF.length=0;
   d.forEach(function(w){ if(w&&w.lat&&w.lng) GLOBAL_WP_REF.push({n:w.n||'',lat:w.lat,lng:w.lng,g:1}); });
+  if(typeof _refVer!=='undefined') _refVer++;
   try{ if(typeof gmap!=='undefined'&&gmap&&typeof renderWPmarkers==='function') renderWPmarkers(); }catch(e){_logErr('refsGlobal render',e);}
   try{ if(typeof renderLiveImmediate==='function') renderLiveImmediate(); }catch(e){}
   try{ if(typeof renderTable==='function') renderTable(); }catch(e){}
