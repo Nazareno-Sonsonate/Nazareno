@@ -7,7 +7,7 @@ function getWPs(){return currentDay===0?LUN_WP_REF:currentDay===1?MART_WP_REF:cu
 function getAllRefs(){var g=(typeof GLOBAL_WP_REF!=='undefined'&&GLOBAL_WP_REF)?GLOBAL_WP_REF:[];return g.concat(getWPs());}
 function saveAll() {
   try {
-    savedPositions[currentDay] = positions.map(p=>({lat:p.lat,lng:p.lng,n:p.n||''}));
+    savedPositions[currentDay] = positions.map(_serPt);
     if(positionsW.length>0) savedPositionsW[currentDay] = positionsW.map(p=>({lat:p.lat,lng:p.lng,n:p.n||''}));
     savedRefs[currentDay] = getWPs().map(w=>({lat:w.lat,lng:w.lng,n:w.n}));
     const data = {
@@ -1223,7 +1223,7 @@ function loadDay(d) {
   // Admin: load saved edits if available. Shared: always KML
   const dayPts=[LUN_PTS,MART_PTS,MIER_PTS,VIER_PTS,SE_PTS];
   if(!isShared && savedPositions[d] && savedPositions[d].length>0){
-    positions = savedPositions[d].map(p=>({lat:p.lat,lng:p.lng,n:p.n||''}));
+    positions = savedPositions[d].map(_serPt);
   } else if(dayPts[d] && dayPts[d].length>0){
     positions = dayPts[d].map(p=>({lat:p.lat,lng:p.lng,n:p.n}));
   } else {
@@ -1416,7 +1416,7 @@ var mapHistoryW=[];
 function pushMapHistory(){
   var wps = (typeof getWPs==='function') ? getWPs() : [];
   mapHistory.push({
-    positions: positions.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};}),
+    positions: positions.map(_serPt),
     wps: wps.map(function(w){return{lat:w.lat,lng:w.lng,n:w.n||''};}),
     day: currentDay,
     t: Date.now()
@@ -1713,7 +1713,7 @@ function calc() {
     const grp=((c.s-1+i)%grupoCnt)+1;
     const timeMin=calcTime(num, tot, c);
     const isCortesia=(currentDay===3 && num===getCortesiasChange());
-    return {num,grp,time:fmt(timeMin),lat:p.lat,lng:p.lng,n:p.n||'',mine:grp===c.g,cortesia:isCortesia};
+    return {num,grp,time:fmt(timeMin),lat:p.lat,lng:p.lng,n:p.n||'',lk:!!p.lk,mine:grp===c.g,cortesia:isCortesia};
   });
   myCarries=changes.filter(ch=>ch.mine);
   const isMujeres=c.t===27;
@@ -1853,22 +1853,12 @@ function _landmarkFromName(raw){
   return name;
 }
 
-// Reduce a point name to its placeholder ("Grupo N"/"Punto N") + official time,
-// dropping any embedded landmark so the displayed name comes from references.
-function _stripLandmark(raw){
-  if(!raw) return '';
-  var s=String(raw).trim();
-  var prefix=(s.match(/^(grupo|punto)\s*#?\s*\d+/i)||[''])[0];
-  var time=(s.match(/\(\s*\d{1,2}:\d{2}[^)]*\)/i)||[''])[0];
-  return (prefix+(time?(' '+time):'')).trim();
-}
-
-// One click: (1) build GENERAL references — one per unique place across ALL
-// processions (deduped by name, route annotations skipped); (2) strip the
-// embedded landmark names from THIS map's points so their name now comes from
-// the references. Confirmed because step 2 edits the shared route data.
+// One click: build GENERAL references — one per unique place across ALL
+// processions (deduped by name, route annotations skipped). The displayed name
+// of every point then comes automatically from the nearest reference, so no
+// need to touch the point names. Additive and idempotent.
 async function generateRefsFromNames(){
-  var ok=await customConfirm('Esto va a:\n\n1) Crear referencias GENERALES (una por lugar, sin repetir entre procesiones) desde los nombres de todos los recorridos.\n\n2) Borrar los nombres dentro de los puntos de ESTE mapa (el nombre pasará a venir de las referencias).\n\n¿Continuar?');
+  var ok=await customConfirm('Crear referencias GENERALES automáticas: una por cada lugar único de TODAS las procesiones (sin repetir).\n\nEl nombre de cada punto pasará a venir solo de la referencia más cercana. ¿Continuar?');
   if(!ok) return;
   var arrays=[];
   try{ arrays=[LUN_PTS,MART_PTS,MIER_PTS,VIER_PTS,SE_PTS]; }catch(e){ arrays=[]; }
@@ -1889,18 +1879,11 @@ async function generateRefsFromNames(){
       addedRefs++;
     });
   });
-  var clearedNames=0;
-  if(positions&&positions.length){
-    pushMapHistory();
-    positions.forEach(function(p){
-      var stripped=_stripLandmark(p.n);
-      if(stripped!==(p.n||'')){ p.n=stripped; clearedNames++; }
-    });
-  }
   renderWPmarkers(); calc(); saveAll();
   if(addedRefs>0) syncGlobalRefs();
-  if(clearedNames>0 && typeof syncPositions==='function') syncPositions();
-  customAlert('Listo. Referencias generales nuevas: '+addedRefs+'. Nombres limpiados en este mapa: '+clearedNames+'. Ahora el nombre de cada punto viene de la referencia más cercana.');
+  customAlert(addedRefs>0
+    ? ('Listo: '+addedRefs+' referencias generales nuevas. El nombre de cada punto ahora viene de la referencia más cercana. Si alguna está mal, editala con ✏️ Renombrar en la referencia.')
+    : 'No había lugares nuevos para agregar (ya estaban todas las referencias generales).');
 }
 
 async function addRef(){
@@ -1962,10 +1945,12 @@ function toggleRefScope(i){
 
 async function renameChange(ci){
   if(ci<0||ci>=positions.length) return;
-  const name=await customPrompt('Nuevo nombre para este cambio:',positions[ci].n||'');
+  const name=await customPrompt('Nombre fijo para este punto (se deja de usar el automático). Dejalo vacío para volver al nombre automático:',positions[ci].n||'');
   if(name===null) return;
   pushMapHistory();
-  positions[ci].n=name;
+  var v=String(name).trim();
+  positions[ci].n=v;
+  positions[ci].lk = v ? true : false;
   infoWin.close();
   calc();
   if(typeof syncPositions==='function') syncPositions();
@@ -2002,14 +1987,14 @@ function openPointInfo(ci){
   var mc3=(ch&&ch.mine)?myCarries.find(function(x){return x.num===ch.num;}):null;
   var tag=(ch&&ch.mine)?'<br><b style="color:#7c3aed">✝️ Tu cargada'+(mc3?(' #'+mc3.ci):'')+'</b>':'';
   var colorTag=(mc3&&mc3.carryLabel)?'<br><span style="font-size:12px">'+_escapeHtml(mc3.carryLabel)+'</span>':'';
-  var refName=ch?ch.n:(p.n||'');
-  var ref=refName?'<br><span style="font-size:12px;color:#555">'+_escapeHtml(refName)+'</span>':'';
+  var refName=ch?_displayRef(ch.n||'',ch):(p.n||'');
+  var ref=refName?'<br><span style="font-size:12px;color:#555">'+((p&&p.lk)?'📌 ':'')+_escapeHtml(refName)+'</span>':'';
   var bs='margin-top:4px;padding:6px 12px;border:none;border-radius:5px;color:#fff;font-size:12px;font-weight:600;cursor:pointer';
   var nav=editMode?('<div style="margin-top:8px;display:flex;gap:6px;justify-content:center">'
     +'<button onclick="openPointInfo('+(ci-1)+')"'+(ci<=0?' disabled':'')+' style="'+bs+';margin-top:0;flex:1;background:'+(ci<=0?'#bbb':'#444')+'">◀ Anterior</button>'
     +'<button onclick="openPointInfo('+(ci+1)+')"'+(ci>=positions.length-1?' disabled':'')+' style="'+bs+';margin-top:0;flex:1;background:'+(ci>=positions.length-1?'#bbb':'#444')+'">Siguiente ▶</button>'
     +'</div>'):'';
-  var ren=editMode?'<br><button onclick="renameChange('+ci+')" style="'+bs+';background:#7c3aed">✏️ Renombrar</button>':'';
+  var ren=editMode?'<br><button onclick="renameChange('+ci+')" style="'+bs+';background:#7c3aed">'+((p&&p.lk)?'📌 Nombre fijo (editar)':'✏️ Fijar nombre')+'</button>':'';
   var hora=editMode?'<br><button onclick="editHora('+ci+')" style="'+bs+';background:#ff9800">🕐 Hora oficial</button>':'';
   var del=editMode?'<br><button onclick="deleteChange('+ci+')" style="'+bs+';background:#c0392b">🗑️ Eliminar</button>':'';
   var sv='<br><button onclick="openStreetView('+p.lat+','+p.lng+')" style="'+bs+';background:#1a73e8">🛣️ Street View</button>';
@@ -2116,13 +2101,13 @@ function renderMarkers() {
         mk2.addListener('dragstart',function(){ pushMapHistory(); });
         mk2.addListener('drag',function(){
           var p=mk2.getPosition();
-          positions[ci2]={lat:p.lat(),lng:p.lng(),n:positions[ci2].n||''};
+          positions[ci2]={lat:p.lat(),lng:p.lng(),n:positions[ci2].n||'',lk:positions[ci2].lk};
           if(routeLine) routeLine.setPath(positions.map(function(pt){return{lat:pt.lat,lng:pt.lng};}));
           if(routeClickLine) routeClickLine.setPath(positions.map(function(pt){return{lat:pt.lat,lng:pt.lng};}));
         });
         mk2.addListener('dragend',function(){
           var p=mk2.getPosition();
-          positions[ci2]={lat:p.lat(),lng:p.lng(),n:positions[ci2].n||''};
+          positions[ci2]={lat:p.lat(),lng:p.lng(),n:positions[ci2].n||'',lk:positions[ci2].lk};
           drawRouteLine();calc();
           if(typeof syncPositions==='function') syncPositions();
         });
@@ -2176,6 +2161,10 @@ function deleteChange(ci) {
 }
 
 // ========== TABLE ==========
+// Serialize a route point, carrying the per-point name lock (lk) when set so it
+// survives Firebase/localStorage/history round-trips.
+function _serPt(p){ var o={lat:p.lat,lng:p.lng,n:p.n||''}; if(p.lk) o.lk=true; return o; }
+
 function autoCarryName(mc){
   var total=positions.length;
   if(!total) return '';
@@ -2208,24 +2197,29 @@ function getCarryRef(mc){
   return _displayRef(mc.n||'', mc);
 }
 
-// Decide what to show as a point's reference. Placeholder labels ("Grupo N",
-// "Punto N") get replaced by the nearest named map reference; an embedded
-// landmark in parens ("Grupo 7 (Caja de Crédito)") becomes the name; a real
-// name passes through; and the Santo Entierro "(5:00 p.m.)" official time is
-// preserved while its "Grupo N" prefix is swapped for the nearest reference.
+// Decide what to show as a point's reference. By default the AUTOMATIC name
+// (nearest map reference via autoCarryName) wins, even over an embedded name —
+// the route's own names were unreliable. A point the editor manually renamed is
+// locked (mc.lk) and keeps that name. The Santo Entierro "(5:00 p.m.)" official
+// time is always preserved.
 function _displayRef(raw, mc){
   raw = raw ? String(raw).trim() : '';
-  if(!raw) return autoCarryName(mc) || nearWP(mc) || '';
-  var paren='', timePart='';
+  var timePart='';
   var pm = raw.match(/\(([^)]*)\)/);
-  if(pm){
-    paren = pm[1].trim();
-    if(/^\d{1,2}:\d{2}/.test(paren)) timePart = '('+paren.replace(/\s+/g,' ')+')';
-  }
+  if(pm && /^\d{1,2}:\d{2}/.test(pm[1].trim())) timePart='('+pm[1].trim().replace(/\s+/g,' ')+')';
   var base = raw.replace(/\([^)]*\)/g,'').replace(/^\s*(grupo|punto)\s*#?\s*\d+\s*[-–—:]?\s*/i,'').trim();
-  if(!base && paren && !timePart) base = paren;
-  if(!base || /^(grupo|punto)\s*#?\s*\d+$/i.test(base)) base = autoCarryName(mc) || nearWP(mc) || '';
-  return (base + (timePart?(' '+timePart):'')).trim();
+  if(!base && pm && !timePart) base = pm[1].trim();
+  var isPlaceholder = !base || /^(grupo|punto)\s*#?\s*\d+$/i.test(base);
+  var withTime=function(s){ return (s + (timePart?(' '+timePart):'')).trim(); };
+  // Locked: keep the manually-chosen name.
+  if(mc && mc.lk && !isPlaceholder) return withTime(base);
+  // Automatic name wins when we have a confident one.
+  var auto = autoCarryName(mc);
+  if(auto) return withTime(auto);
+  // No confident automatic name: placeholders fall back to nearest ref, real
+  // (unlocked) embedded names are kept.
+  if(isPlaceholder) return withTime(nearWP(mc) || '');
+  return withTime(base);
 }
 
 function renderTable() {
@@ -4734,7 +4728,7 @@ function syncPositions(){
   if(isShared) return;
   clearTimeout(syncTimer);
   syncTimer=setTimeout(function(){
-    var pts=positions.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
+    var pts=positions.map(_serPt);
     db.ref('positions/day'+currentDay).set(pts);
   },500);
 }
@@ -4851,7 +4845,7 @@ function startDayListeners(){
   posRef.on('value',function(snap){
     var d=snap.val();
     if(!d||!d.length) return;
-    var newPos=d.filter(function(p){return p&&p.lat&&p.lng;}).map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
+    var newPos=d.filter(function(p){return p&&p.lat&&p.lng;}).map(_serPt);
     // Only update if different
     if(JSON.stringify(newPos)!==JSON.stringify(positions)){
       var wasEmpty=positions.length<2;
