@@ -149,6 +149,8 @@ if(new URLSearchParams(window.location.search).has('se')){
       <button id="bDrag" onclick="toggleDrag()" class="mapbtn">🔀 Mover</button>
       <button onclick="addRef()" class="mapbtn">📌 Ref</button>
       <button onclick="generateRefsFromNames()" class="mapbtn" title="Crear referencias generales desde los nombres del recorrido">🏷️ Auto-ref</button>
+      <button id="bShowRefs" onclick="toggleShowRefs()" class="mapbtn" title="Mostrar/ocultar las referencias">🏷️ Referencias</button>
+      <button id="bShowGroups" onclick="toggleShowGroups()" class="mapbtn" title="Mostrar/ocultar los grupos del recorrido">👥 Grupos</button>
       <button onclick="undoMapEdit()" class="mapbtn">↩️ Deshacer</button>
       <button onclick="exportPoints()" class="mapbtn">📤 Exportar</button>
       <button id="mapLockBtn" onclick="toggleMapLock()" class="mapbtn">🔓 Mapa libre</button>

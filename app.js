@@ -10,7 +10,7 @@ function getAllRefs(){var g=(typeof GLOBAL_WP_REF!=='undefined'&&GLOBAL_WP_REF)?
 var REF_NEAR = 250;
 // Tighter radius (m) for DRAWING a reference: only those right on the
 // procession line are shown, so parallel-street references stay hidden.
-var RENDER_NEAR = 35;
+var RENDER_NEAR = 25;
 // Bumped whenever any reference is added/removed/renamed so caches refresh.
 var _refVer = 0;
 
@@ -1836,13 +1836,17 @@ function calc() {
 var _wpSig='';
 function renderWPmarkers() {
   var em=(dragMode&&editMode)?1:0;
-  var sig=_refSig()+'|'+em;
+  // References are an editor-only layer (hidden for spectators/shared viewers)
+  // and can be toggled off via the filter button.
+  var gate=(editMode && showRefsLayer && !isShared)?1:0;
+  var sig=_refSig()+'|'+em+'|'+gate;
   // Skip the full rebuild when nothing relevant changed (e.g. live ticks) —
   // recreating every reference marker each calc() was the main slowdown.
-  if(sig===_wpSig && wpMarkers.length){ return; }
+  if(sig===_wpSig && (wpMarkers.length || !gate)){ return; }
   _wpSig=sig;
   wpMarkers.forEach(m=>m.setMap(null));
   wpMarkers=[];
+  if(!gate) return;
   const wps = getAllRefs();
   var route=positions||[];
   function nearRoute(wp){
@@ -2191,6 +2195,7 @@ function renderMarkers() {
   for(var mi=0;mi<allMarkers.length;mi++){
     var mk=allMarkers[mi];
     var visible=true;
+    if(!showGroupsLayer) visible=false;
     if(!mk._isMine&&!showOthers) visible=false;
     if(paddedBounds&&!paddedBounds.contains(mk.getPosition())) visible=false;
     // Toggle label/icon only when the zoom mode actually changes — avoids
@@ -2847,6 +2852,24 @@ function zoomTo(i){
 
 // ========== UI ==========
 let editMode=false;
+// Editor-only layer filters: show reference markers / route-group markers.
+var showRefsLayer=true, showGroupsLayer=true;
+function _setLayerBtn(id,on,onTxt,offTxt){
+  var b=$(id); if(!b) return;
+  b.textContent=on?onTxt:offTxt;
+  b.style.background=on?seAccentBg('.8'):'rgba(0,0,0,.7)';
+  b.style.borderColor=on?seAccent():'#666';
+}
+function toggleShowRefs(){
+  showRefsLayer=!showRefsLayer;
+  _setLayerBtn('bShowRefs',showRefsLayer,'🏷️ Referencias','🏷️ Referencias (ocultas)');
+  renderWPmarkers();
+}
+function toggleShowGroups(){
+  showGroupsLayer=!showGroupsLayer;
+  _setLayerBtn('bShowGroups',showGroupsLayer,'👥 Grupos','👥 Grupos (ocultos)');
+  if(editingWomen){renderMarkersW();}else{renderMarkers();}
+}
 function toggleEdit(){
   if(isShared) return;
   editMode=!editMode;
@@ -2854,7 +2877,17 @@ function toggleEdit(){
   $('mapEditTools').style.display=editMode?'flex':'none';
   if(!editMode&&dragMode) toggleDrag();
   // Refresh the undo button count now that the toolbar is visible
-  if(editMode) _updateUndoButton();
+  if(editMode){
+    _updateUndoButton();
+    _setLayerBtn('bShowRefs',showRefsLayer,'🏷️ Referencias','🏷️ Referencias (ocultas)');
+    _setLayerBtn('bShowGroups',showGroupsLayer,'👥 Grupos','👥 Grupos (ocultos)');
+  } else {
+    // Leaving the editor restores the normal view (both layers on).
+    showRefsLayer=true; showGroupsLayer=true;
+    if(editingWomen){renderMarkersW();}else{renderMarkers();}
+  }
+  // Reference markers are editor-only — refresh so they appear/disappear.
+  renderWPmarkers();
 }
 function toggleDrag(){
   dragMode=!dragMode;
