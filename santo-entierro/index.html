@@ -141,13 +141,12 @@ window._forceSE = true;
     <div id="mapEditBar" style="position:absolute;top:8px;right:8px;z-index:1000;display:flex;flex-direction:column;gap:5px">
       <button id="bEdit" onclick="toggleEdit()" class="mapbtn">✏️ Editar</button>
     </div>
-    <div id="mapEditTools" style="position:absolute;top:8px;right:8px;z-index:1000;display:none;flex-direction:column;gap:5px">
+    <div id="mapEditTools" style="position:absolute;top:8px;right:8px;z-index:1000;display:none;flex-direction:column;gap:5px;max-height:calc(100% - 16px);overflow-y:auto">
       <button id="bEditClose" onclick="toggleEdit()" class="mapbtn" style="background:rgba(76,175,80,.85)">✏️ Editando</button>
       <button id="bDrag" onclick="toggleDrag()" class="mapbtn">🔀 Mover</button>
       <button onclick="addRef()" class="mapbtn">📌 Ref</button>
       <button onclick="generateRefsFromNames()" class="mapbtn" title="Crear referencias generales desde los nombres del recorrido">🏷️ Auto-ref</button>
-      <button id="bShowRefs" onclick="toggleShowRefs()" class="mapbtn" title="Mostrar/ocultar las referencias">🏷️ Referencias</button>
-      <button id="bShowGroups" onclick="toggleShowGroups()" class="mapbtn" title="Mostrar/ocultar los grupos del recorrido">👥 Grupos</button>
+      <button id="bLayer" onclick="cycleLayer()" class="mapbtn" title="Alternar: todo / solo referencias / solo grupos">👁️ Ver: todo</button>
       <button onclick="undoMapEdit()" class="mapbtn">↩️ Deshacer</button>
       <button onclick="exportPoints()" class="mapbtn">📤 Exportar</button>
       <button id="mapLockBtn" onclick="toggleMapLock()" class="mapbtn">🔓 Mapa libre</button>
