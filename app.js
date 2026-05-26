@@ -1840,6 +1840,49 @@ function _afterRefChange(){
   if(typeof renderTable==='function') renderTable();
 }
 
+// Extract a real landmark name from a point name, dropping the "Grupo N"/"Punto
+// N" placeholder prefix and any "(5:00 p.m.)" time. Returns '' if nothing real.
+function _landmarkFromName(raw){
+  if(!raw) return '';
+  var timeless=String(raw).replace(/\(\s*\d{1,2}:\d{2}[^)]*\)/ig,'').trim();
+  var pm=timeless.match(/\(([^)]*)\)/);
+  var paren=pm?pm[1].trim():'';
+  var base=timeless.replace(/\([^)]*\)/g,'').replace(/^\s*(grupo|punto)\s*#?\s*\d+\s*[-–—:]?\s*/i,'').trim();
+  var name=base||paren;
+  if(!name || /^(grupo|punto)\s*#?\s*\d+$/i.test(name)) return '';
+  return name;
+}
+
+// One-tap bootstrap: turn the landmark names embedded in THIS map's route points
+// (Catedral, Hospital, Mercado, UMA, ...) into references for this map. Skips
+// route annotations (Esquina/Poste/Salida/…) and placeholders. Idempotent.
+function generateRefsFromNames(){
+  if(!positions||!positions.length){ customAlert('No hay puntos en este mapa.'); return; }
+  var skip=/^(esquina|poste|cruz|cruza|cruzona|giro|salida|entra|entrada|bajada|intersecci[oó]n|tornamesa|mitad|parada|v[ií]a|primer|segunda|levanta|saca|ida|altar|donde|alfombra|minuto|cortes[ií]as|regreso)\b/i;
+  var seen={};
+  getAllRefs().forEach(function(w){ seen[(w.n||'').toLowerCase().trim()]=true; });
+  var day=getWPs();
+  var added=0;
+  positions.forEach(function(p){
+    if(!p||!p.lat||!p.lng) return;
+    var name=_landmarkFromName(p.n);
+    if(!name || skip.test(name)) return;
+    var key=name.toLowerCase().trim();
+    if(seen[key]) return;
+    seen[key]=true;
+    day.push({n:name,lat:p.lat,lng:p.lng});
+    added++;
+  });
+  if(added>0){
+    renderWPmarkers(); saveAll();
+    if(typeof renderLiveImmediate==='function') renderLiveImmediate();
+    if(typeof renderTable==='function') renderTable();
+  }
+  customAlert(added>0
+    ? ('Se crearon '+added+' referencias en este mapa desde los nombres de los puntos. Revisalas y borrá las que no sirvan; para que una sirva en todos los mapas usá "🌐 Hacer general".')
+    : 'No había nombres de lugar nuevos para convertir en referencia en este mapa.');
+}
+
 async function addRef(){
   const name=await customPrompt('Nombre de la referencia:');
   if(!name) return;
