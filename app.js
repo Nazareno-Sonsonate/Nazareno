@@ -2852,38 +2852,33 @@ function zoomTo(i){
 
 // ========== UI ==========
 let editMode=false;
-// Editor-only layer filters: show reference markers / route-group markers.
-var showRefsLayer=true, showGroupsLayer=true;
-function _setLayerBtn(id,on,onTxt,offTxt){
-  var b=$(id); if(!b) return;
-  b.textContent=on?onTxt:offTxt;
-  b.style.background=on?seAccentBg('.8'):'rgba(0,0,0,.7)';
-  b.style.borderColor=on?seAccent():'#666';
-}
-function toggleShowRefs(){
-  showRefsLayer=!showRefsLayer;
-  _setLayerBtn('bShowRefs',showRefsLayer,'🏷️ Referencias','🏷️ Referencias (ocultas)');
+// Editor-only layer filter cycling: 0 = both, 1 = only references, 2 = only groups.
+var showRefsLayer=true, showGroupsLayer=true, layerMode=0;
+function _applyLayer(){
+  showRefsLayer=(layerMode===0||layerMode===1);
+  showGroupsLayer=(layerMode===0||layerMode===2);
+  var b=$('bLayer');
+  if(b){
+    b.textContent=layerMode===0?'👁️ Ver: todo':(layerMode===1?'🏷️ Solo refs':'👥 Solo grupos');
+    b.style.background=layerMode===0?'rgba(0,0,0,.7)':seAccentBg('.8');
+    b.style.borderColor=layerMode===0?'#666':seAccent();
+  }
   renderWPmarkers();
-}
-function toggleShowGroups(){
-  showGroupsLayer=!showGroupsLayer;
-  _setLayerBtn('bShowGroups',showGroupsLayer,'👥 Grupos','👥 Grupos (ocultos)');
   if(editingWomen){renderMarkersW();}else{renderMarkers();}
 }
+function cycleLayer(){ layerMode=(layerMode+1)%3; _applyLayer(); }
 function toggleEdit(){
   if(isShared) return;
   editMode=!editMode;
   $('mapEditBar').style.display=editMode?'none':'flex';
   $('mapEditTools').style.display=editMode?'flex':'none';
   if(!editMode&&dragMode) toggleDrag();
-  // Refresh the undo button count now that the toolbar is visible
   if(editMode){
     _updateUndoButton();
-    _setLayerBtn('bShowRefs',showRefsLayer,'🏷️ Referencias','🏷️ Referencias (ocultas)');
-    _setLayerBtn('bShowGroups',showGroupsLayer,'👥 Grupos','👥 Grupos (ocultos)');
+    _applyLayer();
   } else {
     // Leaving the editor restores the normal view (both layers on).
-    showRefsLayer=true; showGroupsLayer=true;
+    layerMode=0; showRefsLayer=true; showGroupsLayer=true;
     if(editingWomen){renderMarkersW();}else{renderMarkers();}
   }
   // Reference markers are editor-only — refresh so they appear/disappear.
