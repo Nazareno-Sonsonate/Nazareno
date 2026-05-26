@@ -6,10 +6,33 @@ function getWPs(){return currentDay===0?LUN_WP_REF:currentDay===1?MART_WP_REF:cu
 // All references visible on the current map = global pool + this day's own.
 function getAllRefs(){var g=(typeof GLOBAL_WP_REF!=='undefined'&&GLOBAL_WP_REF)?GLOBAL_WP_REF:[];return g.concat(getWPs());}
 
-// Distance (m) within which a reference counts as "on this route".
-var REF_NEAR = 130;
+// Radius (m) to consider a reference a naming candidate for this route.
+var REF_NEAR = 250;
+// Tighter radius (m) for DRAWING a reference: only those right on the
+// procession line are shown, so parallel-street references stay hidden.
+var RENDER_NEAR = 35;
 // Bumped whenever any reference is added/removed/renamed so caches refresh.
 var _refVer = 0;
+
+// Shortest distance (m) from a point to the route POLYLINE (point-to-segment),
+// so a reference between two sparse route vertices is still measured correctly.
+function _distToRouteM(wp, route){
+  if(!route || !route.length) return 0;
+  var latR=wp.lat*Math.PI/180;
+  var mLat=111320, mLng=111320*Math.cos(latR);
+  var wx=wp.lng*mLng, wy=wp.lat*mLat, best=1e9;
+  if(route.length===1){ return Math.hypot(wx-route[0].lng*mLng, wy-route[0].lat*mLat); }
+  for(var i=0;i<route.length-1;i++){
+    var ax=route[i].lng*mLng, ay=route[i].lat*mLat;
+    var bx=route[i+1].lng*mLng, by=route[i+1].lat*mLat;
+    var dx=bx-ax, dy=by-ay, len2=dx*dx+dy*dy;
+    var t = len2>0 ? ((wx-ax)*dx+(wy-ay)*dy)/len2 : 0;
+    if(t<0)t=0; else if(t>1)t=1;
+    var d=Math.hypot(wx-(ax+t*dx), wy-(ay+t*dy));
+    if(d<best) best=d;
+  }
+  return best;
+}
 var _activeRefsCache=null, _activeRefsSig='';
 function _refSig(){
   var rh=positions.length;
@@ -1824,8 +1847,7 @@ function renderWPmarkers() {
   var route=positions||[];
   function nearRoute(wp){
     if(!route.length) return true;
-    for(var k=0;k<route.length;k++){ if(hd(wp,route[k])<REF_NEAR) return true; }
-    return false;
+    return _distToRouteM(wp,route) < RENDER_NEAR;
   }
   wps.forEach((wp,i)=>{
     var isG=!!wp.g;
@@ -1913,7 +1935,8 @@ async function generateRefsFromNames(){
   var removed=GLOBAL_WP_REF.length-kept.length;
   GLOBAL_WP_REF.length=0; kept.forEach(function(w){ GLOBAL_WP_REF.push(w); });
   // 2) Fill gaps: walk every procession's route and add a named reference only
-  //    where there is no reference within REF_NEAR yet.
+  //    where there is no reference within GAP meters yet (≈ one per block).
+  var GAP=110;
   var arrays=[];
   try{ arrays=[LUN_PTS,MART_PTS,MIER_PTS,VIER_PTS,SE_PTS]; }catch(e){ arrays=[]; }
   var skip=/^(esquina|poste|cruz|cruza|cruzona|giro|salida|entra|entrada|bajada|intersecci[oó]n|tornamesa|mitad|parada|v[ií]a|primer|segunda|levanta|saca|ida|altar|donde|alfombra|minuto|cortes[ií]as|regreso)\b/i;
@@ -1924,7 +1947,7 @@ async function generateRefsFromNames(){
       if(!p||!p.lat||!p.lng) return;
       var name=_landmarkFromName(p.n);
       if(!name || skip.test(name)) return;
-      for(var j=0;j<GLOBAL_WP_REF.length;j++){ if(hd(p,GLOBAL_WP_REF[j])<REF_NEAR) return; }
+      for(var j=0;j<GLOBAL_WP_REF.length;j++){ if(hd(p,GLOBAL_WP_REF[j])<GAP) return; }
       GLOBAL_WP_REF.push({n:name,lat:p.lat,lng:p.lng,g:1});
       added++;
     });
