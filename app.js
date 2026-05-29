@@ -2545,19 +2545,24 @@ function renderSpectatorView(){
   var done=Math.max(0,Math.min(eff,total));
   var pct=total>0?Math.round(done/total*100):0;
   var h='';
-  if(isPast || eff>=total){
-    h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:'+seAccentBg('.1')+';border:1px solid '+seAccentBg('.3')+'"><div style="font-size:16px;font-weight:700;color:'+seAccentTxt()+'">'+seCheck()+'Procesión completada</div></div>';
-  } else if(eff>0){
-    var nowObj=changes[Math.min(eff,total)-1];
-    h+='<div class="live-next">';
-    h+='<div class="ln-label">Cargando ahora</div>';
-    h+='<div class="ln-num">Grupo '+nowObj.grp+'</div>';
-    var nowRef=getCarryRef(nowObj);
-    h+='<div class="ln-ref">📍 '+_escapeHtml(nowRef||('Grupo '+nowObj.grp))+'</div>';
-    h+='<div class="ln-time">Cambio '+Math.min(eff,total)+' de '+total+'</div>';
-    h+='</div>';
-  } else {
-    h+='<div class="live-next"><div class="ln-label">La procesión aún no comienza</div><div class="ln-num" style="font-size:22px">⏳</div><div class="ln-ref">Seguí el avance en vivo aquí</div></div>';
+  // Spectators already see all of this in the top live banner (state, group,
+  // location, both andas, next change) — skip the duplicated "Cargando ahora"
+  // card for them. Carriers keep it as their carry cue.
+  if(!_spectatorMode){
+    if(isPast || eff>=total){
+      h+='<div style="text-align:center;padding:12px;margin-bottom:8px;border-radius:10px;background:'+seAccentBg('.1')+';border:1px solid '+seAccentBg('.3')+'"><div style="font-size:16px;font-weight:700;color:'+seAccentTxt()+'">'+seCheck()+'Procesión completada</div></div>';
+    } else if(eff>0){
+      var nowObj=changes[Math.min(eff,total)-1];
+      h+='<div class="live-next">';
+      h+='<div class="ln-label">Cargando ahora</div>';
+      h+='<div class="ln-num">Grupo '+nowObj.grp+'</div>';
+      var nowRef=getCarryRef(nowObj);
+      h+='<div class="ln-ref">📍 '+_escapeHtml(nowRef||('Grupo '+nowObj.grp))+'</div>';
+      h+='<div class="ln-time">Cambio '+Math.min(eff,total)+' de '+total+'</div>';
+      h+='</div>';
+    } else {
+      h+='<div class="live-next"><div class="ln-label">La procesión aún no comienza</div><div class="ln-num" style="font-size:22px">⏳</div><div class="ln-ref">Seguí el avance en vivo aquí</div></div>';
+    }
   }
   h+='<div class="live-progress"><div class="live-progress-bar" style="width:'+pct+'%">'+done+'/'+total+'</div></div>';
   h+='<div style="margin-top:12px">';
