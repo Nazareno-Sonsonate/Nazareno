@@ -183,23 +183,18 @@ function _semanaSantaDayDates(year){
 }
 
 // Mode preference: 'auto' (follow calendar), 'procesion' (forced real),
-// 'ensayo' (forced rehearsal). Persisted per device.
-var APP_MODE_KEY='appMode_v1';
-function _appModePref(){
-  try{ var v=localStorage.getItem(APP_MODE_KEY); return (v==='procesion'||v==='ensayo')?v:'auto'; }catch(e){ return 'auto'; }
+// "Ensayo" rehearsal mode — only available DURING real Semana Santa, and
+// only via the admin's Advanced section. When on, Firebase writes are
+// blocked so playing around doesn't leak to other users. Outside Semana
+// Santa the flag is meaningless and ignored.
+var ENSAYO_KEY='ensayoMode_v1';
+function _ensayoOn(){
+  try{ return localStorage.getItem(ENSAYO_KEY)==='1'; }catch(e){ return false; }
 }
-function _setAppModePref(v){
-  try{ if(v==='auto') localStorage.removeItem(APP_MODE_KEY); else localStorage.setItem(APP_MODE_KEY,v); }catch(e){}
+function _setEnsayo(on){
+  try{ if(on) localStorage.setItem(ENSAYO_KEY,'1'); else localStorage.removeItem(ENSAYO_KEY); }catch(e){}
 }
-function _calendarMode(){ return _isInSemanaSanta(new Date()) ? 'procesion' : 'ensayo'; }
-function _appMode(){
-  var p=_appModePref();
-  return (p==='auto') ? _calendarMode() : p;
-}
-// Only block Firebase writes when the user is rehearsing DURING the real
-// Semana Santa week — otherwise writes are harmless and we want them so the
-// rehearsal stays consistent across devices.
-function _isolated(){ return _appMode()==='ensayo' && _isInSemanaSanta(new Date()); }
+function _isolated(){ return _ensayoOn() && _isInSemanaSanta(new Date()); }
 function _canWrite(){ return !_isolated(); }
 
 // Firebase ref wrapper. Reads pass through unchanged so the UI still sees the
@@ -940,90 +935,72 @@ function openCfg(){
     }
   }
   renderTextSizeButtons();
-  // Lazily inject a "force update" section at the bottom of the cfg panel.
-  // Visible to everyone so users can always nudge the PWA to refresh.
-  // Admin: app mode (Procesión vs Ensayo). Auto follows the Semana Santa
-  // calendar; manual options force one mode for testing or for a drill.
-  if(isAdmin && !document.getElementById('cfgAppModeSection')){
-    var panelAM=document.getElementById('cfgP');
-    if(panelAM){
-      var amsec=document.createElement('div');
-      amsec.id='cfgAppModeSection';
-      amsec.style.cssText='border-top:1px solid rgba(255,255,255,.1);margin-top:10px;padding-top:10px';
-      amsec.innerHTML='<div style="font-size:12px;color:#aaa;margin-bottom:6px">🗓️ Modo de la app</div><div id="cfgAppModeBtns"></div>'
-        +'<div id="cfgAppModeHint" style="font-size:10px;color:#666;margin-top:6px;line-height:1.4"></div>';
-      panelAM.appendChild(amsec);
+  // Advanced section — collapsed by default. Holds the complex stuff: the
+  // Ensayo toggle (only available while we're inside real Semana Santa) and
+  // the force-update button. Keeps the main config sheet clean.
+  if(!document.getElementById('cfgAdvancedSection')){
+    var panelAdv=document.getElementById('cfgP');
+    if(panelAdv){
+      var adv=document.createElement('div');
+      adv.id='cfgAdvancedSection';
+      adv.style.cssText='border-top:1px solid rgba(255,255,255,.1);margin-top:10px;padding-top:10px';
+      adv.innerHTML=
+        '<button id="cfgAdvToggle" onclick="toggleAdvanced()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid #444;border-radius:8px;background:rgba(255,255,255,.04);color:#aaa;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">'
+        +'<span>⚙️ Avanzado</span><span id="cfgAdvCaret" style="font-size:11px;color:#666">▸</span>'
+        +'</button>'
+        +'<div id="cfgAdvBody" style="display:none;margin-top:8px"></div>';
+      panelAdv.appendChild(adv);
     }
   }
-  renderAppModeButtons();
-  if(!document.getElementById('cfgUpdateSection')){
-    var panel=document.getElementById('cfgP');
-    if(panel){
-      var sec=document.createElement('div');
-      sec.id='cfgUpdateSection';
-      sec.style.cssText='border-top:1px solid rgba(255,255,255,.1);margin-top:10px;padding-top:10px';
-      sec.innerHTML=
-        '<div style="font-size:12px;color:#aaa;margin-bottom:6px">🔄 Actualizar la app</div>'
-        +'<button id="forceUpdateBtn" onclick="forceUpdateApp()" style="width:100%;padding:10px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.15);color:#c084fc;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🔄 Forzar actualización ahora</button>'
-        +'<div style="font-size:10px;color:#666;margin-top:6px;line-height:1.4">Borra el caché local y descarga la versión más reciente. Útil si los cambios no aparecen automáticamente.</div>';
-      panel.appendChild(sec);
-    }
-  }
+  renderAdvancedBody();
 }
-
-function renderAppModeButtons(){
-  var el=document.getElementById('cfgAppModeBtns');
-  if(!el) return;
-  var pref=_appModePref();
-  var eff=_appMode();
-  var cal=_calendarMode();
-  function btn(val,label){
-    var on=(pref===val);
-    return '<button onclick="setAppMode(\''+val+'\')" style="flex:1;padding:8px;border:1px solid '+(on?'#7c3aed':'#666')+';border-radius:8px;background:'+(on?'rgba(124,58,237,.2)':'rgba(255,255,255,.04)')+';color:'+(on?'#c084fc':'#888')+';font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">'+label+'</button>';
-  }
-  el.style.cssText='display:flex;gap:5px';
-  el.innerHTML=btn('auto','🗓️ Auto')+btn('procesion','✝️ Procesión')+btn('ensayo','🧪 Ensayo');
-  var hint=document.getElementById('cfgAppModeHint');
-  if(hint){
-    var calLabel=(cal==='procesion'?'Procesión':'Ensayo');
-    var msg='Auto sigue el calendario (hoy: <b>'+calLabel+'</b>).';
-    if(pref!=='auto' && eff!==cal){
-      msg+='<br><b style="color:'+(eff==='ensayo'?'#fbbf24':'#10b981')+'">Forzado a '+(eff==='ensayo'?'Ensayo durante Semana Santa real (no se escribe a Firebase)':'Procesión fuera de Semana Santa (escribe a Firebase real)')+'</b>';
-    } else if(_isolated()){
-      msg+=' <b style="color:#fbbf24">Aislado: tus cambios no llegan a otros dispositivos.</b>';
-    }
-    hint.innerHTML=msg;
-  }
-  _renderAppModeChip();
+function toggleAdvanced(){
+  var body=document.getElementById('cfgAdvBody');
+  var car=document.getElementById('cfgAdvCaret');
+  if(!body) return;
+  var open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  if(car) car.textContent=open?'▸':'▾';
 }
-function setAppMode(v){
-  _setAppModePref(v);
-  // Reload so listeners detach/reattach cleanly and Firebase state snaps to
-  // whatever the new mode expects.
+function renderAdvancedBody(){
+  var body=document.getElementById('cfgAdvBody');
+  if(!body) return;
+  var html='';
+  // Ensayo: only meaningful WHILE we're really in Semana Santa. Outside SS
+  // there's nothing to protect, so the toggle is hidden entirely.
+  if(_isInSemanaSanta(new Date())){
+    var on=_ensayoOn();
+    html+='<div style="margin-bottom:10px">'
+      +'<div style="font-size:12px;color:#aaa;margin-bottom:6px">🧪 Modo ensayo</div>'
+      +'<button onclick="toggleEnsayoMode()" style="width:100%;padding:9px;border:1px solid '+(on?'#fbbf24':'#666')+';border-radius:8px;background:'+(on?'rgba(245,158,11,.18)':'rgba(255,255,255,.04)')+';color:'+(on?'#fbbf24':'#888')+';font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">'+(on?'🧪 Ensayo activo · tocá para apagar':'Activar ensayo')+'</button>'
+      +'<div style="font-size:10px;color:#666;margin-top:6px;line-height:1.4">Mientras esté activo, lo que toques se queda en este dispositivo. Útil para probar sin afectar a otros usuarios durante la procesión real.</div>'
+      +'</div>';
+  }
+  html+='<div style="font-size:12px;color:#aaa;margin-bottom:6px">🔄 Actualizar la app</div>'
+    +'<button id="forceUpdateBtn" onclick="forceUpdateApp()" style="width:100%;padding:10px;border:1px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.15);color:#c084fc;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🔄 Forzar actualización ahora</button>'
+    +'<div style="font-size:10px;color:#666;margin-top:6px;line-height:1.4">Borra el caché local y descarga la versión más reciente. Útil si los cambios no aparecen automáticamente.</div>';
+  body.innerHTML=html;
+}
+function toggleEnsayoMode(){
+  _setEnsayo(!_ensayoOn());
   location.reload();
 }
+
+// Amber chip pinned to the top whenever Ensayo is on, so the admin can never
+// forget their actions aren't reaching production.
 function _renderAppModeChip(){
   var chip=document.getElementById('appModeChip');
-  var eff=_appMode(), cal=_calendarMode();
-  var showChip=(eff!==cal);
-  if(showChip){
+  if(_isolated()){
     if(!chip){
       chip=document.createElement('div');
       chip.id='appModeChip';
       chip.style.cssText='position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:10000;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.4)';
       document.body.appendChild(chip);
     }
-    if(eff==='ensayo'){
-      chip.textContent='🧪 Ensayo';
-      chip.title='Estás en Ensayo durante Semana Santa real — tus cambios no llegan a otros dispositivos';
-      chip.style.background='rgba(245,158,11,.95)';
-      chip.style.color='#1a0a1f';
-    } else {
-      chip.textContent='✝️ Procesión (fuera de SS)';
-      chip.title='Estás en Procesión fuera de Semana Santa — tus cambios SÍ se escriben a Firebase real';
-      chip.style.background='rgba(16,185,129,.95)';
-      chip.style.color='#fff';
-    }
+    chip.textContent='🧪 Ensayo';
+    chip.title='Modo ensayo activo — lo que toques se queda en este dispositivo, no llega a otros usuarios';
+    chip.style.background='rgba(245,158,11,.95)';
+    chip.style.color='#1a0a1f';
   } else if(chip){
     chip.remove();
   }
