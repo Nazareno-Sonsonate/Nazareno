@@ -134,6 +134,104 @@ let lastMulti = 0;
 document.addEventListener('touchstart', e => { if(e.touches.length>1) lastMulti=Date.now(); }, {passive:true});
 function isZoom() { return Date.now()-lastMulti<500; }
 
+// ========== SEMANA SANTA CALENDAR + APP MODE ==========
+// Computus (Gregorian Easter algorithm) — exact date for any year. From there
+// every procession day is a fixed offset from Domingo de Resurrección.
+function easterDate(year){
+  var a=year%19, b=Math.floor(year/100), c=year%100;
+  var d=Math.floor(b/4), e=b%4;
+  var f=Math.floor((b+8)/25), g=Math.floor((b-f+1)/3);
+  var h=(19*a+b-d-g+15)%30;
+  var i=Math.floor(c/4), k=c%4;
+  var L=(32+2*e+2*i-h-k)%7;
+  var m=Math.floor((a+11*h+22*L)/451);
+  var month=Math.floor((h+L-7*m+114)/31);  // 3=March, 4=April
+  var day=((h+L-7*m+114)%31)+1;
+  return new Date(year, month-1, day);
+}
+function semanaSanta(year){
+  var easter=easterDate(year);
+  function offset(days){ var d=new Date(easter); d.setDate(d.getDate()+days); return d; }
+  return {
+    domingoRamos:        offset(-7),
+    lunesSanto:          offset(-6),
+    martesSanto:         offset(-5),
+    miercolesSanto:      offset(-4),
+    juevesSanto:         offset(-3),
+    viernesSanto:        offset(-2),
+    sabadoSanto:         offset(-1),
+    domingoResurreccion: easter
+  };
+}
+function _ymd(d){
+  var y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+dd;
+}
+// Returns true while the real clock is within Holy Week (Domingo de Ramos
+// 00:00 through Sábado Santo 23:59 — the window where the app's processions
+// happen). Domingo de Resurrección itself is excluded because there's no
+// procession on the app's calendar that day.
+function _isInSemanaSanta(d){
+  if(!d) d=new Date();
+  var ss=semanaSanta(d.getFullYear());
+  return d>=ss.domingoRamos && d<=new Date(ss.sabadoSanto.getFullYear(), ss.sabadoSanto.getMonth(), ss.sabadoSanto.getDate(), 23, 59, 59);
+}
+// Map a year's Semana Santa to the 5 day-date strings the app uses.
+function _semanaSantaDayDates(year){
+  var ss=semanaSanta(year);
+  return [_ymd(ss.lunesSanto), _ymd(ss.martesSanto), _ymd(ss.miercolesSanto), _ymd(ss.viernesSanto), _ymd(ss.sabadoSanto)];
+}
+
+// Mode preference: 'auto' (follow calendar), 'procesion' (forced real),
+// 'ensayo' (forced rehearsal). Persisted per device.
+var APP_MODE_KEY='appMode_v1';
+function _appModePref(){
+  try{ var v=localStorage.getItem(APP_MODE_KEY); return (v==='procesion'||v==='ensayo')?v:'auto'; }catch(e){ return 'auto'; }
+}
+function _setAppModePref(v){
+  try{ if(v==='auto') localStorage.removeItem(APP_MODE_KEY); else localStorage.setItem(APP_MODE_KEY,v); }catch(e){}
+}
+function _calendarMode(){ return _isInSemanaSanta(new Date()) ? 'procesion' : 'ensayo'; }
+function _appMode(){
+  var p=_appModePref();
+  return (p==='auto') ? _calendarMode() : p;
+}
+// Only block Firebase writes when the user is rehearsing DURING the real
+// Semana Santa week — otherwise writes are harmless and we want them so the
+// rehearsal stays consistent across devices.
+function _isolated(){ return _appMode()==='ensayo' && _isInSemanaSanta(new Date()); }
+function _canWrite(){ return !_isolated(); }
+
+// Firebase ref wrapper. Reads pass through unchanged so the UI still sees the
+// real procession state; writes (set/update/push/remove/onDisconnect/
+// transaction) become no-ops while _isolated() — so a local rehearsal during
+// the real Semana Santa never leaks to production.
+function _dbref(path){
+  var realRef=db.ref(path);
+  return {
+    set:function(v){ return _isolated()?Promise.resolve():realRef.set(v); },
+    update:function(v){ return _isolated()?Promise.resolve():realRef.update(v); },
+    push:function(v){ return _isolated()?{key:null,set:function(){return Promise.resolve();}}:realRef.push(v); },
+    remove:function(){ return _isolated()?Promise.resolve():realRef.remove(); },
+    on:function(){ return realRef.on.apply(realRef, arguments); },
+    off:function(){ return realRef.off.apply(realRef, arguments); },
+    once:function(){ return realRef.once.apply(realRef, arguments); },
+    child:function(p){ return _dbref(path+'/'+p); },
+    onDisconnect:function(){
+      var od=realRef.onDisconnect();
+      return {
+        set:function(v){ return _isolated()?Promise.resolve():od.set(v); },
+        update:function(v){ return _isolated()?Promise.resolve():od.update(v); },
+        remove:function(){ return _isolated()?Promise.resolve():od.remove(); },
+        cancel:function(){ return od.cancel(); }
+      };
+    },
+    transaction:function(fn){ return _isolated()?Promise.resolve({committed:false}):realRef.transaction(fn); },
+    key:realRef.key,
+    toString:function(){ return realRef.toString(); }
+  };
+}
+
 // ========== URL PARAMS & SHARING ==========
 // Default to PUBLIC (shared) — admin status comes from Firebase Auth
 let isShared = true;
@@ -674,14 +772,14 @@ function updateStartTime(){
         liveGrupoData={cambio:expectedCambio,grp:grp,nombre:nombre,tot:positions.length,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:correctTs,autoSet:true};
         try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
         saveAll();
-        db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+        _dbref('grupoActual/day'+currentDay).set(liveGrupoData);
       }
       window._autoTimeOffset=0;
       if(typeof syncAutoState==='function') syncAutoState();
     } else {
       currentGrupoActual=0;
       liveGrupoData={cambio:0,grp:0,nombre:'',tot:positions.length,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
-      db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+      _dbref('grupoActual/day'+currentDay).set(liveGrupoData);
       window._autoTimeOffset=0;
       if(typeof syncAutoState==='function') syncAutoState();
     }
@@ -721,7 +819,7 @@ function forceAndaPosition(){
   var ptA=positions[idxA],ptB=positions[idxB];
   var jLat=ptA.lat+(ptB.lat-ptA.lat)*frac;
   var jLng=ptA.lng+(ptB.lng-ptA.lng)*frac;
-  db.ref('jesus').set({lat:jLat,lng:jLng,t:Date.now()});
+  _dbref('jesus').set({lat:jLat,lng:jLng,t:Date.now()});
   // Interpolate Virgen
   var vRoute=(positionsW.length>=2)?positionsW:positions;
   var vExact=Math.max(0,exactPos-virgenDesfase);
@@ -731,7 +829,7 @@ function forceAndaPosition(){
   var vB=Math.min(vC+1,vRoute.length-1);
   var vLat=vRoute[vA].lat+(vRoute[vB].lat-vRoute[vA].lat)*vF;
   var vLng=vRoute[vA].lng+(vRoute[vB].lng-vRoute[vA].lng)*vF;
-  db.ref('virgen').set({lat:vLat,lng:vLng,t:Date.now()});
+  _dbref('virgen').set({lat:vLat,lng:vLng,t:Date.now()});
 }
 function setStartTimeUI(h,m){
   if($('cHour')) $('cHour').value=h;
@@ -784,7 +882,7 @@ function changeDayDate(val){
         var sacaP=daySaca[p]||17;
         var lastGrpP=((sacaP-1+totP-1)%getHomCount())+1;
         var pastData={cambio:totP,grp:lastGrpP,nombre:'',tot:totP,desfase:0,movidos:0,sacaMuj:daySacaMuj[p]||22,t:Date.now()};
-        db.ref('grupoActual/day'+p).set(pastData);
+        _dbref('grupoActual/day'+p).set(pastData);
       }
     }
   }
@@ -792,7 +890,7 @@ function changeDayDate(val){
   // Reset avance for current day
   currentGrupoActual=0;
   liveGrupoData={cambio:0,grp:0,nombre:'',tot:positions.length||44,desfase:0,movidos:0,sacaMuj:daySacaMuj[currentDay]||6,t:Date.now()};
-  db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+  _dbref('grupoActual/day'+currentDay).set(liveGrupoData);
   var bc2=document.getElementById('bannersContainer');if(bc2) bc2.innerHTML='';
   // Update UI
   var isM2=(+$('cType').value===27);
@@ -844,6 +942,20 @@ function openCfg(){
   renderTextSizeButtons();
   // Lazily inject a "force update" section at the bottom of the cfg panel.
   // Visible to everyone so users can always nudge the PWA to refresh.
+  // Admin: app mode (Procesión vs Ensayo). Auto follows the Semana Santa
+  // calendar; manual options force one mode for testing or for a drill.
+  if(isAdmin && !document.getElementById('cfgAppModeSection')){
+    var panelAM=document.getElementById('cfgP');
+    if(panelAM){
+      var amsec=document.createElement('div');
+      amsec.id='cfgAppModeSection';
+      amsec.style.cssText='border-top:1px solid rgba(255,255,255,.1);margin-top:10px;padding-top:10px';
+      amsec.innerHTML='<div style="font-size:12px;color:#aaa;margin-bottom:6px">🗓️ Modo de la app</div><div id="cfgAppModeBtns"></div>'
+        +'<div id="cfgAppModeHint" style="font-size:10px;color:#666;margin-top:6px;line-height:1.4"></div>';
+      panelAM.appendChild(amsec);
+    }
+  }
+  renderAppModeButtons();
   if(!document.getElementById('cfgUpdateSection')){
     var panel=document.getElementById('cfgP');
     if(panel){
@@ -859,6 +971,63 @@ function openCfg(){
   }
 }
 
+function renderAppModeButtons(){
+  var el=document.getElementById('cfgAppModeBtns');
+  if(!el) return;
+  var pref=_appModePref();
+  var eff=_appMode();
+  var cal=_calendarMode();
+  function btn(val,label){
+    var on=(pref===val);
+    return '<button onclick="setAppMode(\''+val+'\')" style="flex:1;padding:8px;border:1px solid '+(on?'#7c3aed':'#666')+';border-radius:8px;background:'+(on?'rgba(124,58,237,.2)':'rgba(255,255,255,.04)')+';color:'+(on?'#c084fc':'#888')+';font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">'+label+'</button>';
+  }
+  el.style.cssText='display:flex;gap:5px';
+  el.innerHTML=btn('auto','🗓️ Auto')+btn('procesion','✝️ Procesión')+btn('ensayo','🧪 Ensayo');
+  var hint=document.getElementById('cfgAppModeHint');
+  if(hint){
+    var calLabel=(cal==='procesion'?'Procesión':'Ensayo');
+    var msg='Auto sigue el calendario (hoy: <b>'+calLabel+'</b>).';
+    if(pref!=='auto' && eff!==cal){
+      msg+='<br><b style="color:'+(eff==='ensayo'?'#fbbf24':'#10b981')+'">Forzado a '+(eff==='ensayo'?'Ensayo durante Semana Santa real (no se escribe a Firebase)':'Procesión fuera de Semana Santa (escribe a Firebase real)')+'</b>';
+    } else if(_isolated()){
+      msg+=' <b style="color:#fbbf24">Aislado: tus cambios no llegan a otros dispositivos.</b>';
+    }
+    hint.innerHTML=msg;
+  }
+  _renderAppModeChip();
+}
+function setAppMode(v){
+  _setAppModePref(v);
+  // Reload so listeners detach/reattach cleanly and Firebase state snaps to
+  // whatever the new mode expects.
+  location.reload();
+}
+function _renderAppModeChip(){
+  var chip=document.getElementById('appModeChip');
+  var eff=_appMode(), cal=_calendarMode();
+  var showChip=(eff!==cal);
+  if(showChip){
+    if(!chip){
+      chip=document.createElement('div');
+      chip.id='appModeChip';
+      chip.style.cssText='position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:10000;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.4)';
+      document.body.appendChild(chip);
+    }
+    if(eff==='ensayo'){
+      chip.textContent='🧪 Ensayo';
+      chip.title='Estás en Ensayo durante Semana Santa real — tus cambios no llegan a otros dispositivos';
+      chip.style.background='rgba(245,158,11,.95)';
+      chip.style.color='#1a0a1f';
+    } else {
+      chip.textContent='✝️ Procesión (fuera de SS)';
+      chip.title='Estás en Procesión fuera de Semana Santa — tus cambios SÍ se escriben a Firebase real';
+      chip.style.background='rgba(16,185,129,.95)';
+      chip.style.color='#fff';
+    }
+  } else if(chip){
+    chip.remove();
+  }
+}
 function renderModeButtons(){
   var el=document.getElementById('cfgModeBtns');
   if(!el) return;
@@ -1082,6 +1251,17 @@ function initMap() {
     },120);
   });
   const hasSaved = loadSaved();
+  // Auto-fill dayDates from the Semana Santa calendar so the app rolls into
+  // each new year without manual reconfiguration. If we're already a month
+  // past Easter, look ahead to next year's Semana Santa.
+  try{
+    var _nowY=new Date().getFullYear();
+    var _ssThis=semanaSanta(_nowY);
+    var _easter1mo=new Date(_ssThis.domingoResurreccion.getFullYear(), _ssThis.domingoResurreccion.getMonth(), _ssThis.domingoResurreccion.getDate()+30);
+    var _useY=(new Date() > _easter1mo) ? _nowY+1 : _nowY;
+    var _haveY=(dayDates&&dayDates[0])?parseInt(dayDates[0].slice(0,4)):0;
+    if(_haveY!==_useY){ dayDates=_semanaSantaDayDates(_useY); }
+  }catch(e){_logErr('semanaSanta-init',e);}
   readParams();
   // Auto-detect today's day, constrained to the current mode so a public
   // viewer locked into SE mode never switches to a procession day, and
@@ -1136,13 +1316,13 @@ function initMap() {
   // Editor: push dates to Firebase so shared users can detect today
   if(!isShared){
     setTimeout(function(){
-      db.ref('config/dates').set(dayDates);
+      _dbref('config/dates').set(dayDates);
       syncConfig();
     },2000);
   }
   // Shared: fetch dates from Firebase FIRST, then detect today and switch
   if(isShared){
-    db.ref('config/dates').once('value',function(snap){
+    _dbref('config/dates').once('value',function(snap){
       var dd=snap.val();
       if(dd&&Array.isArray(dd)){
         for(var ddi=0;ddi<dd.length;ddi++){if(dd[ddi]) dayDates[ddi]=dd[ddi];}
@@ -1153,7 +1333,7 @@ function initMap() {
       }
     });
     // Also keep listening for future changes
-    db.ref('config/dates').on('value',function(snap){
+    _dbref('config/dates').on('value',function(snap){
       var dd=snap.val();
       if(!dd||!Array.isArray(dd)) return;
       for(var ddi=0;ddi<dd.length;ddi++){if(dd[ddi]) dayDates[ddi]=dd[ddi];}
@@ -1255,12 +1435,12 @@ function switchDay(d) {
   if(dayDates[d]===nowDate){
     // Clear any stale completed data
     try{localStorage.removeItem('grupoActual_day'+d);}catch(e){_logErr("swallow",e);}
-    db.ref('grupoActual/day'+d).once('value',function(snap){
+    _dbref('grupoActual/day'+d).once('value',function(snap){
       var gd=snap.val();
       if(gd&&gd.cambio>0&&gd.cambio>=(positions.length||44)){
         // Stale completed data - reset
         var resetData={cambio:0,grp:0,nombre:'',tot:positions.length||44,desfase:0,movidos:0,sacaMuj:daySacaMuj[d]||22,t:Date.now()};
-        db.ref('grupoActual/day'+d).set(resetData);
+        _dbref('grupoActual/day'+d).set(resetData);
         currentGrupoActual=0;
         liveGrupoData=resetData;
         if(typeof renderLive==='function') renderLive();
@@ -1689,7 +1869,7 @@ function insertAtPositionW(lat,lng,edge){
 
 function syncPositionsW(){
   if(isShared) return;
-  db.ref('positions_w/day'+currentDay).set(
+  _dbref('positions_w/day'+currentDay).set(
     positionsW.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};})
   );
   savedPositionsW[currentDay]=positionsW.map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
@@ -1925,7 +2105,7 @@ function renderWPmarkers() {
 // even if this path were blocked the refs never disappear.
 function syncGlobalRefs(){
   if(isShared) return;
-  try{ db.ref('positions/refsGlobal').set(GLOBAL_WP_REF.map(function(w){return{lat:w.lat,lng:w.lng,n:w.n||''};})); }catch(e){_logErr('syncGlobalRefs',e);}
+  try{ _dbref('positions/refsGlobal').set(GLOBAL_WP_REF.map(function(w){return{lat:w.lat,lng:w.lng,n:w.n||''};})); }catch(e){_logErr('syncGlobalRefs',e);}
 }
 function _afterRefChange(){
   _refVer++;
@@ -3269,7 +3449,7 @@ function _isAdminEmail(email){
 }
 
 // Live editor list from Firebase
-db.ref('admins').on('value', function(snap){
+_dbref('admins').on('value', function(snap){
   var d = snap.val() || {};
   _adminListFromDB = Object.keys(d).filter(function(k){return d[k]===true;}).map(_keyToEmail);
   _adminListLoaded = true;
@@ -3485,7 +3665,7 @@ function addAdminEmail(){
   }
   if(_isSuperAdmin(email)){ alert('Ese email ya es super-admin.'); input.value=''; return; }
   if(_adminListFromDB.indexOf(email) !== -1){ alert('Ese email ya es editor.'); input.value=''; return; }
-  db.ref('admins/' + _emailToKey(email)).set(true).then(function(){
+  _dbref('admins/' + _emailToKey(email)).set(true).then(function(){
     input.value='';
   }).catch(function(err){
     alert('Error al agregar: '+(err.message||err.code||'desconocido'));
@@ -3494,7 +3674,7 @@ function addAdminEmail(){
 
 async function removeAdminEmail(email){
   if(!await customConfirm('¿Quitar a '+email+' como editor?\n\nVa a perder acceso de edición la próxima vez que use la app.')) return;
-  db.ref('admins/' + _emailToKey(email)).remove().catch(function(err){
+  _dbref('admins/' + _emailToKey(email)).remove().catch(function(err){
     alert('Error al quitar: '+(err.message||err.code||'desconocido'));
   });
 }
@@ -3632,7 +3812,7 @@ function updatePushToken(){
   // If all passed, no alert needed
   var alertAtCambio=nextCambio>0?Math.max(1,nextCambio-alertBefore):0;
   
-  db.ref('pushTokens/'+_tokenToKey(token)).set({
+  _dbref('pushTokens/'+_tokenToKey(token)).set({
     token:token,
     grupo:grupo,
     tipo:tipo,
@@ -3690,8 +3870,8 @@ function unsubscribePush(){
   if(token){
     // Remove both the new safe key and the old truncated key (legacy
     // entries from devices that subscribed before _tokenToKey existed)
-    db.ref('pushTokens/'+_tokenToKey(token)).remove();
-    try{ db.ref('pushTokens/'+token.substring(0,20)).remove(); }catch(e){_logErr('legacy push key', e);}
+    _dbref('pushTokens/'+_tokenToKey(token)).remove();
+    try{ _dbref('pushTokens/'+token.substring(0,20)).remove(); }catch(e){_logErr('legacy push key', e);}
   }
   try{
     localStorage.removeItem('pushToken');
@@ -3713,7 +3893,7 @@ setTimeout(function(){
 },2000);
 
 // ========== LIVE BROADCAST (runs first for everyone) ==========
-db.ref('broadcast').on('value',function(snap){
+_dbref('broadcast').on('value',function(snap){
   var d=snap.val();
   var banner=document.getElementById('broadcastBanner');
   if(!banner) return;
@@ -3755,7 +3935,7 @@ function toggleUrna(tipo){
 
   if(urnaActive[tipo]){
     if(urnaWatchIds[tipo]!==null){navigator.geolocation.clearWatch(urnaWatchIds[tipo]);urnaWatchIds[tipo]=null;}
-    db.ref(tipo).remove();
+    _dbref(tipo).remove();
     urnaActive[tipo]=false;
     saveUrnaState();
     if(!urnaActive.jesus&&!urnaActive.virgen){releaseWakeLock();stopKeepAlive();}
@@ -3765,7 +3945,7 @@ function toggleUrna(tipo){
   }
   if(!navigator.geolocation){alert('GPS no disponible');return;}
   
-  db.ref(tipo).once('value',async function(snap){
+  _dbref(tipo).once('value',async function(snap){
     const d=snap.val();
     if(d&&d.t&&Date.now()-d.t<120000){
       if(!await customConfirm('⚠️ '+label+' ya está siendo rastreada. ¿Tomar control?')) return;
@@ -3788,7 +3968,7 @@ function startGPSWatch(tipo){
     if(lastWrite[tipo]&&now-lastWrite[tipo]<8000) return;
     lastWrite[tipo]=now;
     if(tipo==='jesus') window._lastRealGPS=now;
-    db.ref(tipo).set({lat:pos.coords.latitude,lng:pos.coords.longitude,t:now});
+    _dbref(tipo).set({lat:pos.coords.latitude,lng:pos.coords.longitude,t:now});
   },function(err){
     console.log(tipo+' GPS error',err);
     // Auto-retry on error
@@ -3834,7 +4014,7 @@ function startKeepAlive(){
   // Ping Firebase every 30s to keep connection alive
   _keepAliveTimer=setInterval(function(){
     if(!urnaActive.jesus&&!urnaActive.virgen){stopKeepAlive();return;}
-    db.ref('online/'+_GPS_SESSION_ID).set(Date.now());
+    _dbref('online/'+_GPS_SESSION_ID).set(Date.now());
   },30000);
   // Show persistent notification to keep service worker alive
   if('Notification' in window&&Notification.permission==='granted'){
@@ -4035,7 +4215,9 @@ function getAndaColor(tipo){
   return tipo==='jesus'?'#dc2626':'#3b82f6';
 }
 function listenAnda(tipo,imgUrl,color,zIdx){
-  db.ref(tipo).on('value',function(snap){
+  _dbref(tipo).on('value',function(snap){
+    // Isolated rehearsal: ignore live anda positions from production.
+    if(_isolated()) return;
     const d=snap.val();
     if(!d||!d.lat||!d.lng||Date.now()-d.t>120000){
       if(urnaMarkers[tipo]){
@@ -4118,7 +4300,7 @@ function listenAnda(tipo,imgUrl,color,zIdx){
         try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
         saveAll();
         updateGrupoUI();
-        db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+        _dbref('grupoActual/day'+currentDay).set(liveGrupoData);
         if(typeof renderLive==='function') renderLive();
         // Sync auto-time offset so it continues from here if GPS drops
         if(window._autoTimeRunning){
@@ -4302,7 +4484,7 @@ if(_isSE){
                     var nombre=bestJCI<=changes.length?changes[bestJCI-1].n||'':'';
                     liveGrupoData={cambio:bestJCI,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[4]||6,t:Date.now()};
                     currentDay=4;
-                    db.ref('grupoActual/day4').set(liveGrupoData);
+                    _dbref('grupoActual/day4').set(liveGrupoData);
                   }
                   if(typeof renderLive==='function') renderLive();
                 }
@@ -4328,7 +4510,7 @@ if(_isSE){
                         var nombre2=jesusCambioGPS<=changes.length?changes[jesusCambioGPS-1].n||'':'';
                         liveGrupoData={cambio:jesusCambioGPS,grp:grp2,nombre:nombre2,tot:tot2,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[4]||6,t:Date.now()};
                         currentDay=4;
-                        db.ref('grupoActual/day4').set(liveGrupoData);
+                        _dbref('grupoActual/day4').set(liveGrupoData);
                         updateGrupoUI();
                       }
                       if(typeof renderLive==='function') renderLive();
@@ -4419,7 +4601,7 @@ if(_isSE){
 // Cached in localStorage ('gr') and synced via positions/refsGlobal (a path the
 // rules already permit). The listener ignores empty/null server values so a
 // just-added "general" reference is never wiped by an optimistic revert.
-db.ref('positions/refsGlobal').on('value',function(snap){
+_dbref('positions/refsGlobal').on('value',function(snap){
   if(typeof GLOBAL_WP_REF==='undefined') return;
   var d=snap.val();
   if(!d || !d.length) return; // keep local refs if the server has nothing
@@ -4433,8 +4615,8 @@ db.ref('positions/refsGlobal').on('value',function(snap){
 
 // ========== ONLINE COUNTER ==========
 // Register presence with heartbeat
-const myPresRef=db.ref('online/'+Math.random().toString(36).substr(2,9));
-db.ref('.info/connected').on('value',function(snap){
+const myPresRef=_dbref('online/'+Math.random().toString(36).substr(2,9));
+_dbref('.info/connected').on('value',function(snap){
   if(snap.val()===true){
     myPresRef.set(Date.now());
     myPresRef.onDisconnect().remove();
@@ -4444,13 +4626,13 @@ db.ref('.info/connected').on('value',function(snap){
 setInterval(function(){myPresRef.set(Date.now());},30000);
 // Clean stale entries (older than 2 minutes)
 function cleanStaleOnline(){
-  db.ref('online').once('value',function(snap){
+  _dbref('online').once('value',function(snap){
     var d=snap.val();
     if(!d) return;
     var now=Date.now();
     Object.keys(d).forEach(function(k){
       if(now-d[k]>60000){
-        try{db.ref('online/'+k).remove();}catch(e){_logErr("swallow",e);}
+        try{_dbref('online/'+k).remove();}catch(e){_logErr("swallow",e);}
       }
     });
   });
@@ -4462,7 +4644,7 @@ function showAdminTools(){
   if(!isShared){
     document.getElementById('broadcastInput').style.display='block';
     document.getElementById('onlineCounter').style.display='block';
-    db.ref('online').on('value',function(snap){
+    _dbref('online').on('value',function(snap){
       var d=snap.val();
       if(!d){document.getElementById('onlineCounter').textContent='👥 0 conectados';return;}
       var now=Date.now();
@@ -4476,11 +4658,11 @@ function showAdminTools(){
 function sendBroadcast(){
   const msg=document.getElementById('broadcastMsg').value.trim();
   if(!msg) return;
-  db.ref('broadcast').set({text:msg,t:Date.now()});
+  _dbref('broadcast').set({text:msg,t:Date.now()});
   document.getElementById('broadcastMsg').value='';
 }
 function clearBroadcast(){
-  db.ref('broadcast').remove();
+  _dbref('broadcast').remove();
 }
 
 // ========== GRUPO ACTUAL (admin marks current group) ==========
@@ -4497,7 +4679,7 @@ function changeVirgenMn(delta){
   if(liveGrupoData&&liveGrupoData.cambio>0){
     try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
     saveAll();
-    db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+    _dbref('grupoActual/day'+currentDay).set(liveGrupoData);
   }
   if(typeof renderLive==='function') renderLive();
 }
@@ -4565,7 +4747,7 @@ function advanceGrupo(delta){
   try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
   saveAll();
   updateGrupoUI();
-  db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+  _dbref('grupoActual/day'+currentDay).set(liveGrupoData);
   if(typeof renderLive==='function') renderLive();
   if(typeof syncConfig==='function') syncConfig();
   // Recalculate auto-time offset so auto follows from this position
@@ -4597,7 +4779,7 @@ async function setGrupoManual(){
   try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
   saveAll();
   updateGrupoUI();
-  db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+  _dbref('grupoActual/day'+currentDay).set(liveGrupoData);
   if(typeof renderLive==='function') renderLive();
   if(window._autoTimeRunning&&num>0){
     var _stB=getStartTime();var h3=_stB.h;
@@ -4618,7 +4800,7 @@ function changeDesfase(delta){
   if(liveGrupoData&&liveGrupoData.cambio>0){
     try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
     saveAll();
-    db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+    _dbref('grupoActual/day'+currentDay).set(liveGrupoData);
   }
   updateGrupoUI();
   if(typeof renderLive==='function') renderLive();
@@ -4632,7 +4814,7 @@ function changeMovidos(delta){
   if(liveGrupoData&&liveGrupoData.cambio>0){
     try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
     saveAll();
-    db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+    _dbref('grupoActual/day'+currentDay).set(liveGrupoData);
   }
   updateGrupoUI();
   setTimeout(function(){if(typeof renderLive==='function') renderLive();},100);
@@ -4848,8 +5030,8 @@ function syncConfig(){
     cfgData.cortM=VIER_CORTESIAS_CHANGE_M;
     cfgData.cortMin=VIER_CORTESIAS_MIN;
   }
-  db.ref('config/day'+currentDay).set(cfgData);
-  db.ref('config/dates').set(dayDates);
+  _dbref('config/day'+currentDay).set(cfgData);
+  _dbref('config/dates').set(dayDates);
 }
 
 // ========== MAP POSITIONS SYNC ==========
@@ -4859,7 +5041,7 @@ function syncPositions(){
   clearTimeout(syncTimer);
   syncTimer=setTimeout(function(){
     var pts=positions.map(_serPt);
-    db.ref('positions/day'+currentDay).set(pts);
+    _dbref('positions/day'+currentDay).set(pts);
   },500);
 }
 
@@ -4875,9 +5057,12 @@ function startDayListeners(){
   if(typeof loadGrupoFromStorage==='function') loadGrupoFromStorage();
   if(typeof loadAutoState==='function') loadAutoState();
   // Grupo actual
-  var gaRef=db.ref('grupoActual/day'+currentDay);
+  var gaRef=_dbref('grupoActual/day'+currentDay);
   activeDayRefs.push(gaRef);
   gaRef.on('value',function(snap){
+    // Isolated rehearsal: don't let production data overwrite the local
+    // state the editor is playing with.
+    if(_isolated()) return;
     var d=snap.val();
     if(!d) return;
     // Reject snapshots older than what we already have (race-condition guard)
@@ -4888,7 +5073,7 @@ function startDayListeners(){
       var totGA=positions.length||changes.length||44;
       if(d.cambio>=totGA&&!isShared){
         var resetD={cambio:0,grp:0,nombre:'',tot:totGA,desfase:d.desfase||0,movidos:d.movidos||0,sacaMuj:d.sacaMuj||daySacaMuj[currentDay],t:Date.now()};
-        db.ref('grupoActual/day'+currentDay).set(resetD);
+        _dbref('grupoActual/day'+currentDay).set(resetD);
         currentGrupoActual=0;
         liveGrupoData=resetD;
         if(typeof renderLive==='function') renderLive();
@@ -4925,7 +5110,7 @@ function startDayListeners(){
     });
   }
   // Config sync - ALL users listen (not just shared)
-  var cfgRef=db.ref('config/day'+currentDay);
+  var cfgRef=_dbref('config/day'+currentDay);
   activeDayRefs.push(cfgRef);
   cfgRef.on('value',function(snap){
     var d=snap.val();
@@ -4951,7 +5136,7 @@ function startDayListeners(){
     if(changed) calc();
   });
   // Listen for dates sync
-  var datesRef=db.ref('config/dates');
+  var datesRef=_dbref('config/dates');
   activeDayRefs.push(datesRef);
   datesRef.on('value',function(snap){
     var d=snap.val();
@@ -4970,9 +5155,10 @@ function startDayListeners(){
     }
   });
   // Positions sync - ALL users listen
-  var posRef=db.ref('positions/day'+currentDay);
+  var posRef=_dbref('positions/day'+currentDay);
   activeDayRefs.push(posRef);
   posRef.on('value',function(snap){
+    if(_isolated()) return;
     var d=snap.val();
     if(!d||!d.length) return;
     var newPos=d.filter(function(p){return p&&p.lat&&p.lng;}).map(_serPt);
@@ -4986,9 +5172,10 @@ function startDayListeners(){
     }
   });
   // Women's positions sync
-  var posRefW=db.ref('positions_w/day'+currentDay);
+  var posRefW=_dbref('positions_w/day'+currentDay);
   activeDayRefs.push(posRefW);
   posRefW.on('value',function(snap){
+    if(_isolated()) return;
     var d=snap.val();
     if(!d||!d.length){positionsW=[];return;}
     var newPosW=d.filter(function(p){return p&&p.lat&&p.lng;}).map(function(p){return{lat:p.lat,lng:p.lng,n:p.n||''};});
@@ -5045,7 +5232,7 @@ function toggleAutoTime(){
         currentGrupoActual=0;
         liveGrupoData={cambio:0,grp:0,nombre:'',tot:positions.length||44,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay]||6,t:Date.now()};
         try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr('swallow',e);}
-        if(typeof db!=='undefined'&&db&&db.ref) db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+        if(typeof db!=='undefined'&&db&&db.ref) _dbref('grupoActual/day'+currentDay).set(liveGrupoData);
       }
     } else if(currentGrupoActual>0){
       var shouldBeI=startTimeI+(currentGrupoActual-1)*mnI*60000;
@@ -5069,7 +5256,7 @@ function toggleAutoTime(){
 
 function syncAutoState(){
   if(isShared) return;
-  db.ref('config/auto/day'+currentDay).set({
+  _dbref('config/auto/day'+currentDay).set({
     running:window._autoTimeRunning,
     offset:window._autoTimeOffset,
     owner:window._autoTimeRunning?window._deviceId:'',
@@ -5088,7 +5275,7 @@ function startHeartbeat(){
   if(_heartbeatTimer) return;
   _heartbeatTimer=setInterval(function(){
     if(window._autoTimeRunning&&!window._autoRemote&&!isShared){
-      db.ref('config/auto/day'+currentDay+'/heartbeat').set(Date.now());
+      _dbref('config/auto/day'+currentDay+'/heartbeat').set(Date.now());
     }
   },15000);
 }
@@ -5097,7 +5284,7 @@ function stopHeartbeat(){
 }
 
 function loadAutoState(){
-  db.ref('config/auto/day'+currentDay).on('value',function(snap){
+  _dbref('config/auto/day'+currentDay).on('value',function(snap){
     var d=snap.val();
     if(!d) return;
     if(d.offset!==undefined) window._autoTimeOffset=d.offset;
@@ -5111,7 +5298,7 @@ function loadAutoState(){
         if(ownerDead&&!isMyOwn){
           console.log('Auto owner died, taking over');
           window._deviceId=window._deviceId; // keep own ID
-          if(!isShared) db.ref('config/auto/day'+currentDay+'/owner').set(window._deviceId);
+          if(!isShared) _dbref('config/auto/day'+currentDay+'/owner').set(window._deviceId);
         }
         window._autoRemote=false;
         if(!window._autoTimeRunning||!window._autoTimeTimer){
@@ -5152,9 +5339,9 @@ function autoTimeStep(){
 
   if(elapsed<0){
     if(!gpsActive){
-      db.ref('jesus').set({lat:positions[0].lat,lng:positions[0].lng,t:Date.now()});
+      _dbref('jesus').set({lat:positions[0].lat,lng:positions[0].lng,t:Date.now()});
       var vRoute0=(positionsW.length>=2)?positionsW:positions;
-      db.ref('virgen').set({lat:vRoute0[0].lat,lng:vRoute0[0].lng,t:Date.now()});
+      _dbref('virgen').set({lat:vRoute0[0].lat,lng:vRoute0[0].lng,t:Date.now()});
     }
     updateBanners();
     return;
@@ -5180,7 +5367,7 @@ function autoTimeStep(){
       liveGrupoData={cambio:tot,grp:grpF,nombre:nombreF,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
       try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
       saveAll();
-      db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+      _dbref('grupoActual/day'+currentDay).set(liveGrupoData);
     }
     // Wait for virgen to finish too
     var vRoute2=(positionsW.length>=2)?positionsW:positions;
@@ -5204,7 +5391,7 @@ function autoTimeStep(){
     liveGrupoData={cambio:currentCambio,grp:grp,nombre:nombre,tot:tot,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
     try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr("swallow",e);}
     saveAll();
-    db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+    _dbref('grupoActual/day'+currentDay).set(liveGrupoData);
     if(typeof renderLive==='function') renderLive();
   }
 
@@ -5216,7 +5403,7 @@ function autoTimeStep(){
     var ptA=positions[idxA],ptB=positions[idxB];
     var jLat=ptA.lat+(ptB.lat-ptA.lat)*fraction;
     var jLng=ptA.lng+(ptB.lng-ptA.lng)*fraction;
-    db.ref('jesus').set({lat:jLat,lng:jLng,t:Date.now()});
+    _dbref('jesus').set({lat:jLat,lng:jLng,t:Date.now()});
   }
   // Always animate Virgen (she doesn't have her own GPS usually)
   var virgenHasGPS=(urnaActive&&urnaActive.virgen);
@@ -5240,7 +5427,7 @@ function autoTimeStep(){
     var vPtA=vRoute[vIdxA],vPtB=vRoute[vIdxB];
     var vLat=vPtA.lat+(vPtB.lat-vPtA.lat)*vFrac;
     var vLng=vPtA.lng+(vPtB.lng-vPtA.lng)*vFrac;
-    db.ref('virgen').set({lat:vLat,lng:vLng,t:Date.now()});
+    _dbref('virgen').set({lat:vLat,lng:vLng,t:Date.now()});
   }
 
   updateBanners();
@@ -5530,3 +5717,10 @@ function renderSpiritual(section){
 
 // Apply the saved reading-size preference as soon as the body is available.
 try{ if(document.body){ applyBigText(); } else { document.addEventListener('DOMContentLoaded', applyBigText); } }catch(e){}
+
+// Show the app-mode chip (only when the manual mode differs from the
+// calendar) as soon as the body exists.
+try{
+  function _initModeChip(){ try{ _renderAppModeChip(); }catch(e){} }
+  if(document.body){ _initModeChip(); } else { document.addEventListener('DOMContentLoaded', _initModeChip); }
+}catch(e){}
