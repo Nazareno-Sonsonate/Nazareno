@@ -735,6 +735,9 @@ function setStartTimeUI(h,m){
 }
 function changeDayDate(val){
   dayDates[currentDay]=val;
+  // Any saved Auto offset was anchored to the OLD date — drop it so the auto
+  // clock realigns with the new date instead of carrying over a stale shift.
+  window._autoTimeOffset=0;
   // Auto-fill using Semana Santa intervals
   // Gaps: Lun→Mar:1, Mar→Mie:1, Mie→Vie:2 (skip Jueves), Vie→SE:0
   var gaps=[0,1,1,2,0]; // gap FROM previous day TO this day
@@ -920,14 +923,24 @@ function updateAdminLiveControls(){
   h+='</div>';
   // Ritmo offset
   if(window._autoTimeRunning){
-    h+='<div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;justify-content:center">';
+    var _off=window._autoTimeOffset||0;
+    var _bigOff=Math.abs(_off)>30;
+    h+='<div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;justify-content:center;flex-wrap:wrap">';
     h+='<span style="font-size:12px;color:#f44336">Ritmo:</span>';
     h+='<button onclick="adjustAutoTime(-5);updateAdminLiveControls()" style="padding:4px 10px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:14px;cursor:pointer">-5m</button>';
     h+='<button onclick="adjustAutoTime(-1);updateAdminLiveControls()" style="padding:4px 10px;border:1px solid #666;border-radius:6px;background:rgba(255,255,255,.05);color:#ccc;font-size:14px;cursor:pointer">-1m</button>';
-    h+='<span style="font-size:14px;font-weight:700;color:#f44336;min-width:40px;text-align:center">'+(window._autoTimeOffset>0?'+':'')+window._autoTimeOffset+'m</span>';
+    h+='<span style="font-size:14px;font-weight:700;color:#f44336;min-width:40px;text-align:center">'+(_off>0?'+':'')+_off+'m</span>';
     h+='<button onclick="adjustAutoTime(1);updateAdminLiveControls()" style="padding:4px 10px;border:1px solid #f44336;border-radius:6px;background:rgba(244,67,54,.15);color:#f44336;font-size:14px;cursor:pointer">+1m</button>';
     h+='<button onclick="adjustAutoTime(5);updateAdminLiveControls()" style="padding:4px 10px;border:1px solid #f44336;border-radius:6px;background:rgba(244,67,54,.15);color:#f44336;font-size:14px;cursor:pointer">+5m</button>';
+    h+='<button onclick="syncAutoToRealTime()" title="Volver a la hora real" style="padding:4px 10px;border:1px solid #3b82f6;border-radius:6px;background:rgba(59,130,246,.15);color:#93c5fd;font-size:13px;cursor:pointer">🔄 Sincronizar</button>';
     h+='</div>';
+    if(_bigOff){
+      // Loud warning when the Auto clock has drifted far from real time —
+      // most of the time a residual offset from testing is the cause.
+      var _hh=Math.floor(Math.abs(_off)/60), _mm=Math.abs(_off)%60;
+      var _humanOff=(_off<0?'−':'+')+(_hh?_hh+'h ':'')+_mm+'m';
+      h+='<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin:-2px 0 8px;padding:6px 10px;border-radius:8px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);font-size:12px;color:#fbbf24">⚠️ Auto desfasada de la hora real: <b>'+_humanOff+'</b> · tocá <b>🔄 Sincronizar</b> para alinear</div>';
+    }
   }
   // Show real rhythm from GPS (info only)
   if(window._realRhythm){
@@ -5003,6 +5016,10 @@ function toggleAutoTime(){
       var startTimeI=new Date(dateStrI+'T'+String(_stI.h).padStart(2,'0')+':'+String(_stI.m).padStart(2,'0')+':00').getTime();
       var shouldBeI=startTimeI+(currentGrupoActual-1)*mnI*60000;
       window._autoTimeOffset=Math.round((shouldBeI-Date.now())/60000);
+    } else {
+      // No manual cambio set yet — align Auto with the real clock instead of
+      // keeping a stale offset from a previous test session.
+      window._autoTimeOffset=0;
     }
     autoTimeStep();
     window._autoTimeTimer=setInterval(autoTimeStep,3000);
@@ -5200,6 +5217,16 @@ function adjustAutoTime(delta){
   autoTimeStep();
   syncAutoState();
   if(typeof syncConfig==='function') syncConfig();
+  if(typeof renderLive==='function') renderLive();
+}
+// Snap the Auto clock back to the real wall clock. Useful after testing or
+// after a stale offset left the procession out of sync.
+function syncAutoToRealTime(){
+  window._autoTimeOffset=0;
+  if(window._autoTimeRunning && typeof autoTimeStep==='function') autoTimeStep();
+  if(typeof syncAutoState==='function') syncAutoState();
+  if(typeof syncConfig==='function') syncConfig();
+  if(typeof updateAdminLiveControls==='function') updateAdminLiveControls();
   if(typeof renderLive==='function') renderLive();
 }
 
