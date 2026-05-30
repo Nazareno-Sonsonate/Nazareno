@@ -2473,16 +2473,26 @@ function getRealAvg(){
 
 // Get last recorded time and project forward
 function getEstimate(mc){
-  // 1. If we have registered carries, project from last one
-  const recorded=myCarries.filter(x=>isDone(x.ci)).map(x=>({num:x.num,t:getEntry(x.ci).t})).sort((a,b)=>b.num-a.num);
-  const avg=getRealAvg();
+  var avg=getRealAvg()||(+$('cMn').value||6);
+  // Live anchor — when the procession's live cambio is fresh (updated in the
+  // last 30 min), project the estimate from "right now we are at cambio X"
+  // instead of from a possibly stale registered carry or the original
+  // schedule. This keeps the next-cargada time realistic when the procession
+  // is running ahead of or behind the original schedule.
+  var liveFresh=window.liveGrupoData&&liveGrupoData.cambio>0&&liveGrupoData.t
+                &&(Date.now()-liveGrupoData.t<30*60*1000);
+  var recorded=myCarries.filter(x=>isDone(x.ci)).map(x=>({num:x.num,t:getEntry(x.ci).t})).sort((a,b)=>b.num-a.num);
+  if(liveFresh && (!recorded.length || liveGrupoData.cambio>=recorded[0].num)){
+    if(mc.num<=liveGrupoData.cambio) return fmtClock(Date.now());
+    return fmtClock(Date.now()+(mc.num-liveGrupoData.cambio)*avg*60000);
+  }
+  // Last registered carry projection
   if(recorded.length>0&&avg){
-    const last=recorded[0];
-    if(mc.num<=last.num) return fmtClock(last.t); // already passed
+    var last=recorded[0];
+    if(mc.num<=last.num) return fmtClock(last.t);
     return fmtClock(last.t+(mc.num-last.num)*avg*60000);
   }
-
-  // 2. If GPS is actively tracking, use real rhythm
+  // GPS rhythm derived from departure
   if(window._lastRealGPS&&(Date.now()-window._lastRealGPS<GPS_TIMEOUT)&&window._realRhythm>0){
     var cc=cfg();
     var dateStr=dayDates[currentDay]||localDateStr(new Date());
@@ -2491,8 +2501,7 @@ function getEstimate(mc){
       return fmtClock(departMs+(mc.num-1)*window._realRhythm*60000);
     }
   }
-
-  // 3. Default: use calc() time (departure + n × mn)
+  // Default: scheduled time (departure + num × mn)
   return mc.time;
 }
 
