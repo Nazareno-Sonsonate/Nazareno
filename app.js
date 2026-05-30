@@ -1647,9 +1647,13 @@ var mapHistoryW=[];
 // the route points AND the waypoint references for the current day.
 function pushMapHistory(){
   var wps = (typeof getWPs==='function') ? getWPs() : [];
+  var globals = (typeof GLOBAL_WP_REF!=='undefined' && GLOBAL_WP_REF)
+    ? GLOBAL_WP_REF.map(function(w){return{lat:w.lat,lng:w.lng,n:w.n||''};})
+    : [];
   mapHistory.push({
     positions: positions.map(_serPt),
     wps: wps.map(function(w){return{lat:w.lat,lng:w.lng,n:w.n||''};}),
+    globals: globals,
     day: currentDay,
     t: Date.now()
   });
@@ -1716,8 +1720,14 @@ function undoMapEdit(){
       var wps=getWPs();
       wps.length=0;
       snap.wps.forEach(function(w){wps.push(w);});
-      try{ if(typeof renderWPmarkers==='function') renderWPmarkers(); }catch(e){_logErr('renderWPmarkers',e);}
     }
+    if(snap.globals && typeof GLOBAL_WP_REF!=='undefined'){
+      GLOBAL_WP_REF.length=0;
+      snap.globals.forEach(function(w){ GLOBAL_WP_REF.push({n:w.n||'',lat:w.lat,lng:w.lng,g:1}); });
+      if(typeof _refVer!=='undefined') _refVer++;
+      try{ if(typeof syncGlobalRefs==='function') syncGlobalRefs(); }catch(e){_logErr('syncGlobalRefs',e);}
+    }
+    try{ if(typeof renderWPmarkers==='function') renderWPmarkers(); }catch(e){_logErr('renderWPmarkers',e);}
     drawRouteLine();
     allMarkers.forEach(function(m){m.setMap(null);});
     allMarkers=[];
@@ -2464,11 +2474,20 @@ function getCarryRef(mc){
 // time is always preserved.
 function _displayRef(raw, mc){
   raw = raw ? String(raw).trim() : '';
+  // Find the parenthetical that looks like an official time. Scan ALL parens,
+  // not just the first, so "Catedral (norte) (5:00 p.m.)" still keeps the time.
   var timePart='';
-  var pm = raw.match(/\(([^)]*)\)/);
-  if(pm && /^\d{1,2}:\d{2}/.test(pm[1].trim())) timePart='('+pm[1].trim().replace(/\s+/g,' ')+')';
-  var base = raw.replace(/\([^)]*\)/g,'').replace(/^\s*(grupo|punto)\s*#?\s*\d+\s*[-–—:]?\s*/i,'').trim();
-  if(!base && pm && !timePart) base = pm[1].trim();
+  var timeMatch = raw.match(/\(\s*\d{1,2}:\d{2}[^)]*\)/);
+  if(timeMatch) timePart = '('+timeMatch[0].slice(1,-1).trim().replace(/\s+/g,' ')+')';
+  // Drop the time paren first, then any remaining parens for the base lookup,
+  // then strip the "Grupo N - " placeholder prefix.
+  var withoutTime = timeMatch ? raw.replace(timeMatch[0],'').trim() : raw;
+  var base = withoutTime.replace(/\([^)]*\)/g,'').replace(/^\s*(grupo|punto)\s*#?\s*\d+\s*[-–—:]?\s*/i,'').trim();
+  if(!base){
+    // Fall back to the first non-time parenthetical content if the bare text was empty.
+    var pmFallback = withoutTime.match(/\(([^)]*)\)/);
+    if(pmFallback) base = pmFallback[1].trim();
+  }
   var isPlaceholder = !base || /^(grupo|punto)\s*#?\s*\d+$/i.test(base);
   var withTime=function(s){ return (s + (timePart?(' '+timePart):'')).trim(); };
   // Locked: keep the manually-chosen name.
@@ -2786,9 +2805,12 @@ function renderLiveImpl(){
   // of blanking the panel, render the full procession as a read-only list so
   // the historical record is always visible after Semana Santa.
   if(isPastDay&&changes.length>0&&!myCarries.length){
-    var sigPD=daySaca[currentDay]||17;
+    var ccPD=cfg();
+    var isMujPD=ccPD.t===27;
+    var sigPD=(isMujPD?(daySacaMuj[currentDay]||22):(daySaca[currentDay]||17));
     var totPD2=changes.length;
-    var lastGrpPD2=((sigPD-1+totPD2-1)%getHomCount())+1;
+    var grpCntPD=isMujPD?getMujCount():getHomCount();
+    var lastGrpPD2=((sigPD-1+totPD2-1)%grpCntPD)+1;
     currentGrupoActual=totPD2;
     liveGrupoData={cambio:totPD2,grp:lastGrpPD2,nombre:(totPD2<=changes.length&&changes[totPD2-1])?changes[totPD2-1].n||'':'',tot:totPD2,desfase:0,movidos:0,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
     var ph='';
@@ -2814,11 +2836,15 @@ function renderLiveImpl(){
 
   var isPastDay=isDayPast(currentDay);
   
-  // For past days, auto-set grupo actual to last cambio
+  // For past days, auto-set grupo actual to last cambio. Pick the right saca
+  // (men's vs women's) so cargadoras don't see the men's group number.
   if(isPastDay&&changes.length>0){
-    var sacaPD=daySaca[currentDay]||17;
+    var ccPD0=cfg();
+    var isMujPD0=ccPD0.t===27;
+    var sacaPD=isMujPD0?(daySacaMuj[currentDay]||22):(daySaca[currentDay]||17);
     var totPD=changes.length;
-    var lastGrpPD=((sacaPD-1+totPD-1)%getHomCount())+1;
+    var grpCntPD0=isMujPD0?getMujCount():getHomCount();
+    var lastGrpPD=((sacaPD-1+totPD-1)%grpCntPD0)+1;
     currentGrupoActual=totPD;
     liveGrupoData={cambio:totPD,grp:lastGrpPD,nombre:(totPD<=changes.length&&changes[totPD-1])?changes[totPD-1].n||'':'',tot:totPD,desfase:0,movidos:0,sacaMuj:daySacaMuj[currentDay],t:Date.now()};
   }
@@ -4193,8 +4219,9 @@ function getAndaColor(tipo){
 }
 function listenAnda(tipo,imgUrl,color,zIdx){
   _dbref(tipo).on('value',function(snap){
-    // Isolated rehearsal: ignore live anda positions from production.
-    if(_isolated()) return;
+    // During Ensayo the rehearsal doesn't manipulate anda GPS positions, so
+    // showing real production positions is harmless — and importantly the
+    // stale-data cleanup still runs, so markers don't freeze on screen.
     const d=snap.val();
     if(!d||!d.lat||!d.lng||Date.now()-d.t>120000){
       if(urnaMarkers[tipo]){
@@ -5125,9 +5152,11 @@ function startDayListeners(){
     if(changed2){
       var newToday=detectToday();
       if($('cDate'))$('cDate').value=dayDates[currentDay];
-      // Shared users: auto-switch to today's day
+      // Shared users: auto-switch to today's day — but never switch out of
+      // the locked PWA scope (SE PWA stays on day 4, Nazareno PWA stays on 0-3).
       if(isShared&&newToday>=0&&newToday!==currentDay){
-        switchDay(newToday);
+        var lockedScope=(window._forceSE===true)?(newToday===4):(newToday<=3);
+        if(lockedScope) switchDay(newToday);
       }
     }
   });
@@ -5181,7 +5210,6 @@ var GPS_TIMEOUT=120000; // 2 min — GPS can drop briefly between buildings
 // is treated as the anchor; on tick we walk forward from it at the
 // configured rhythm.
 function _deriveCambioFromAnchor(){
-  if(isPastDay && typeof isPastDay==='function') return null; // function shadow guard
   if(!positions||!positions.length) return null;
   var total=positions.length;
   // Past days are pinned to the final cambio in switchDay; don't override.
