@@ -332,7 +332,15 @@ function applyDayFilter(){
   var seOpt = document.getElementById('seOpt');
   var procOpts = sel.querySelectorAll('option:not(#seOpt)');
   if(isAdmin){
-    // Admin: every option visible
+    // Admin: every option visible — EXCEPT when the PWA scope is locked
+    // (santo-entierro/ sets _forceSE), where switching to a Nazareno day
+    // would silently load the wrong procession's data. Keep them on SE.
+    if(window._forceSE===true){
+      procOpts.forEach(function(o){ o.hidden = true; });
+      if(seOpt) seOpt.hidden = false;
+      sel.style.display = 'none';
+      return;
+    }
     if(seOpt) seOpt.hidden = false;
     procOpts.forEach(function(o){ o.hidden = false; });
     sel.style.display = '';
@@ -1199,7 +1207,10 @@ function switchDay(d) {
   currentDay = d;
   window.currentDay=d;
   try{localStorage.setItem('lastViewedDay',d);}catch(e){_logErr("swallow",e);}
-  isSEMode=(d===4);
+  // SE PWA scope wins over the day: even an admin staying on the SE PWA
+  // shouldn't accidentally pull Nazareno data by picking another day in the
+  // selector. To work on Nazareno days, open the Nazareno PWA explicitly.
+  isSEMode=(window._forceSE===true)?true:(d===4);
   document.querySelectorAll('.day').forEach((b,i) => b.classList.toggle('a',i===d));
   var ds=document.getElementById('daySelector');
   if(ds) ds.value=d;
