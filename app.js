@@ -5196,6 +5196,73 @@ window._autoTimeOffset=0;
 window._lastRealGPS=0;
 var GPS_TIMEOUT=120000; // 2 min — GPS can drop briefly between buildings
 
+// ========== CLIENT-SIDE LIVE CAMBIO DERIVATION ==========
+// Every client (spectator, cargador, admin) advances liveGrupoData locally
+// from the last-known anchor + elapsed real time. That way the procession
+// keeps moving in the UI even when no admin device is connected to push
+// updates to Firebase. The last admin override that was written to Firebase
+// is treated as the anchor; on tick we walk forward from it at the
+// configured rhythm.
+function _deriveCambioFromAnchor(){
+  if(isPastDay && typeof isPastDay==='function') return null; // function shadow guard
+  if(!positions||!positions.length) return null;
+  var total=positions.length;
+  // Past days are pinned to the final cambio in switchDay; don't override.
+  if(typeof isDayPast==='function' && isDayPast(currentDay)) return null;
+  var mn=+($('cMn')&&$('cMn').value)||6;
+  if(!(mn>0)) mn=6;
+  var mnMs=mn*60000;
+  var st=getStartTime();
+  var dateStr=dayDates[currentDay]||localDateStr(new Date());
+  var departMs=new Date(dateStr+'T'+String(st.h).padStart(2,'0')+':'+String(st.m).padStart(2,'0')+':00').getTime();
+  // Admin's personal time-shift (offset) applies only on the admin device.
+  var now=Date.now()+(window._autoTimeOffset||0)*60000;
+  if(now<departMs) return null; // procession hasn't started
+  var anchorCambio, anchorT;
+  if(liveGrupoData && typeof liveGrupoData.cambio==='number' && liveGrupoData.t){
+    anchorCambio=liveGrupoData.cambio;
+    anchorT=liveGrupoData.t;
+  } else {
+    anchorCambio=0;
+    anchorT=departMs;
+  }
+  // Never walk backward from an anchor that's still in the future relative
+  // to depart time (admin reset before the day started).
+  var fromT=Math.max(anchorT, departMs);
+  if(now<fromT) return anchorCambio;
+  var derived=anchorCambio+Math.floor((now-fromT)/mnMs);
+  if(derived<0) derived=0;
+  if(derived>total) derived=total;
+  return derived;
+}
+function _deriveLiveTick(){
+  try{
+    var derived=_deriveCambioFromAnchor();
+    if(derived===null) return;
+    // Don't fight the admin who is actively pushing (autoTimeStep writes
+    // every 3s); if the anchor was updated in the last 6 seconds it's fresher
+    // than anything we'd compute. Otherwise advance if we're ahead.
+    if(liveGrupoData && Date.now()-(liveGrupoData.t||0) < 6000) return;
+    var cur=liveGrupoData?liveGrupoData.cambio:-1;
+    if(derived<=cur) return;
+    var sacaH=daySaca[currentDay]||16;
+    var newGrp=((sacaH-1+derived-1)%getHomCount())+1;
+    var nombre=(derived<=changes.length && changes[derived-1]) ? (changes[derived-1].n||'') : '';
+    liveGrupoData={
+      cambio:derived, grp:newGrp, nombre:nombre,
+      tot:positions.length,
+      desfase:(liveGrupoData?liveGrupoData.desfase:virgenDesfase)||virgenDesfase||0,
+      movidos:(liveGrupoData?liveGrupoData.movidos:virgenMovidos)||virgenMovidos||0,
+      sacaMuj:(liveGrupoData?liveGrupoData.sacaMuj:daySacaMuj[currentDay])||daySacaMuj[currentDay]||6,
+      t:Date.now()
+    };
+    if(typeof updateBanners==='function') updateBanners();
+    if(typeof renderLive==='function') renderLive();
+  }catch(e){_logErr('deriveLiveTick',e);}
+}
+// Run every 10s on every client — light, battery-friendly.
+setInterval(_deriveLiveTick, 10000);
+
 function startAutoIfNeeded(){
   if(isShared) return;
   if(window._autoTimeRunning) return;
