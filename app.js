@@ -1171,6 +1171,9 @@ function getLastGroup(day){
 }
 
 function switchDay(d) {
+  // The Auto offset is anchored to the previous day's start time; clear it so
+  // it doesn't carry over and desynchronize the new day's clock.
+  window._autoTimeOffset=0;
   // Save current day's state
   if(+$('cType').value===27){
     daySacaMuj[currentDay]=+$('cS').value||13;
@@ -5018,11 +5021,22 @@ function toggleAutoTime(){
   window._autoTimeRunning=!window._autoTimeRunning;
   window._autoRemote=false;
   if(window._autoTimeRunning){
-    if(currentGrupoActual>0){
-      var _stI=getStartTime();
-      var mnI=+$('cMn').value||6;
-      var dateStrI=dayDates[currentDay]||localDateStr(new Date());
-      var startTimeI=new Date(dateStrI+'T'+String(_stI.h).padStart(2,'0')+':'+String(_stI.m).padStart(2,'0')+':00').getTime();
+    var _stI=getStartTime();
+    var mnI=+$('cMn').value||6;
+    var dateStrI=dayDates[currentDay]||localDateStr(new Date());
+    var startTimeI=new Date(dateStrI+'T'+String(_stI.h).padStart(2,'0')+':'+String(_stI.m).padStart(2,'0')+':00').getTime();
+    if(Date.now()<startTimeI){
+      // Before today's scheduled departure: always start clean. Don't carry
+      // over a leftover cambio or offset that would make the procession look
+      // like it's already in progress — wait for the real start time.
+      window._autoTimeOffset=0;
+      if(currentGrupoActual!==0){
+        currentGrupoActual=0;
+        liveGrupoData={cambio:0,grp:0,nombre:'',tot:positions.length||44,desfase:virgenDesfase,movidos:virgenMovidos,sacaMuj:daySacaMuj[currentDay]||6,t:Date.now()};
+        try{localStorage.setItem('grupoActual_day'+currentDay,JSON.stringify(liveGrupoData));}catch(e){_logErr('swallow',e);}
+        if(typeof db!=='undefined'&&db&&db.ref) db.ref('grupoActual/day'+currentDay).set(liveGrupoData);
+      }
+    } else if(currentGrupoActual>0){
       var shouldBeI=startTimeI+(currentGrupoActual-1)*mnI*60000;
       window._autoTimeOffset=Math.round((shouldBeI-Date.now())/60000);
     } else {
