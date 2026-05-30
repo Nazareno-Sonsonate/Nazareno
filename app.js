@@ -2650,8 +2650,13 @@ function renderLiveImpl(){
   const cargaInfo=isMuj?total+'×2':total;
   const cargaLabel=isMuj?'Cambios':'Cargadas';
 
-  // Procession complete only when ALL cambios are done or past day
-  var procComplete=(done>=total&&total>0)||isPastDay||(liveGrupoData&&liveGrupoData.cambio>=total&&total>0);
+  // Procession is over when YOUR carries are all done, the day is in the past,
+  // or the procession-wide cambio reached the total. Note: liveGrupoData.cambio
+  // is procession-scope (0..positions.length), not your own carry count, so it
+  // must be compared against the procession total, never against `total` (which
+  // here is myCarries.length).
+  var procTotal=(positions&&positions.length)||(changes&&changes.length)||0;
+  var procComplete=(done>=total&&total>0)||isPastDay||(liveGrupoData&&procTotal>0&&liveGrupoData.cambio>=procTotal);
 
   // Banners always updated (updateBanners handles isPastDay styling)
   updateBanners();
