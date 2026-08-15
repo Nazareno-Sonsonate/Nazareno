@@ -130,8 +130,8 @@ if(new URLSearchParams(window.location.search).has('se')){
 <div id="pushNotiBanner" style="display:none;position:fixed;top:56px;left:8px;right:8px;z-index:5001;padding:12px;background:rgba(124,58,237,.95);border-radius:10px;color:#fff;font-size:14px;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,.5)" onclick="this.style.display='none'"></div>
 
 <div class="vtabs">
-  <button class="vtab" onclick="showView(0)">🗺️ MAPA</button>
-  <button class="vtab a" onclick="showView(1)" style="font-weight:700">✝️ AVANCE</button>
+  <button class="vtab" onclick="showView(0)" aria-label="Mapa"><span class="vt-ic">🗺️</span><span class="vt-tx">Mapa</span></button>
+  <button class="vtab a" onclick="showView(1)" aria-label="En vivo"><span class="vt-ic">✝️</span><span class="vt-tx">En vivo</span></button>
 </div>
 
 <div class="pnl" id="v0">
@@ -169,6 +169,11 @@ if(new URLSearchParams(window.location.search).has('se')){
   <div style="position:sticky;top:52px;z-index:2000;background:#1a0a1f;padding:0 10px;border-bottom:1px solid rgba(255,255,255,.06)">
     <div id="bannersContainer"></div>
     <div id="stickyInfo"></div>
+  </div>
+  <div class="live-quick-actions">
+    <button type="button" class="lqa-btn" onclick="showView(0)"><span class="lqa-ic">📍</span><span class="lqa-tx">Ver mapa</span></button>
+    <button type="button" class="lqa-btn" onclick="openAlerts()"><span class="lqa-ic">🔔</span><span class="lqa-tx">Alertas</span></button>
+    <button type="button" class="lqa-btn" onclick="shareWhatsApp()"><span class="lqa-ic">↗️</span><span class="lqa-tx">Compartir</span></button>
   </div>
   <div id="livePanel" style="padding:10px"></div>
 </div>
@@ -234,6 +239,6 @@ if(new URLSearchParams(window.location.search).has('se')){
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxQxXH4qihmmjiGTVdWC7QnBfdbklfcU8&libraries=geometry&callback=initMap" async defer></script>
 
 
-<div id="editorStatus" class="adminOnly" style="position:fixed;bottom:50px;left:0;right:0;background:rgba(0,0,0,.85);color:#0f0;font-size:10px;padding:3px 8px;z-index:9999;font-family:monospace;display:none"></div>
+<div id="editorStatus" class="adminOnly" style="position:fixed;bottom:76px;left:0;right:0;background:rgba(0,0,0,.85);color:#0f0;font-size:10px;padding:3px 8px;z-index:9999;font-family:monospace;display:none"></div>
 </body>
 </html>

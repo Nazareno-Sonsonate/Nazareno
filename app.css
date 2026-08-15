@@ -233,3 +233,59 @@ body.se-mode .gb-maphint{color:#d8d2c0}
 /* AHSEC official-GPS status (editor only) */
 #ahsecStatus{font-size:10px;font-weight:700;margin-top:3px;padding:3px 8px;border-radius:8px;background:rgba(255,152,0,.14);color:#ffb74d;border:1px solid rgba(255,152,0,.3)}
 #ahsecStatus.ahsec-live{background:rgba(76,175,80,.16);color:#7bdc82;border-color:rgba(76,175,80,.4)}
+
+/* ==========================================================================
+   UX fase 1 — vista pública en celular: prioridad a "En vivo" y al mapa.
+   Todo lo de abajo es solo presentación: no cambia marcado generado por
+   app.js ni el orden de .vtab / .pnl que usa showView(n).
+   ========================================================================== */
+
+/* --- Barra superior: semitransparente con blur --- */
+.hdr{background:rgba(17,17,17,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom-color:rgba(178,102,255,.22)}
+body.se-mode .hdr{background:rgba(0,0,0,.86)!important;border-bottom-color:rgba(255,255,255,.14)!important}
+
+/* --- Barra inferior: 68px, icono arriba y texto abajo, activo tipo tarjeta --- */
+.vtabs{min-height:68px;align-items:stretch;gap:8px;padding:6px 8px;padding-bottom:calc(6px + env(safe-area-inset-bottom));border-top:1px solid rgba(178,102,255,.22);background:rgba(17,17,17,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 -3px 14px rgba(0,0,0,.45)}
+.vtab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 4px;border-radius:14px;font-size:12px;font-weight:700;letter-spacing:.2px;color:#9a93a6;transition:background .18s ease,color .18s ease,transform .12s ease;-webkit-tap-highlight-color:transparent}
+.vtab .vt-ic{font-size:21px;line-height:1}
+.vtab .vt-tx{font-size:12px;line-height:1.15;white-space:nowrap}
+.vtab:active{transform:scale(.97)}
+.vtab.a{margin-top:0;border-top:none;color:#e9d5ff;background:rgba(178,102,255,.16);box-shadow:inset 0 0 0 1px rgba(192,132,252,.45)}
+body.se-mode .vtabs{background:rgba(0,0,0,.96)!important;border-top-color:rgba(255,255,255,.14)!important}
+body.se-mode .vtab.a{color:#f2ede0!important;background:rgba(180,153,99,.14)!important;box-shadow:inset 0 0 0 1px rgba(180,153,99,.45)!important}
+body.big-text .vtab .vt-tx{font-size:14px}
+
+/* Espacio para la nueva barra + mapa un poco más alto */
+.pnl{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+#map{height:calc(100vh - 128px)}
+.rfloat{bottom:calc(80px + env(safe-area-inset-bottom))}
+
+/* --- Accesos rápidos de la vista "En vivo" --- */
+.live-quick-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 10px 0}
+.lqa-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:64px;padding:10px 6px;border:1px solid rgba(178,102,255,.28);border-radius:14px;background:rgba(178,102,255,.10);color:#e6dcf5;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .18s ease,transform .12s ease}
+.lqa-btn .lqa-ic{font-size:22px;line-height:1}
+.lqa-btn .lqa-tx{font-size:12px;line-height:1.15;white-space:nowrap}
+.lqa-btn:active{transform:scale(.97);background:rgba(178,102,255,.18)}
+body.se-mode .lqa-btn{border-color:rgba(255,255,255,.16)!important;background:rgba(255,255,255,.06)!important;color:#e8e8e8!important}
+body.se-mode .lqa-btn:active{background:rgba(180,153,99,.14)!important}
+body.big-text .lqa-btn .lqa-tx{font-size:14px}
+
+/* --- Próxima cargada: sombra leve y número más grande --- */
+.live-next{border-radius:14px;padding:16px 14px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.live-next .ln-label{font-size:12px;letter-spacing:1.5px}
+.live-next .ln-num{font-size:54px;letter-spacing:-1px}
+body.big-text .live-next .ln-num{font-size:62px}
+body.se-mode .live-next{box-shadow:0 6px 18px rgba(0,0,0,.55)!important}
+
+/* --- Progreso: más delgado y sin texto adentro (el conteo ya va arriba) --- */
+.live-progress{height:8px;border-radius:6px;margin:10px 0 12px;background:rgba(255,255,255,.08)}
+.live-progress-bar{border-radius:6px;min-width:8px;font-size:0;color:transparent}
+
+/* --- Filas de cargadas: esquinas más suaves, actual resaltada con discreción --- */
+.live-carry{border-radius:12px}
+.live-carry.current{border-width:1px;background:rgba(178,102,255,.13);box-shadow:0 0 0 1px rgba(192,132,252,.28),0 4px 12px rgba(0,0,0,.3)}
+body.se-mode .live-carry.current{border-color:rgba(232,232,232,.45)!important;box-shadow:0 0 0 1px rgba(255,255,255,.14),0 4px 12px rgba(0,0,0,.5)!important}
+
+/* --- Botones sobre el mapa: más amplios y con mejor sombra --- */
+.mapbtn{padding:11px 14px;border-radius:12px;border-color:rgba(255,255,255,.18);background:rgba(0,0,0,.62);box-shadow:0 3px 10px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);-webkit-tap-highlight-color:transparent}
+.mapbtn:active{transform:scale(.97)}
