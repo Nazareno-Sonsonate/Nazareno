@@ -601,3 +601,12 @@ body,body.big-text{padding-top:0}
 .day-control{width:82px}
 #daySelector{padding-left:7px!important;padding-right:18px!important;font-size:10px!important}
 @media(max-width:350px){.day-control{width:76px}.hdr-actions{gap:4px}.hdr-layout{gap:6px}}
+/* La cabecera pinta tambien el area segura superior del telefono. */
+.hdr{padding-top:calc(10px + env(safe-area-inset-top));min-height:calc(82px + env(safe-area-inset-top))}
+.live-sticky{top:calc(82px + env(safe-area-inset-top))!important}
+#installBanner{top:calc(88px + env(safe-area-inset-top))}
+body.big-text .hdr{min-height:calc(88px + env(safe-area-inset-top))}
+body.big-text .live-sticky{top:calc(88px + env(safe-area-inset-top))!important}
+body.big-text #installBanner{top:calc(94px + env(safe-area-inset-top))}
+/* El resumen de grupo se desplaza; solo quedan fijas identidad y navegacion. */
+.live-sticky,body.big-text .live-sticky{position:relative!important;top:auto!important;z-index:2!important}

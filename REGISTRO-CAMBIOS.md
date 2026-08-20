@@ -9,7 +9,7 @@ arriba.** El formato y las reglas están en [`AGENTS.md`](AGENTS.md), sección 7
 
 **Agente:** Codex  **Commit:** `sin commit`  **Rama:** `main`
 
-**Qué cambió:** eliminé la compensación manual superior y convertí la cabecera en sticky para evitar huecos variables en teléfonos. El selector de días de Nazareno ahora tiene ancho suficiente y Santo Entierro oculta también su contenedor vacío. El aviso de instalación flota sin desplazar el contenido, el resumen de grupo y avance es más compacto, y ambas portadas usan una etiqueta de imagen real; esto garantiza que la foto de Jesús Nazareno no dependa solamente de un fondo CSS.
+**Qué cambió:** eliminé la compensación manual superior y convertí la cabecera en sticky para evitar huecos variables en teléfonos. Añadí `viewport-fit=cover` y soporte del área segura para que la barra llegue al borde superior. El resumen de grupo, cargada y avance vuelve a desplazarse con el contenido; solo quedan fijas la identidad superior y la navegación inferior. El selector de días de Nazareno ahora tiene ancho suficiente y Santo Entierro oculta también su contenedor vacío. El aviso de instalación flota sin desplazar el contenido, el resumen de grupo y avance es más compacto, y ambas portadas usan una etiqueta de imagen real; esto garantiza que la foto de Jesús Nazareno no dependa solamente de un fondo CSS.
 
 **Qué NO toqué:** Firebase, rutas, GPS, notificaciones, mapa, datos de cargadas ni administración.
 
