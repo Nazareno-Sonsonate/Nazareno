@@ -564,3 +564,40 @@ body.se-mode .day-control>span{color:#9e9279!important}
 body.se-mode #daySelector{color:#e6dcc3!important}
 body.big-text{padding-top:88px}body.big-text .hdr{min-height:88px}body.big-text .hdr h1{font-size:23px!important}body.big-text .live-sticky{top:88px!important}
 @media(max-width:350px){.hdr{padding-inline:9px}.hdr h1{font-size:18px!important}.hdr-copy::before{font-size:7px;letter-spacing:.85px}.day-control{width:56px}.day-control,#btnMenu{height:46px}#btnMenu{width:46px}}
+
+/* Resumen movil compacto: instalar flota sin desplazar el contenido. */
+#installBanner{position:fixed!important;z-index:3200;top:88px;left:10px;right:10px;width:auto;min-height:0!important;padding:9px 42px 9px 12px!important;border:1px solid rgba(192,132,252,.28)!important;border-radius:12px;box-shadow:0 10px 26px rgba(0,0,0,.48)}
+body.se-mode #installBanner{border-color:rgba(180,153,99,.28)!important}
+body.big-text #installBanner{top:94px}
+.live-sticky{padding:0 8px 3px!important;border-bottom:0!important;background:linear-gradient(180deg,rgba(26,10,31,.98),rgba(26,10,31,.9),transparent)!important}
+body.se-mode .live-sticky{background:linear-gradient(180deg,rgba(8,8,8,.99),rgba(8,8,8,.92),transparent)!important}
+#bannersContainer{padding-top:3px}
+#bannersContainer>div:first-child{min-height:50px;margin-bottom:4px!important;border-radius:12px!important;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+#bannersContainer>div:first-child::before{top:9px;bottom:9px;width:2px}
+#bannersContainer>div:first-child>div{padding:6px 10px 6px 12px!important}
+#bannersContainer>div:first-child [id$="Text"]{font-size:20px!important;line-height:1!important}
+#bannersContainer>div:first-child [id$="Progress"]{margin-top:3px!important;font-size:9px!important;line-height:1.15!important}
+#bannersContainer>div+div{min-height:32px;margin-bottom:4px;padding:5px 9px!important;border-radius:10px!important}
+#bannersContainer>div+div [id$="Text"]{font-size:13px!important;line-height:1.1!important}
+.gb-pill{padding:2px 6px;font-size:7px}.gb-maphint{padding:2px 7px;font-size:8px}
+#stickyInfo>div:first-child{min-height:45px;margin-bottom:4px!important;padding:5px 2px!important;border-radius:11px;box-shadow:none}
+#stickyInfo>div:first-child>div{padding:0 3px}
+#stickyInfo>div:first-child>div>div:first-child{font-size:14px!important;line-height:1.05!important}
+#stickyInfo>div:first-child>div>div:last-child{margin-top:1px;font-size:8px!important}
+#stickyInfo>div:last-child:not(:first-child){margin-bottom:4px!important}
+/* Foto real: evita que algunos telefonos omitan la imagen de portada. */
+.procession-hero{min-height:288px;margin-top:7px;padding-top:74px;background-image:none;isolation:isolate}
+.ph-photo{position:absolute;z-index:0;inset:0;width:100%;height:100%;object-fit:contain;object-position:center top;background:#16091b}
+.procession-hero::before{z-index:1;background:linear-gradient(180deg,rgba(16,5,20,.02) 0%,rgba(22,8,28,.52) 48%,rgba(18,7,23,.99) 80%)}
+.procession-hero>*:not(.ph-photo){position:relative;z-index:2}
+.procession-hero>.ph-crest,.procession-hero>.ph-halo{position:absolute}
+body.se-mode .ph-photo{background:#050505!important}
+body.se-mode .procession-hero::before{z-index:1!important;background:linear-gradient(180deg,rgba(0,0,0,.02) 0%,rgba(0,0,0,.55) 48%,rgba(5,5,5,.99) 80%)!important}
+body.big-text #bannersContainer>div:first-child [id$="Text"]{font-size:23px!important}
+body.big-text #stickyInfo>div:first-child>div>div:first-child{font-size:16px!important}
+/* La cabecera participa en el flujo: sin compensaciones que dejan huecos. */
+body,body.big-text{padding-top:0}
+.hdr{position:sticky;top:0}
+.day-control{width:82px}
+#daySelector{padding-left:7px!important;padding-right:18px!important;font-size:10px!important}
+@media(max-width:350px){.day-control{width:76px}.hdr-actions{gap:4px}.hdr-layout{gap:6px}}

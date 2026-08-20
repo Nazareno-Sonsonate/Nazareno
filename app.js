@@ -432,11 +432,15 @@ function applyDayFilter(){
       procOpts.forEach(function(o){ o.hidden = true; });
       if(seOpt) seOpt.hidden = false;
       sel.style.display = 'none';
+    var dayControl=sel.closest('.day-control');
+    if(dayControl) dayControl.style.display='none';
       return;
     }
     if(seOpt) seOpt.hidden = false;
     procOpts.forEach(function(o){ o.hidden = false; });
     sel.style.display = '';
+    var dayControl=sel.closest('.day-control');
+    if(dayControl) dayControl.style.display='block';
     return;
   }
   if(isSEMode){
@@ -445,11 +449,15 @@ function applyDayFilter(){
     if(seOpt) seOpt.hidden = false;
     // Only one option left — hide the dropdown entirely to reduce clutter
     sel.style.display = 'none';
+    var dayControl=sel.closest('.day-control');
+    if(dayControl) dayControl.style.display='none';
   } else {
     // Public viewer locked to the regular procession days
     if(seOpt) seOpt.hidden = true;
     procOpts.forEach(function(o){ o.hidden = false; });
     sel.style.display = '';
+    var dayControl=sel.closest('.day-control');
+    if(dayControl) dayControl.style.display='block';
   }
 }
 

@@ -5,6 +5,17 @@ arriba.** El formato y las reglas están en [`AGENTS.md`](AGENTS.md), sección 7
 
 ---
 
+## 2026-08-20 — Compactación móvil y portada confiable
+
+**Agente:** Codex  **Commit:** `sin commit`  **Rama:** `main`
+
+**Qué cambió:** eliminé la compensación manual superior y convertí la cabecera en sticky para evitar huecos variables en teléfonos. El selector de días de Nazareno ahora tiene ancho suficiente y Santo Entierro oculta también su contenedor vacío. El aviso de instalación flota sin desplazar el contenido, el resumen de grupo y avance es más compacto, y ambas portadas usan una etiqueta de imagen real; esto garantiza que la foto de Jesús Nazareno no dependa solamente de un fondo CSS.
+
+**Qué NO toqué:** Firebase, rutas, GPS, notificaciones, mapa, datos de cargadas ni administración.
+
+**Cómo lo verifiqué:** `node --check app.js`, `git diff --check`, CSS con 582 llaves de apertura y cierre, y revisión de que ambas portadas conservan sus imágenes y las dos apps mantienen el mismo marcado funcional.
+
+**Pendiente / riesgos:** confirmar visualmente en el teléfono físico después de que GitHub Pages y el service worker entreguen la versión nueva.
 ## 2026-08-19 — Selector inicial adaptable y accesibilidad táctil
 
 **Agente:** Codex  **Commit:** `sin commit`  **Rama:** `codex/mejoras-ux-movil`
