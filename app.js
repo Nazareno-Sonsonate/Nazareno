@@ -3639,13 +3639,12 @@ function applyAuthMode(){
   syncHeaderPad();
 }
 
-// The header is position:fixed and the body offsets content with a fixed
-// padding-top. Editor-only rows (like the AHSEC GPS status) make the header
-// taller, so the first banner would slide underneath. Keep the body padding in
-// sync with the header's real height instead of a hard-coded value.
+// A fixed header needs a body offset; a sticky header already occupies space.
+// Keep this conditional so editor-only rows cannot create a duplicate gap.
 function syncHeaderPad(){
   var hdr=document.querySelector('.hdr');
-  if(hdr) document.body.style.paddingTop=hdr.offsetHeight+'px';
+  if(!hdr) return;
+  document.body.style.paddingTop=getComputedStyle(hdr).position==='fixed'?hdr.offsetHeight+'px':'0px';
 }
 window.addEventListener('resize', syncHeaderPad);
 window.addEventListener('load', syncHeaderPad);
