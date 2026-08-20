@@ -5,6 +5,17 @@ arriba.** El formato y las reglas están en [`AGENTS.md`](AGENTS.md), sección 7
 
 ---
 
+## 2026-08-20 — Consolidación CSS y jerarquía fuera de temporada
+
+**Agente:** Codex  **Commit:** `sin commit`  **Rama:** `codex/consolidacion-css-movil`
+
+**Qué cambió:** consolidé en una sola sección las capas acumuladas de cabecera, selector de día, aviso de instalación, resumen de grupos y portada. `app.css` bajó de 612 a 560 líneas. Fuera de temporada se muestra únicamente el resultado principal antes de la portada; la fila secundaria y las estadísticas redundantes quedan ocultas. En vivo se conserva el detalle completo.
+
+**Qué NO toqué:** Firebase, rutas, GPS, mapa, notificaciones, cálculos de cargadas, administración, HTML ni JavaScript.
+
+**Cómo lo verifiqué:** `node --check` para ambos JavaScript, `git diff --check`, 524 llaves CSS balanceadas, exactamente 2 pestañas y 2 paneles por app, presencia de reglas de texto grande y 138 variantes de Santo Entierro. Vista previa local a 420×860 y 350×780.
+
+**Pendiente / riesgos:** falta confirmación visual final del usuario antes de integrar y publicar en `main`.
 ## 2026-08-20 — Compactación móvil y portada confiable
 
 **Agente:** Codex  **Commit:** `sin commit`  **Rama:** `main`
