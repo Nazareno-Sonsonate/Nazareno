@@ -5,6 +5,94 @@ arriba.** El formato y las reglas están en [`AGENTS.md`](AGENTS.md), sección 7
 
 ---
 
+## 2026-08-19 — Selector inicial adaptable y accesibilidad táctil
+
+**Agente:** Codex  **Commit:** `sin commit`  **Rama:** `codex/mejoras-ux-movil`
+
+**Qué cambié:** `app.css`, `jesus-nazareno/index.html` y
+`santo-entierro/index.html`. Convertí las tarjetas para elegir cargador o
+cargadora en botones semánticos, contuve sus imágenes para evitar desbordes y
+agregué texto alternativo. Incorporé objetivos táctiles mínimos, foco visible,
+ajustes para pantallas angostas y soporte para la preferencia de movimiento
+reducido. También diseñé una familia propia de nueve iconos SVG (mapa,
+procesión, ubicación, alertas, compartir, seguimiento, menú, instalación y
+configuración) y reemplacé los
+emojis de la navegación y los accesos públicos principales en ambas apps. Los
+iconos van integrados en cada HTML, no dependen de red y heredan el color del
+tema. Rediseñé además la tarjeta generada de próxima cargada como una
+credencial de turno: estado según cercanía, cambios faltantes, referencia,
+hora estimada, ritmo, acceso al mapa y botones con jerarquía clara. El progreso
+ahora expone cantidad y porcentaje fuera de la barra. Incorporé una portada
+gráfica permanente en “En vivo”, con emblema procesional, ornamento de ruta,
+mensaje público y acceso al mapa: morado ceremonial para Jesús Nazareno y una
+versión independiente en negro y dorado para Santo Entierro. El estado previo
+quedó preservado en
+`respaldo/ux-antes-2026-08-19` (commit `09ed89b`).
+
+En una segunda pasada convertí esa portada en una composición fotográfica,
+transformé el selector inicial en galería de imágenes, conecté un indicador
+“Próxima salida / Procesión en vivo / Temporada finalizada”, añadí una ruta
+visual con punto de avance y simplifiqué el mapa: “Mi ubicación” queda visible
+y los controles secundarios viven en “Opciones del mapa”. Todos conservan sus
+IDs y llamadas existentes. Ajusté finalmente la portada para mostrar la foto
+completa centrada, con una segunda capa desenfocada que llena los laterales sin
+recortar la imagen principal. La foto y el título cambian según el tipo elegido:
+cargador ve Jesús Nazareno o la urna del Santo Entierro; cargadora ve María
+Santísima o la Virgen Dolorosa.
+
+Tras revisar una captura real, eliminé la segunda copia desenfocada de la foto
+porque producía dos recortes discordantes. La portada usa ahora una única imagen
+completa con laterales gráficos. Para evitar repetir a Jesús o la urna entre el
+resumen superior y la portada, oculté solamente la miniatura del resumen
+principal; conservé la tarjeta secundaria de la Virgen y las estadísticas. El
+aviso de temporada queda concentrado en la portada, el aviso de instalación
+pasó a una sola línea y el encabezado recibió controles más sobrios.
+
+Rediseñé después toda la franja superior como encabezado editorial: tipografía
+sans-serif más limpia, selectores compactos, tarjeta principal con acento
+lateral, tarjeta secundaria discreta y estadísticas agrupadas en una sola
+superficie con separadores. Añadí variantes específicas de Santo Entierro y
+modo de texto grande.
+
+Convertí finalmente la barra fija del día en una cabecera de identidad: emblema
+SVG, título claro, subtítulo alineado, días escritos completos y controles
+compactos. Ajusté el desplazamiento del contenido, la posición del bloque
+pegajoso y la altura del mapa para la nueva barra de 62 px.
+
+Generé además `se-virgen-v2.webp` como variante aprobada para móvil: fondo rojo
+extendido, sin franjas blancas, mayor definición y encuadre 720×900. Santo
+Entierro ahora la usa en el selector inicial; el original `se-virgen.jpg`
+permanece intacto. Generé `se-entierro-v2.webp` a 720×900 como variante vertical
+de la urna y el cortejo; se usa para cargadores en portada, selector y banner,
+con `se-entierro.jpg` preservado. Subí el caché offline de `v116` a `v118` para
+distribuir ambas imágenes.
+
+**Qué NO toqué:** cálculos existentes de cargadas, `routes-data.js`, Firebase,
+rutas, GPS, notificaciones push ni lógica de administración. Del service worker
+solo cambié `CACHE_NAME` y la imagen precargada para distribuir el nuevo WebP.
+En `app.js` solo modifiqué el HTML que compone `renderLiveImpl()` y añadí un
+cálculo derivado de presentación; no modifiqué funciones ni datos. Tampoco
+cambié el orden o la cantidad de `.vtab` y `.pnl`.
+
+**Cómo lo verifiqué:** servidor local y capturas de ambas apps con Chromium en
+ventana de 390×844; revisión visual de los dos temas, `git diff --check`, nueve
+símbolos SVG disponibles por app, y conteo de exactamente 2 pestañas y 2 paneles
+en cada HTML. `node --check app.js` confirmó sintaxis válida; cada app conserva
+una portada, un estado, una bandeja de mapa, 2 pestañas y 2 paneles, y el CSS
+terminó con 545 llaves de apertura y cierre. También validé
+`firebase-messaging-sw.js` con `node --check`. Firebase y Google Maps no
+estuvieron disponibles en el entorno.
+
+**Pendiente / riesgos:** no se probó en un teléfono físico ni con datos en vivo.
+Chromium headless aplica un ancho interno mínimo distinto al de la captura, por
+lo que la comprobación exacta a 390 px debe repetirse con emulación móvil o en
+un dispositivo antes de publicar. La variante `se-virgen-v2.webp` es
+generativa y fue aprobada visualmente; pesa unos 174 KB. Conviene vigilar la
+fidelidad de sus detalles devocionales en futuras ediciones. La variante
+`se-entierro-v2.webp` también es generativa (unos 144 KB) y reconstruye detalles
+finos del anda y personas del cortejo; debe revisarse visualmente antes de
+publicar.
+
 ## 2026-08-15 — Fase 1 UX: vista en vivo y navegación pública
 
 **Agente:** Claude (Claude Code, terminal) · **Commit:** `feaa8d2` · **Rama:** `claude/nazareno-live-view-ux-xz6s8b` → `main`

@@ -30,18 +30,28 @@ if(new URLSearchParams(window.location.search).has('se')){
 </head>
 <body>
 
+<svg class="ui-symbols" aria-hidden="true">
+  <symbol id="ui-map" viewBox="0 0 24 24"><path d="m3.5 5.5 5-2 7 2.5 5-2v14.5l-5 2-7-2.5-5 2zM8.5 3.5V18m7-12v14.5"/><path d="M11 10c1.8-2 4.2-2 6-1"/><circle cx="11" cy="10" r="1"/><circle cx="17" cy="9" r="1"/></symbol>
+  <symbol id="ui-procession" viewBox="0 0 24 24"><path d="M5 18h14M7 18v2h10v-2M8 16V9h8v7M6.5 9h11L16 6H8zM12 6V2m-2 2h4"/><path d="M9.5 16v-3a2.5 2.5 0 0 1 5 0v3"/></symbol>
+  <symbol id="ui-location" viewBox="0 0 24 24"><path d="M12 21s6-5.7 6-12a6 6 0 1 0-12 0c0 6.3 6 12 6 12z"/><path d="M12 6v6m-2-4h4"/></symbol>
+  <symbol id="ui-bell" viewBox="0 0 24 24"><path d="M6 17h12l-1.5-2.5V10a4.5 4.5 0 0 0-9 0v4.5zM10 20h4"/><path d="M4.5 7.5A8 8 0 0 1 6 4.5m13.5 3A8 8 0 0 0 18 4.5"/></symbol>
+  <symbol id="ui-share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.2"/><circle cx="17.5" cy="6" r="2.2"/><circle cx="17.5" cy="18" r="2.2"/><path d="m8 11 7.5-4m-7.5 6 7.5 4"/></symbol>
+  <symbol id="ui-watch" viewBox="0 0 24 24"><path d="M2.5 12s3.5-5 9.5-5 9.5 5 9.5 5-3.5 5-9.5 5-9.5-5-9.5-5z"/><path d="M12 9.5v5m-2.5-2.5h5"/></symbol>
+  <symbol id="ui-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h6m4 0h6M4 18h16"/><path d="m12 10 2 2-2 2-2-2z"/></symbol>
+  <symbol id="ui-install" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2"/><path d="M12 6v8m-3-3 3 3 3-3m-5 7h4"/></symbol>
+  <symbol id="ui-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.4-6.4L17 7m-10 10-1.4 1.4m12.8 0L17 17M7 7 5.6 5.6"/></symbol>
+</svg>
+
 <div class="hdr">
-  <div style="display:flex;align-items:center;justify-content:space-between">
-    <h1 id="hTitle" style="font-size:15px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">✝️ Lunes Santo</h1>
-    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-      <select id="daySelector" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:4px 6px;border-radius:5px;font-size:11px;font-weight:700;font-family:inherit">
-        <option value="0">Lun</option><option value="1">Mar</option><option value="2">Mié</option><option value="3">Vie</option><option value="4" id="seOpt">SE</option>
-      </select>
-      <button class="btn" onclick="openMainMenu()" style="padding:5px 10px;font-size:17px;line-height:1" id="btnMenu" title="Menú" aria-label="Menú">☰</button>
+  <div class="hdr-layout">
+    <div class="hdr-copy"><h1 id="hTitle">Lunes Santo</h1><div id="hSub"></div><div id="onlineCounter" style="display:none"></div></div>
+    <div class="hdr-actions">
+      <label class="day-control"><span>Día</span><select id="daySelector" aria-label="Cambiar día" onchange="switchDay(+this.value)" style="background:rgba(0,0,0,.6);border:1px solid #7c3aed;color:#c084fc;padding:4px 6px;border-radius:5px;font-size:11px;font-weight:700;font-family:inherit">
+        <option value="0">Lunes</option><option value="1">Martes</option><option value="2">Miércoles</option><option value="3">Viernes</option><option value="4" id="seOpt">Santo Entierro</option>
+      </select></label>
+      <button class="btn icon-button" onclick="openMainMenu()" style="padding:5px 10px;font-size:17px;line-height:1" id="btnMenu" title="Menú" aria-label="Menú"><svg class="ui-icon"><use href="#ui-menu"/></svg></button>
     </div>
   </div>
-  <div id="hSub" style="font-size:11px;color:#aaa;overflow-x:auto;white-space:nowrap;padding:1px 0"></div>
-  <div id="onlineCounter" style="display:none;font-size:10px;color:#4CAF50;margin-top:1px"></div>
 </div>
 
 <!-- Live broadcast banner (everyone sees) -->
@@ -62,7 +72,7 @@ if(new URLSearchParams(window.location.search).has('se')){
 <!-- Carry alert banner -->
 
 <div id="installBanner" style="display:none;padding:10px;background:rgba(124,58,237,.15);border-bottom:1px solid rgba(124,58,237,.3);text-align:center;cursor:pointer;position:relative" onclick="installApp()">
-  <span style="font-size:13px;color:#c084fc">📱 <b>Tocá aquí para instalar la app</b></span>
+  <span style="font-size:13px;color:#c084fc"><svg class="ui-icon ui-icon-inline"><use href="#ui-install"/></svg><b>Tocá aquí para instalar la app</b></span>
   <br><span style="font-size:11px;color:#aaa">Se agrega a tu pantalla de inicio · Funciona sin internet</span>
   <span onclick="event.stopPropagation();dismissInstall()" style="position:absolute;right:10px;top:8px;color:#666;font-size:16px;cursor:pointer">✕</span>
 </div>
@@ -70,7 +80,7 @@ if(new URLSearchParams(window.location.search).has('se')){
 
 <div id="cfgP" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5000;width:90%;max-width:340px;background:#1a1a2e;border:2px solid #7c3aed;border-radius:14px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.8);max-height:80vh;overflow-y:auto">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <span style="font-size:16px;font-weight:700;color:#c084fc">⚙️ Configuración</span>
+    <span style="font-size:16px;font-weight:700;color:#c084fc"><svg class="ui-icon ui-icon-inline"><use href="#ui-settings"/></svg>Configuración</span>
     <button onclick="closeCfg()" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer">✕</button>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
@@ -111,15 +121,15 @@ if(new URLSearchParams(window.location.search).has('se')){
 <div id="cfgOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:4999" onclick="closeCfg()"></div>
 <div id="alertPanel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5000;width:85%;max-width:320px;background:#1a1a2e;border:2px solid #ff9800;border-radius:14px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.8);max-height:80vh;overflow-y:auto">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <span style="font-size:16px;font-weight:700;color:#ff9800">🔔 Alertas y Push</span>
+    <span style="font-size:16px;font-weight:700;color:#ffb454"><svg class="ui-icon ui-icon-inline"><use href="#ui-bell"/></svg>Alertas y notificaciones</span>
     <button onclick="document.getElementById('alertPanel').style.display='none';document.getElementById('alertOverlay').style.display='none'" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer">✕</button>
   </div>
-  <div style="margin-bottom:10px"><label style="font-size:14px;color:#eee;display:block;margin-bottom:4px">🔔 Alerta mi cargada (app abierta)</label><select id="vibrateCfg" onchange="setVibrateN(+this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="0">Off</option></select></div>
+  <div style="margin-bottom:10px"><label style="font-size:14px;color:#eee;display:block;margin-bottom:4px">Alerta para mi cargada (app abierta)</label><select id="vibrateCfg" onchange="setVibrateN(+this.value)" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="0">Desactivada</option></select></div>
   <div style="margin-bottom:12px;border-top:1px solid rgba(124,58,237,.2);padding-top:10px">
     <div style="font-size:14px;font-weight:700;color:#c084fc;margin-bottom:8px">📲 Push (app cerrada)</div>
-    <button id="pushSubBtn" onclick="subscribePush()" style="width:100%;padding:12px;border:2px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.15);color:#c084fc;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px">🔔 Activar notificaciones push</button>
+    <button id="pushSubBtn" onclick="subscribePush()" style="width:100%;padding:12px;border:2px solid #7c3aed;border-radius:8px;background:rgba(124,58,237,.15);color:#c084fc;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px"><svg class="ui-icon ui-icon-inline"><use href="#ui-bell"/></svg>Activar notificaciones</button>
     <div id="pushSettings" style="display:none">
-      <div style="margin-bottom:8px"><label style="font-size:13px;color:#eee;display:block;margin-bottom:4px">👁️ Vigilar grupo</label><select id="pushWatchGrp" onchange="updatePushToken()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="0">Mi grupo</option></select></div>
+      <div style="margin-bottom:8px"><label style="font-size:13px;color:#eee;display:block;margin-bottom:4px">Vigilar grupo</label><select id="pushWatchGrp" onchange="updatePushToken()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="0">Mi grupo</option></select></div>
       <div style="margin-bottom:8px"><label style="font-size:13px;color:#eee;display:block;margin-bottom:4px">⏰ Avisar con anticipación</label><select id="pushAlertBefore" onchange="updatePushToken()" style="background:rgba(0,0,0,.4);border:1px solid #666;color:#fff;padding:10px;border-radius:6px;width:100%;font-size:16px"><option value="1">1 cambio antes</option><option value="2">2 cambios antes</option><option value="3" selected>3 cambios antes</option><option value="5">5 cambios antes</option></select></div>
       <div style="padding:6px;background:rgba(76,175,80,.08);border-radius:6px;font-size:12px;color:#4CAF50">✅ Push activo · Recibirás alerta cuando tu grupo se acerque</div>
     </div>
@@ -130,8 +140,8 @@ if(new URLSearchParams(window.location.search).has('se')){
 <div id="pushNotiBanner" style="display:none;position:fixed;top:56px;left:8px;right:8px;z-index:5001;padding:12px;background:rgba(124,58,237,.95);border-radius:10px;color:#fff;font-size:14px;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,.5)" onclick="this.style.display='none'"></div>
 
 <div class="vtabs">
-  <button class="vtab" onclick="showView(0)" aria-label="Mapa"><span class="vt-ic">🗺️</span><span class="vt-tx">Mapa</span></button>
-  <button class="vtab a" onclick="showView(1)" aria-label="En vivo"><span class="vt-ic">✝️</span><span class="vt-tx">En vivo</span></button>
+  <button class="vtab" onclick="showView(0)" aria-label="Mapa"><span class="vt-ic"><svg class="ui-icon"><use href="#ui-map"/></svg></span><span class="vt-tx">Mapa</span></button>
+  <button class="vtab a" onclick="showView(1)" aria-label="En vivo"><span class="vt-ic"><svg class="ui-icon"><use href="#ui-procession"/></svg></span><span class="vt-tx">En vivo</span></button>
 </div>
 
 <div class="pnl" id="v0">
@@ -156,24 +166,41 @@ if(new URLSearchParams(window.location.search).has('se')){
       <button id="bRouteW" onclick="toggleEditWomen()" class="mapbtn" style="font-size:10px">🔵 Ruta mujeres</button>
     </div>
     <!-- Left side: view controls -->
-    <div style="position:absolute;top:8px;left:8px;z-index:1000;display:flex;flex-direction:column;gap:5px">
-      <button id="bGps" onclick="toggleGps()" class="mapbtn">📍 Mi Ubicación</button>
-      <button id="bAll" onclick="toggleAll()" class="mapbtn">👥 Ver otros grupos</button>
-      <button onclick="openStreetView(gmap.getCenter().lat(),gmap.getCenter().lng())" class="mapbtn" style="background:rgba(26,115,232,.8);border-color:#1a73e8">🛣️ Street View</button>
-      <button id="bUrna" onclick="toggleUrna('jesus')" class="mapbtn" style="display:none;background:rgba(220,38,38,.8);border-color:#dc2626">✝️ Anda Jesús</button>
-      <button id="bUrnaV" onclick="toggleUrna('virgen')" class="mapbtn" style="display:none;background:rgba(59,130,246,.8);border-color:#3b82f6">👑 Anda Virgen</button>
+    <div class="map-public-tools">
+      <button id="bGps" onclick="toggleGps()" class="mapbtn map-primary"><svg class="ui-icon"><use href="#ui-location"/></svg><span>Mi ubicación</span></button>
+      <details class="map-options">
+        <summary class="mapbtn"><svg class="ui-icon"><use href="#ui-menu"/></svg><span>Opciones del mapa</span></summary>
+        <div class="map-options-sheet">
+          <button id="bAll" onclick="toggleAll()" class="mapbtn">Ver otros grupos</button>
+          <button onclick="openStreetView(gmap.getCenter().lat(),gmap.getCenter().lng())" class="mapbtn">Street View</button>
+          <button id="bUrna" onclick="toggleUrna('jesus')" class="mapbtn" style="display:none">Anda Jesús</button>
+          <button id="bUrnaV" onclick="toggleUrna('virgen')" class="mapbtn" style="display:none">Anda Virgen</button>
+        </div>
+      </details>
     </div>
   </div>
 </div>
 <div class="pnl a" id="v1">
-  <div style="position:sticky;top:52px;z-index:2000;background:#1a0a1f;padding:0 10px;border-bottom:1px solid rgba(255,255,255,.06)">
+  <div class="live-sticky" style="position:sticky;top:52px;z-index:2000;background:#1a0a1f;padding:0 10px;border-bottom:1px solid rgba(255,255,255,.06)">
     <div id="bannersContainer"></div>
     <div id="stickyInfo"></div>
   </div>
+  <section class="procession-hero" style="--hero-image:url('../jesus.jpg')" aria-labelledby="processionHeroTitle">
+    <div class="ph-halo" aria-hidden="true"></div>
+    <div class="ph-crest" aria-hidden="true"><svg class="ui-icon"><use href="#ui-procession"/></svg></div>
+    <div id="processionHeroStatus" class="ph-status" aria-live="polite">Consultando estado</div>
+    <div class="ph-copy">
+      <span class="ph-kicker">Tradición de Sonsonate</span>
+      <h2 id="processionHeroTitle">Jesús Nazareno</h2>
+      <p>Tu guía para caminar, esperar y encontrarte con la procesión.</p>
+    </div>
+    <div class="ph-route" aria-hidden="true"><span></span><i></i><i></i><i></i><span></span></div>
+    <button type="button" class="ph-map" onclick="showView(0)"><svg class="ui-icon"><use href="#ui-map"/></svg><span><b>Explorar el recorrido</b><small>Mapa y ubicación en vivo</small></span><strong>→</strong></button>
+  </section>
   <div class="live-quick-actions">
-    <button type="button" class="lqa-btn" onclick="showView(0)"><span class="lqa-ic">📍</span><span class="lqa-tx">Ver mapa</span></button>
-    <button type="button" class="lqa-btn" onclick="openAlerts()"><span class="lqa-ic">🔔</span><span class="lqa-tx">Alertas</span></button>
-    <button type="button" class="lqa-btn" onclick="shareWhatsApp()"><span class="lqa-ic">↗️</span><span class="lqa-tx">Compartir</span></button>
+    <button type="button" class="lqa-btn" onclick="showView(0)"><span class="lqa-ic"><svg class="ui-icon"><use href="#ui-location"/></svg></span><span class="lqa-tx">Ver mapa</span></button>
+    <button type="button" class="lqa-btn" onclick="openAlerts()"><span class="lqa-ic"><svg class="ui-icon"><use href="#ui-bell"/></svg></span><span class="lqa-tx">Alertas</span></button>
+    <button type="button" class="lqa-btn" onclick="shareWhatsApp()"><span class="lqa-ic"><svg class="ui-icon"><use href="#ui-share"/></svg></span><span class="lqa-tx">Compartir</span></button>
   </div>
   <div id="livePanel" style="padding:10px"></div>
 </div>
@@ -184,23 +211,23 @@ if(new URLSearchParams(window.location.search).has('se')){
   <div style="max-width:340px;width:100%;margin:auto">
     <!-- Step 1: Choose type -->
     <div id="step1" style="text-align:center">
-      <div style="font-size:16px;color:#c084fc;font-weight:700;margin-bottom:4px">✝️ JESÚS NAZARENO</div>
+      <div style="font-size:16px;color:#c084fc;font-weight:700;margin-bottom:4px">JESÚS NAZARENO</div>
       <div style="font-size:12px;color:#ccc;margin-bottom:16px" id="sharedDayLabel"></div>
       <div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div>
-      <div style="display:flex;gap:12px;justify-content:center">
-        <div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#1a0a1f;border:2px solid #7c3aed;border-radius:14px;padding:12px;text-align:center">
-          <img src="../jesus.jpg" style="width:100%;border-radius:10px;margin-bottom:8px">
+      <div class="shared-type-grid">
+        <button type="button" class="shared-type-card" onclick="pickType(21)" style="background:#1a0a1f;border-color:#7c3aed">
+          <img src="../jesus.jpg" alt="Jesús Nazareno">
           <div style="font-size:14px;color:#c084fc;font-weight:700">CARGADOR</div>
           <div style="font-size:11px;color:#aaa">21 grupos</div>
-        </div>
-        <div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#1a0a1f;border:2px solid #7c3aed;border-radius:14px;padding:12px;text-align:center">
-          <img src="../maria.jpg" style="width:100%;border-radius:10px;margin-bottom:8px">
+        </button>
+        <button type="button" class="shared-type-card" onclick="pickType(27)" style="background:#1a0a1f;border-color:#7c3aed">
+          <img src="../maria.jpg" alt="Virgen María">
           <div style="font-size:14px;color:#c084fc;font-weight:700">CARGADORA</div>
           <div style="font-size:11px;color:#aaa">27 grupos</div>
-        </div>
+        </button>
       </div>
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12)">
-        <button id="btnSpectator" onclick="pickSpectator()" style="width:100%;padding:12px;border:1px solid #888;border-radius:12px;background:rgba(255,255,255,.05);color:#ddd;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">👁️ Solo quiero seguir la procesión</button>
+        <button id="btnSpectator" onclick="pickSpectator()" style="width:100%;padding:12px;border:1px solid #888;border-radius:12px;background:rgba(255,255,255,.05);color:#ddd;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit"><svg class="ui-icon ui-icon-inline"><use href="#ui-watch"/></svg>Solo quiero seguir la procesión</button>
         <div style="font-size:10px;color:#888;margin-top:6px;text-align:center">Modo espectador · sin grupo</div>
       </div>
     </div>

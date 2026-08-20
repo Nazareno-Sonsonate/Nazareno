@@ -35,8 +35,8 @@ self.addEventListener('notificationclick', function(event) {
   );
 });
 
-const CACHE_NAME = 'semana-santa-v116';
-const URLS_TO_CACHE = ['./', './index.html', './app.js', './app.css', './routes-data.js', './icon-192.png', './icon-512.png', './se-icon-192.png', './jesus.jpg', './maria.jpg', './se-entierro.jpg', './se-virgen.jpg', './jesus-nazareno/', './jesus-nazareno/index.html', './jesus-nazareno/manifest.json', './santo-entierro/', './santo-entierro/index.html', './santo-entierro/manifest.json'];
+const CACHE_NAME = 'semana-santa-v118';
+const URLS_TO_CACHE = ['./', './index.html', './app.js', './app.css', './routes-data.js', './icon-192.png', './icon-512.png', './se-icon-192.png', './jesus.jpg', './maria.jpg', './se-entierro-v2.webp', './se-virgen-v2.webp', './jesus-nazareno/', './jesus-nazareno/index.html', './jesus-nazareno/manifest.json', './santo-entierro/', './santo-entierro/index.html', './santo-entierro/manifest.json'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(URLS_TO_CACHE)));

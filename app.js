@@ -282,7 +282,7 @@ function readParams(){
       if(isSEMode){
         var step1El=document.getElementById('step1');
         if(step1El){
-          step1El.innerHTML='<div style="font-size:20px;margin-bottom:4px">✝️</div><div style="font-size:16px;color:#e8e8e8;font-weight:700;margin-bottom:4px;letter-spacing:1px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#aaa;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div style="display:flex;gap:12px;justify-content:center"><div onclick="pickType(21)" style="cursor:pointer;flex:1;background:#000;border:2px solid #444;border-radius:14px;padding:12px;text-align:center"><img src="'+_asset('se-entierro.jpg')+'" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#e8e8e8;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">22 grupos</div></div><div onclick="pickType(27)" style="cursor:pointer;flex:1;background:#000;border:2px solid #444;border-radius:14px;padding:12px;text-align:center"><img src="'+_asset('se-virgen.jpg')+'" style="width:100%;border-radius:10px;margin-bottom:8px"><div style="font-size:14px;color:#e8e8e8;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">23 grupos</div></div></div><div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12)"><button id="btnSpectator" onclick="pickSpectator()" style="width:100%;padding:12px;border:1px solid #888;border-radius:12px;background:rgba(255,255,255,.05);color:#ddd;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">👁️ Solo quiero seguir la procesión</button><div style="font-size:10px;color:#888;margin-top:6px;text-align:center">Modo espectador · sin grupo</div></div>';
+          step1El.innerHTML='<div style="font-size:16px;color:#e8e8e8;font-weight:700;margin-bottom:4px;letter-spacing:1px">SANTO ENTIERRO DE CRISTO</div><div style="font-size:12px;color:#aaa;margin-bottom:16px" id="sharedDayLabel"></div><div style="font-size:14px;color:#eee;margin-bottom:14px;font-weight:600">¿Qué cargás?</div><div class="shared-type-grid"><button type="button" class="shared-type-card" onclick="pickType(21)" style="background:#000;border-color:#444"><img src="'+_asset('se-entierro-v2.webp')+'" alt="Urna del Santo Entierro"><div style="font-size:14px;color:#e8e8e8;font-weight:700">CARGADOR</div><div style="font-size:11px;color:#aaa">22 grupos</div></button><button type="button" class="shared-type-card" onclick="pickType(27)" style="background:#000;border-color:#444"><img src="'+_asset('se-virgen-v2.webp')+'" alt="Virgen Dolorosa"><div style="font-size:14px;color:#e8e8e8;font-weight:700">CARGADORA</div><div style="font-size:11px;color:#aaa">23 grupos</div></button></div><div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12)"><button id="btnSpectator" onclick="pickSpectator()" style="width:100%;padding:12px;border:1px solid #888;border-radius:12px;background:rgba(255,255,255,.05);color:#ddd;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit"><svg class="ui-icon ui-icon-inline"><use href="#ui-watch"/></svg>Solo quiero seguir la procesión</button><div style="font-size:10px;color:#888;margin-top:6px;text-align:center">Modo espectador · sin grupo</div></div>';
         }
       }
       $('sharedModal').style.display='flex';
@@ -292,7 +292,7 @@ function readParams(){
   }
   // Apply SE theme if day 4
   if(isSEMode){
-    $('hTitle').textContent='✝️ Santo Entierro';
+    $('hTitle').textContent='Santo Entierro';
     $('hTitle').style.color='#e8e8e8';
     document.body.classList.add('se-mode');
     var opts=$('cType').options;
@@ -332,7 +332,7 @@ function ensureSpectatorButton(){
   b.id='btnSpectator';
   b.onclick=pickSpectator;
   b.style.cssText='width:100%;padding:12px;border:1px solid #888;border-radius:12px;background:rgba(255,255,255,.05);color:#ddd;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit';
-  b.innerHTML='👁️ Solo quiero seguir la procesión';
+  b.innerHTML='<svg class="ui-icon ui-icon-inline"><use href="#ui-watch"/></svg>Solo quiero seguir la procesión';
   wrap.appendChild(b);
   var hint=document.createElement('div');
   hint.style.cssText='font-size:10px;color:#888;margin-top:6px;text-align:center';
@@ -916,7 +916,7 @@ function openCfg(){
       var msec=document.createElement('div');
       msec.id='cfgModeSection';
       msec.style.cssText='border-top:1px solid rgba(255,255,255,.1);margin-top:10px;padding-top:10px';
-      msec.innerHTML='<div style="font-size:12px;color:#aaa;margin-bottom:6px">👁️ Modo de uso</div><div id="cfgModeBtns"></div>'
+      msec.innerHTML='<div style="font-size:12px;color:#aaa;margin-bottom:6px">Modo de uso</div><div id="cfgModeBtns"></div>'
         +'<div style="font-size:10px;color:#666;margin-top:6px;line-height:1.4">Espectador: seguís la procesión sin grupo. Cargador: registrás tus cargadas.</div>';
       panelM.appendChild(msec);
     }
@@ -946,7 +946,7 @@ function openCfg(){
       adv.style.cssText='border-top:1px solid rgba(255,255,255,.1);margin-top:10px;padding-top:10px';
       adv.innerHTML=
         '<button id="cfgAdvToggle" onclick="toggleAdvanced()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid #444;border-radius:8px;background:rgba(255,255,255,.04);color:#aaa;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">'
-        +'<span>⚙️ Avanzado</span><span id="cfgAdvCaret" style="font-size:11px;color:#666">▸</span>'
+        +'<span>Avanzado</span><span id="cfgAdvCaret" style="font-size:11px;color:#666">▸</span>'
         +'</button>'
         +'<div id="cfgAdvBody" style="display:none;margin-top:8px"></div>';
       panelAdv.appendChild(adv);
@@ -1012,7 +1012,7 @@ function renderModeButtons(){
   el.style.cssText='display:flex;gap:6px';
   el.innerHTML=
     '<button onclick="switchToCargador()" style="flex:1;padding:9px;border:1px solid '+(!specOn?'#7c3aed':'#666')+';border-radius:8px;background:'+(!specOn?'rgba(124,58,237,.2)':'rgba(255,255,255,.04)')+';color:'+(!specOn?'#c084fc':'#888')+';font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🙋 Cargador</button>'
-    +'<button onclick="switchToSpectator()" style="flex:1;padding:9px;border:1px solid '+(specOn?'#7c3aed':'#666')+';border-radius:8px;background:'+(specOn?'rgba(124,58,237,.2)':'rgba(255,255,255,.04)')+';color:'+(specOn?'#c084fc':'#888')+';font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">👁️ Espectador</button>';
+        +'<button onclick="switchToSpectator()" style="flex:1;padding:9px;border:1px solid '+(specOn?'#7c3aed':'#666')+';border-radius:8px;background:'+(specOn?'rgba(124,58,237,.2)':'rgba(255,255,255,.04)')+';color:'+(specOn?'#c084fc':'#888')+';font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Espectador</button>';
 }
 var _bigText=(function(){ try{ return localStorage.getItem('bigText')==='1'; }catch(e){ return false; } })();
 function applyBigText(){ document.body.classList.toggle('big-text', _bigText); }
@@ -1269,7 +1269,7 @@ function initMap() {
   // Apply SE theme if needed
   if(currentDay===4){
     isSEMode=true;
-    $('hTitle').textContent='✝️ Santo Entierro';
+    $('hTitle').textContent='Santo Entierro';
     $('hTitle').style.color='#e8e8e8';
     document.body.classList.add('se-mode');
     var optsInit=$('cType').options;
@@ -1374,7 +1374,7 @@ function switchDay(d) {
 
   // Apply/remove SE theme
   if(isSEMode){
-    $('hTitle').textContent='✝️ Santo Entierro';
+    $('hTitle').textContent='Santo Entierro';
     $('hTitle').style.color='#e8e8e8';
     document.body.classList.add('se-mode');
     // Update group count labels
@@ -2003,14 +2003,13 @@ function calc() {
 
   let extra=currentDay===3?' · ✝️ Cortesías ~11:30-12:00':'';
   const dateStr=dayDates[currentDay]?dayDates[currentDay].slice(5).replace('-','/'):'';
-  var titleIcon=isSEMode?'✝️':'✝️';
   var titleText=isSEMode?'Santo Entierro de Cristo':dayNames[currentDay];
-  $('hTitle').textContent=titleIcon+' '+titleText;
+  $('hTitle').textContent=titleText;
   $('hTitle').style.color=isSEMode?'#e8e8e8':'#c084fc';
   var depTimeStr=fmt(c.h*60+(c.hm||0));
   if(_spectatorMode){
     var totGrp=(c.t===27)?getMujCount():getHomCount();
-    $('hSub').textContent=dateStr+' · Sale '+depTimeStr+' · '+totGrp+' grupos · 👁️ Espectador';
+    $('hSub').textContent=dateStr+' · Sale '+depTimeStr+' · '+totGrp+' grupos · Modo espectador';
   } else if(isShared){
     $('hSub').textContent=dateStr+' · Sale '+depTimeStr+' · Grupo #'+c.g;
   } else {
@@ -2759,7 +2758,7 @@ function renderSpectatorView(){
   // The top live banner already shows the current group, location, "Cambio X/Y"
   // and state pill (EN VIVO / POR SALIR / ASENTÓ). Don't duplicate it here.
   var h='';
-  h+='<div class="live-progress"><div class="live-progress-bar" style="width:'+pct+'%">'+done+'/'+total+'</div></div>';
+  h+='<div class="live-progress-wrap"><div class="live-progress-meta"><span>Avance de la procesión</span><strong>'+done+' de '+total+' · '+pct+'%</strong></div><div class="live-progress"><div class="live-progress-bar" style="width:'+pct+'%">'+done+'/'+total+'</div></div><div class="live-route-labels"><span>Salida</span><span>Llegada</span></div></div>';
   h+='<div style="margin-top:12px">';
   for(var i=0;i<changes.length;i++){
     var ch=changes[i];
@@ -2818,7 +2817,7 @@ function renderLiveImpl(){
     var tipoNow=cfgNow.t===27?'Mujeres (27)':'Hombres (21)';
     ph+='<div style="padding:12px 14px;margin-bottom:10px;border-radius:10px;background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.4)">';
     ph+='<div style="font-size:14px;font-weight:700;color:#ff9800;margin-bottom:6px">⚠️ Tu grupo no aparece en esta procesión</div>';
-    ph+='<div style="font-size:12px;color:#ddd;line-height:1.5">Estás viendo la lista completa de cargadas. Tu config actual: <b>Grupo #'+cfgNow.g+'</b> · <b>'+tipoNow+'</b>. Para ver tus cargadas personales, abrí <b>⚙️ Configuración</b> y corregí el grupo o el tipo de cargador.</div>';
+    ph+='<div style="font-size:12px;color:#ddd;line-height:1.5">Estás viendo la lista completa de cargadas. Tu config actual: <b>Grupo #'+cfgNow.g+'</b> · <b>'+tipoNow+'</b>. Para ver tus cargadas personales, abrí <b>Configuración</b> y corregí el grupo o el tipo de cargador.</div>';
     ph+='<div style="font-size:11px;color:#aaa;margin-top:6px">📜 Resultado histórico · '+totPD2+' '+(totPD2===1?'cargada':'cargadas')+'</div>';
     ph+='</div>';
     ph+='<div>';
@@ -2887,7 +2886,7 @@ function renderLiveImpl(){
   }
 
   // Progress
-  h+='<div class="live-progress"><div class="live-progress-bar" style="width:'+pct+'%">'+done+'/'+total+'</div></div>';
+  h+='<div class="live-progress-wrap"><div class="live-progress-meta"><span>Mis cargadas</span><strong>'+done+' de '+total+' · '+pct+'%</strong></div><div class="live-progress"><div class="live-progress-bar" style="width:'+pct+'%">'+done+'/'+total+'</div></div><div class="live-route-labels"><span>Primera</span><span>Última</span></div></div>';
 
   // Cortesías banner for Viernes (only when NOT complete)
   if(currentDay===3&&!procComplete){
@@ -2941,22 +2940,25 @@ function renderLiveImpl(){
     const ref=getCarryRef(nextCarry)||('Grupo '+nextCarry.grp);
     const estTime=getEstimate(nextCarry);
     const realAvg=getRealAvg();
+    const changesAway=Math.max(0,nextCarry.num-effCambio);
+    const turnStatus=changesAway<=1?'MUY PRONTO':(changesAway<=3?'PREPARATE':'PRÓXIMA');
+    const turnDetail=changesAway===0?'Es tu turno':(changesAway===1?'Falta 1 cambio':'Faltan '+changesAway+' cambios');
 
     h+='<div class="live-next" onclick="zoomTo('+(nextCarry.ci-1)+')" style="cursor:pointer;'+(nextCarry.colorHex?'border-color:'+nextCarry.colorHex:'')+'\">';
-    h+='<div class="ln-label">Próxima cargada · tocá para ver en mapa</div>';
-    h+='<div class="ln-num"'+(nextCarry.colorHex?' style="color:'+nextCarry.colorHex+'"':'')+'>#'+nextCarry.ci+'</div>';
-    if(nextCarry.carryLabel) h+='<div style="font-size:14px;margin:4px 0">'+nextCarry.carryLabel+'</div>';
-    h+='<div class="ln-ref">📍 '+ref+'</div>';
-    h+='<div class="ln-time">~'+estTime+'</div>';
-    h+='<div id="countdownText" style="font-size:13px;margin-top:4px"></div>';
-    if(realAvg) h+='<div style="font-size:11px;color:'+seAccentTxt()+';margin-top:2px">⏱ Ritmo real: '+realAvg.toFixed(1)+' min/cambio</div>';
-    h+='<div style="font-size:10px;color:#aaa;margin-top:2px">Cambio #'+nextCarry.num+'</div>';
+    h+='<div class="ln-ornament"><span></span><svg class="ui-icon"><use href="#ui-procession"/></svg><span></span></div>';
+    h+='<div class="ln-top"><div class="ln-label">Tu próxima cargada</div><div class="ln-status">'+turnStatus+'</div></div>';
+    h+='<div class="ln-main"><div class="ln-number-wrap"><span class="ln-number-caption">Cargada</span><div class="ln-num"'+(nextCarry.colorHex?' style="color:'+nextCarry.colorHex+'"':'')+'>#'+nextCarry.ci+'</div></div><div class="ln-place"><div class="ln-ref"><svg class="ui-icon"><use href="#ui-location"/></svg><span>'+ref+'</span></div><div class="ln-turn-detail">'+turnDetail+' · Cambio #'+nextCarry.num+'</div></div></div>';
+    if(nextCarry.carryLabel) h+='<div class="ln-carry-label">'+nextCarry.carryLabel+'</div>';
+    h+='<div class="ln-time-row"><span>Hora estimada</span><strong>~'+estTime+'</strong></div>';
+    h+='<div id="countdownText" class="ln-countdown"></div>';
+    if(realAvg) h+='<div class="ln-rhythm">Ritmo actual: '+realAvg.toFixed(1)+' min por cambio</div>';
+    h+='<div class="ln-map-hint"><svg class="ui-icon"><use href="#ui-map"/></svg> Tocá la tarjeta para ubicarla</div>';
     h+='</div>';
 
     // Compact register buttons
-    h+='<div style="display:flex;gap:4px;margin-bottom:4px">';
-    h+='<button onclick="markDone('+nextCarry.ci+')" style="flex:3;padding:8px;border:none;border-radius:8px;background:'+seAccent()+';color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">'+seCheck()+'Registrar #'+nextCarry.ci+'</button>';
-    h+='<button onclick="markDoneWithTime('+nextCarry.ci+')" style="flex:1;padding:6px;border:1px solid #555;border-radius:8px;background:none;color:#888;font-size:9px;font-family:inherit;cursor:pointer">🕐</button>';
+    h+='<div class="live-register-actions">';
+    h+='<button class="live-register-main" onclick="markDone('+nextCarry.ci+')" style="background:'+seAccent()+'">'+seCheck()+'Registrar cargada #'+nextCarry.ci+'</button>';
+    h+='<button class="live-register-time" onclick="markDoneWithTime('+nextCarry.ci+')" aria-label="Registrar con otra hora" title="Registrar con otra hora">Hora</button>';
     h+='</div>';
   }
 
@@ -3031,7 +3033,7 @@ function renderLiveImpl(){
     var est2=getEstimate(nextCarry);
     si+='<div onclick="zoomTo('+(nextCarry.ci-1)+')" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:6px 8px;background:rgba(192,132,252,.08);border:1px solid rgba(192,132,252,.2);border-radius:8px;margin-bottom:2px">';
     si+='<span style="font-size:20px;font-weight:700;color:#c084fc">#'+nextCarry.ci+'</span>';
-    si+='<span style="font-size:12px;color:#ccc;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">📍 '+ref2+'</span>';
+    si+='<span style="font-size:12px;color:#ccc;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+ref2+'</span>';
     si+='<span style="font-size:14px;font-weight:700;color:#c084fc">~'+est2+'</span>';
     si+='<span id="stickyCountdown" style="font-size:11px;color:#ff9800;min-width:40px;text-align:right"></span>';
     si+='</div>';
@@ -3931,8 +3933,8 @@ function releaseWakeLock(){
 
 function toggleUrna(tipo){
   const btnId=tipo==='jesus'?'bUrna':'bUrnaV';
-  const label=tipo==='jesus'?'✝️ Anda Jesús':'👑 Anda Virgen';
-  const activeLabel=tipo==='jesus'?'✝️ Jesús ACTIVA':'👑 Virgen ACTIVA';
+  const label=tipo==='jesus'?'Anda Jesús':'Anda Virgen';
+  const activeLabel=tipo==='jesus'?'Jesús ACTIVA':'Virgen ACTIVA';
   const bgOff=tipo==='jesus'?'rgba(220,38,38,.8)':'rgba(59,130,246,.8)';
   const bgOn=tipo==='jesus'?'rgba(220,38,38,1)':'rgba(59,130,246,1)';
 
@@ -3997,7 +3999,7 @@ function restoreUrnaState(){
       startKeepAlive();
       startGPSWatch('jesus');
       var btn=document.getElementById('bUrna');
-      if(btn){btn.style.background='rgba(220,38,38,1)';btn.textContent='✝️ Jesús ACTIVA';}
+      if(btn){btn.style.background='rgba(220,38,38,1)';btn.textContent='Jesús ACTIVA';}
     }
     if(state.virgen){
       urnaActive.virgen=true;
@@ -4365,7 +4367,7 @@ function checkVibrate(cambio){
           if(navigator.vibrate) navigator.vibrate([300,100,300,100,500]);
           if('Notification' in window){
             if(Notification.permission==='granted'){
-              try{new Notification('🔔 ¡Prepárate!',{body:'Tu cargada #'+myCarries[i].ci+' está a '+diff+' cambio'+(diff>1?'s':'')+' · Grupo #'+myCarries[i].grp,icon:_asset(isSEMode?'se-icon-192.png':'icon-192.png'),tag:'cargada-'+myCarries[i].ci,renotify:true});}catch(e){_logErr("swallow",e);}
+              try{new Notification('¡Prepárate!',{body:'Tu cargada #'+myCarries[i].ci+' está a '+diff+' cambio'+(diff>1?'s':'')+' · Grupo #'+myCarries[i].grp,icon:_asset(isSEMode?'se-icon-192.png':'icon-192.png'),tag:'cargada-'+myCarries[i].ci,renotify:true});}catch(e){_logErr("swallow",e);}
             } else if(Notification.permission!=='denied'){
               Notification.requestPermission();
             }
@@ -4390,7 +4392,7 @@ function checkVibrate(cambio){
         if(wDiff<=10&&wDiff>=0){
           if(navigator.vibrate) navigator.vibrate([200,100,200,100,200,100,400]);
           if('Notification' in window&&Notification.permission==='granted'){
-            try{new Notification('👁️ Grupo #'+watchGrp+(wDiff===0?' ¡AHORA!':' en '+wDiff+' cambio'+(wDiff>1?'s':'')),{body:wDiff===0?'El grupo que vigilás está cargando ahora':'Faltan '+wDiff+' cambio'+(wDiff>1?'s':'')+' para el Grupo #'+watchGrp,icon:_asset(isSEMode?'se-icon-192.png':'icon-192.png'),tag:'watch-'+watchGrp,renotify:true});}catch(e){_logErr("swallow",e);}
+            try{new Notification('Grupo #'+watchGrp+(wDiff===0?' ¡AHORA!':' en '+wDiff+' cambio'+(wDiff>1?'s':'')),{body:wDiff===0?'El grupo que vigilás está cargando ahora':'Faltan '+wDiff+' cambio'+(wDiff>1?'s':'')+' para el Grupo #'+watchGrp,icon:_asset(isSEMode?'se-icon-192.png':'icon-192.png'),tag:'watch-'+watchGrp,renotify:true});}catch(e){_logErr("swallow",e);}
           }
           found=true;
           break;
@@ -4842,11 +4844,26 @@ function updateBanners(){
   var tot=positions.length||changes.length||147;
   var isMuj=(+$('cType').value===27);
   var isPast=isDayPast(currentDay);
+  var hero=document.querySelector('.procession-hero');
+  var heroTitle=document.getElementById('processionHeroTitle');
+  if(hero){
+    var heroImage=isSEMode?(isMuj?'se-virgen-v2.webp':'se-entierro-v2.webp'):(isMuj?'maria.jpg':'jesus.jpg');
+    hero.style.setProperty('--hero-image','url("'+_asset(heroImage)+'")');
+  }
+  if(heroTitle){
+    heroTitle.textContent=isSEMode?(isMuj?'Virgen Dolorosa':'Santo Entierro de Cristo'):(isMuj?'María Santísima':'Jesús Nazareno');
+  }
   // A past day is complete by definition. Pin the banner to the final cambio
   // so it doesn't flicker between the stale remote value (Firebase listener)
   // and the computed total (past-day render fallback).
   if(isPast && tot>0) cambio=tot;
   var procDone=(cambio>=tot&&tot>0)||isPast;
+  document.body.classList.toggle('procession-complete',procDone);
+  var heroState=document.getElementById('processionHeroStatus');
+  if(heroState){
+    heroState.textContent=procDone?'Temporada finalizada':(cambio>0?'Procesión en vivo':'Próxima salida');
+    heroState.className='ph-status '+(procDone?'done':(cambio>0?'live':'soon'));
+  }
   
   // Create banner HTML if not exists or mode changed
   var existingBanner=document.getElementById('grupoActualBanner');
@@ -4857,8 +4874,8 @@ function updateBanners(){
     window._bannerSEMode=isSEMode;
     var jLabel1=isSEMode?'Santo Entierro':'Jesús Nazareno';
     var vLabel=isSEMode?'Virgen Dolorosa':'María Santísima';
-    var jImg=isSEMode?_asset('se-entierro.jpg'):_asset('jesus.jpg');
-    var vImg=isSEMode?_asset('se-virgen.jpg'):_asset('maria.jpg');
+    var jImg=isSEMode?_asset('se-entierro-v2.webp'):_asset('jesus.jpg');
+    var vImg=isSEMode?_asset('se-virgen-v2.webp'):_asset('maria.jpg');
     // Main banner = user's type (full with image)
     // Secondary = other type (slim line)
     var mainLabel=isMuj?vLabel:jLabel1;
@@ -5683,7 +5700,8 @@ function openMainMenu(){
     document.body.appendChild(ov);
   }
   var row=function(ic,title,desc,fn){
-    return '<button class="mm-row" onclick="closeMainMenu();'+fn+'"><span class="mm-ic">'+ic+'</span>'
+    var iconMarkup=ic.indexOf('ui-')===0?'<svg class="ui-icon"><use href="#'+ic+'"/></svg>':ic;
+    return '<button class="mm-row" onclick="closeMainMenu();'+fn+'"><span class="mm-ic">'+iconMarkup+'</span>'
       +'<span class="mm-tx"><b>'+title+'</b><small>'+desc+'</small></span><span class="mm-arrow">›</span></button>';
   };
   var adminRow = isAdmin
@@ -5692,10 +5710,10 @@ function openMainMenu(){
   ov.innerHTML='<div class="mm-sheet">'
     +'<div class="mm-handle"></div>'
     +'<div class="mm-title">MENÚ</div>'
-    +row('📖','Vía Crucis y oraciones','Estaciones, significado del día, 7 Palabras','openSpiritual()')
-    +row('⚙️','Configuración','Tu grupo, modo de uso, tamaño de letra','openCfg()')
-    +row('🔔','Alertas y avisos','Notificaciones cuando se acerca tu grupo','openAlerts()')
-    +row('📤','Compartir','Enviar la app por WhatsApp','shareWhatsApp()')
+    +row('ui-procession','Vía Crucis y oraciones','Estaciones, significado del día, 7 Palabras','openSpiritual()')
+    +row('ui-settings','Configuración','Tu grupo, modo de uso, tamaño de letra','openCfg()')
+    +row('ui-bell','Alertas y avisos','Notificaciones cuando se acerca tu grupo','openAlerts()')
+    +row('ui-share','Compartir','Enviar la app por WhatsApp','shareWhatsApp()')
     +adminRow
     +'</div>';
   ov.style.display='flex';
