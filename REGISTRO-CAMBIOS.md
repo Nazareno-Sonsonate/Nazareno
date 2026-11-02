@@ -5,9 +5,21 @@ arriba.** El formato y las reglas están en [`AGENTS.md`](AGENTS.md), sección 7
 
 ---
 
+## 2026-11-01 — Retoma y conciliación del estado documentado
+
+**Agente:** Codex  **Commit:** `sin commit`  **Rama:** `codex/retoma-documentacion`
+
+**Qué cambié:** agregué `.gitignore` para excluir los cinco perfiles locales de Chrome sin borrarlos. Corregí los commits y el estado de integración de las entradas de agosto. Actualicé `TRASPASO-CODEX.md` para distinguir pendientes reales de información histórica: el avance ya aparece fuera de la barra y la última regla de altura del mapa es `calc(100vh - 158px)`.
+
+**Qué NO toqué:** código, estilos, imágenes, Firebase, rutas, GPS, notificaciones, administración ni producción. Conservé los perfiles y el archivo de traspaso existente.
+
+**Cómo lo verifiqué:** revisión de los tres documentos, estado local de Git, diferencias del índice y del árbol de trabajo, ramas, stash e historial de los cinco commits de agosto. Sintaxis de `app.js` y `firebase-messaging-sw.js` con `node --check`; `git diff --check`; comprobación de las reglas de exclusión. No ejecuté una revisión en navegador en esta retoma documental.
+
+**Pendiente / riesgos:** siguen pendientes la revisión visual en teléfono físico y la validación con datos en vivo. `origin/main` es la referencia local: no se consultó el remoto ni se verificó el despliegue actual de GitHub Pages. Cambios documentales sin commit.
+
 ## 2026-08-20 — Consolidación CSS y jerarquía fuera de temporada
 
-**Agente:** Codex  **Commit:** `sin commit`  **Rama:** `codex/consolidacion-css-movil`
+**Agente:** Codex  **Commit:** `fccb715`  **Rama:** `codex/consolidacion-css-movil` → `main`
 
 **Qué cambió:** consolidé en una sola sección las capas acumuladas de cabecera, selector de día, aviso de instalación, resumen de grupos y portada. `app.css` bajó de 612 a 560 líneas. Fuera de temporada se muestra únicamente el resultado principal antes de la portada; la fila secundaria y las estadísticas redundantes quedan ocultas. En vivo se conserva el detalle completo.
 
@@ -15,10 +27,10 @@ arriba.** El formato y las reglas están en [`AGENTS.md`](AGENTS.md), sección 7
 
 **Cómo lo verifiqué:** `node --check` para ambos JavaScript, `git diff --check`, 524 llaves CSS balanceadas, exactamente 2 pestañas y 2 paneles por app, presencia de reglas de texto grande y 138 variantes de Santo Entierro. Vista previa local a 420×860 y 350×780.
 
-**Pendiente / riesgos:** falta confirmación visual final del usuario antes de integrar y publicar en `main`.
+**Pendiente / riesgos:** el cambio ya está integrado en `main`. Sigue pendiente la confirmación visual del usuario en teléfono físico; no debe confundirse con una integración pendiente.
 ## 2026-08-20 — Compactación móvil y portada confiable
 
-**Agente:** Codex  **Commit:** `sin commit`  **Rama:** `main`
+**Agente:** Codex  **Commits:** `5d68ad3`, `dc16e46`, `c41900d`  **Rama:** `main`
 
 **Qué cambió:** eliminé la compensación manual superior y convertí la cabecera en sticky para evitar huecos variables en teléfonos. Añadí `viewport-fit=cover` y soporte del área segura para que la barra llegue al borde superior. El resumen de grupo, cargada y avance vuelve a desplazarse con el contenido; solo quedan fijas la identidad superior y la navegación inferior. Corregí además `syncHeaderPad()` para que no reserve otra vez la altura de una cabecera sticky. El selector de días de Nazareno ahora tiene ancho suficiente y Santo Entierro oculta también su contenedor vacío. El aviso de instalación flota sin desplazar el contenido, el resumen de grupo y avance es más compacto, y ambas portadas usan una etiqueta de imagen real; esto garantiza que la foto de Jesús Nazareno no dependa solamente de un fondo CSS.
 
@@ -29,7 +41,7 @@ arriba.** El formato y las reglas están en [`AGENTS.md`](AGENTS.md), sección 7
 **Pendiente / riesgos:** confirmar visualmente en el teléfono físico después de que GitHub Pages y el service worker entreguen la versión nueva.
 ## 2026-08-19 — Selector inicial adaptable y accesibilidad táctil
 
-**Agente:** Codex  **Commit:** `sin commit`  **Rama:** `codex/mejoras-ux-movil`
+**Agente:** Codex  **Commit:** `f7b725c` (20-ago-2026)  **Rama:** `codex/mejoras-ux-movil` → `main`
 
 **Qué cambié:** `app.css`, `jesus-nazareno/index.html` y
 `santo-entierro/index.html`. Convertí las tarjetas para elegir cargador o
@@ -163,6 +175,8 @@ entorno de prueba Firebase y Google Maps están bloqueados.
   (`app.js:2762` y `2890`) quedó oculto con `font-size:0` para no tocar el JS en
   esta fase. Si se quiere ese dato visible, hay que moverlo fuera de la barra
   editando `app.js`.
+  **Actualización 1-nov-2026:** resuelto en `f7b725c`: `.live-progress-meta`
+  muestra cantidad y porcentaje fuera de la barra en ambas variantes.
 - `#map` pasó a `calc(100vh - 128px)`. Si el aviso `.notice` se muestra, empuja
   el mapa y aparece un scroll corto en la vista de mapa. Ya pasaba antes; ahora
   el margen es más chico.

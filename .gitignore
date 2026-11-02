@@ -1,0 +1,6 @@
+# Perfiles locales de Chrome usados para revisión móvil; pueden contener sesiones.
+/.chrome-mobile-preview/
+/.chrome-mobile-preview-2/
+/.chrome-mobile-review/
+/.chrome-mobile-review-2/
+/.chrome-mobile-review-3/
